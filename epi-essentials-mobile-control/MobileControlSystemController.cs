@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Reflection;
-using Crestron.SimplSharpPro.CrestronThread;
-using Crestron.SimplSharpPro;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
@@ -19,6 +13,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.AppServer.Messengers;
+using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
 {
@@ -118,9 +113,15 @@ namespace PepperDash.Essentials
             // Config Messenger
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
-            ConfigMessenger.RegisterWithAppServer(this);			
+            ConfigMessenger.RegisterWithAppServer(this);	
+		
+            AddPostActivationAction(() => { });
         }
 
+        private void CreateRoomBridges()
+        {
+            
+        }
         /// <summary>
         /// If config rooms is empty or null then go
         /// </summary>
@@ -135,6 +136,7 @@ namespace PepperDash.Essentials
 
             return base.CustomActivate();
         }
+       
 
 //        /// <summary>
 //        /// 

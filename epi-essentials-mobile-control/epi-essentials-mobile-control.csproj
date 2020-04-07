@@ -110,6 +110,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpThreadingLibrary.dll</HintPath>
     </Reference>
+    <Reference Include="SSharpWebSocketClientLibrary, Version=1.0.2.31317, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpWebSocketClientLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.30805, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoCryptographyExtensions.dll</HintPath>
@@ -161,10 +165,16 @@
     <Compile Include="DeviceTypeInterfaces\ITransportExtensions.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="Messengers\AudioCodecBaseMessenger.cs" />
+    <Compile Include="Messengers\CameraBaseMessenger.cs" />
     <Compile Include="Messengers\ConfigMessenger.cs" />
-    <Compile Include="Messengers\Ddvc01AtcMessenger.cs" />
     <Compile Include="Messengers\Ddvc01VtcMessenger.cs" />
+    <Compile Include="Messengers\IRunRouteActionMessenger.cs" />
     <Compile Include="Messengers\MessengerBase.cs" />
+    <Compile Include="Messengers\SIMPLAtcMessenger.cs" />
+    <Compile Include="Messengers\SIMPLCameraMessenger.cs" />
+    <Compile Include="Messengers\SimplMessengerPropertiesConfig.cs" />
+    <Compile Include="Messengers\SIMPLRouteMessenger.cs" />
+    <Compile Include="Messengers\SIMPLVtcMessenger.cs" />
     <Compile Include="Messengers\SystemMonitorMessenger.cs" />
     <Compile Include="Messengers\VideoCodecBaseMessenger.cs" />
     <Compile Include="MobileControlConfig.cs" />
@@ -172,9 +182,12 @@
     <Compile Include="MobileControlSystemController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoomBridges\MobileControlBridgeBase.cs" />
-    <Compile Include="RoomBridges\MobileControlDdvc01RoomBridge.cs" />
     <Compile Include="RoomBridges\MobileControlEssentialsHuddleSpaceRoomBridge.cs" />
+    <Compile Include="RoomBridges\MobileControlSIMPLRoomBridge.cs" />
     <Compile Include="RoomBridges\SourceDeviceMapDictionary.cs" />
+    <Compile Include="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
+    <Compile Include="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
+    <Compile Include="SIMPLJoinMaps\SIMPLVtcJoinMap.cs" />
     <Compile Include="Volumes.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
