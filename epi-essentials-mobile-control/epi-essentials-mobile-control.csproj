@@ -46,6 +46,10 @@
     <GenerateSerializationAssemblies>off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Crestron.SimplSharpPro.EthernetCommunications, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\ProgramData\Crestron\SDK\SSPDevices\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
+    </Reference>
     <Reference Include="Essentials Devices Common, Version=1.4.7348.38758, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Essentials-Builds\Essentials Devices Common.dll</HintPath>
@@ -90,16 +94,88 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpReflectionInterface.dll</HintPath>
     </Reference>
+    <Reference Include="SSCoreTupleLibrary, Version=1.0.0.30762, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSCoreTupleLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpCrestronExtensionsLibrary, Version=1.0.0.30754, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpCrestronExtensionsLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpReflectionExtensionsLibrary, Version=1.0.0.30759, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpReflectionExtensionsLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpThreadingLibrary, Version=1.0.0.30781, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpThreadingLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.30805, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoCryptographyExtensions.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoCryptographyLibrary, Version=1.0.0.30776, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoCryptographyLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoIOLibrary, Version=1.0.0.30801, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoIOLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoNetLibrary, Version=1.0.0.30797, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoNetLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoSslStreamLibrary, Version=1.0.0.31025, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoSslStreamLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoSupportLibrary, Version=1.0.0.30770, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoSupportLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoThreadPoolLibrary, Version=1.0.0.30785, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoThreadPoolLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoWebLibrary, Version=1.0.0.31028, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoWebLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoX509CertificatesLibrary, Version=1.0.0.31018, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoX509CertificatesLibrary.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EssentialsPluginDeviceTemplate.cs" />
-    <Compile Include="EssentialsPluginBridgeTemplate.cs" />
-    <Compile Include="EssentialsPluginConfigObjectTemplate.cs" />
-    <Compile Include="EssentialsPluginFactoryTemplate.cs" />
+    <Compile Include="DeviceTypeInterfaces\IChannelExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\IColorExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\IDPadExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\IDvrExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\INumericExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\IPowerExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs" />
+    <Compile Include="DeviceTypeInterfaces\ITransportExtensions.cs" />
+    <Compile Include="Interfaces.cs" />
+    <Compile Include="Messengers\AudioCodecBaseMessenger.cs" />
+    <Compile Include="Messengers\ConfigMessenger.cs" />
+    <Compile Include="Messengers\Ddvc01AtcMessenger.cs" />
+    <Compile Include="Messengers\Ddvc01VtcMessenger.cs" />
+    <Compile Include="Messengers\MessengerBase.cs" />
+    <Compile Include="Messengers\SystemMonitorMessenger.cs" />
+    <Compile Include="Messengers\VideoCodecBaseMessenger.cs" />
+    <Compile Include="MobileControlConfig.cs" />
+    <Compile Include="MobileControlDdvc01DeviceBridge.cs" />
+    <Compile Include="MobileControlSystemController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RoomBridges\MobileControlBridgeBase.cs" />
+    <Compile Include="RoomBridges\MobileControlDdvc01RoomBridge.cs" />
+    <Compile Include="RoomBridges\MobileControlEssentialsHuddleSpaceRoomBridge.cs" />
+    <Compile Include="RoomBridges\SourceDeviceMapDictionary.cs" />
+    <Compile Include="Volumes.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
