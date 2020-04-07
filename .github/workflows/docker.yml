@@ -12,8 +12,8 @@ env:
   # solution path needs slashes (use \). When solution file name and path are put together, it should be a valid path
   # If Solution is in repo root, leave SOLUTION_PATH empty
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: PDT.EssentialsPluginTemplate.EPI\
-  SOLUTION_FILE: PDT.EssentialsPluginTemplate.EPI
+  SOLUTION_PATH: epi-essentials-mobile-control\
+  SOLUTION_FILE: epi-essentials-mobile-control
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
