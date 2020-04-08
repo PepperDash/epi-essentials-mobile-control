@@ -26,18 +26,19 @@ jobs:
     steps:
       # First we checkout the source repo
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@master
         with:
           fetch-depth: 0
+          submodules: recursive
       # And any submodules
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-        # Fetch all tags
+      # - name: Checkout submodules
+      #   shell: bash
+      #   run: |
+      #     git config --global url."https://github.com/".insteadOf "git@github.com:"
+      #     auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+      #     git submodule sync --recursive
+      #     git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+      # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
       # check if the branch is master and if current commit is tagged
