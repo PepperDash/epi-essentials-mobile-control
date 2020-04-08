@@ -3,11 +3,11 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class ITransportExtensions
+    public static class TransportExtensions
     {
         public static void LinkActions(this ITransport dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.AddAction(prefix + "play", new PressAndHoldAction(dev.Play));
             controller.AddAction(prefix + "pause", new PressAndHoldAction(dev.Pause));
@@ -21,7 +21,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this ITransport dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.RemoveAction(prefix + "play");
             controller.RemoveAction(prefix + "pause");

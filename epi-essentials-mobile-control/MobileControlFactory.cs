@@ -32,13 +32,14 @@ namespace PepperDash.Essentials
         {
             var comm = CommFactory.GetControlPropertiesConfig(dc);
 
-            var bridge = new PepperDash.Essentials.Room.MobileControl.MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
+            var bridge = new MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
             bridge.AddPreActivationAction(() =>
             {
                 var parent = DeviceManager.AllDevices.FirstOrDefault(d => d.Key == "appServer") as MobileControlSystemController;
                 if (parent == null)
                 {
                     Debug.Console(0, bridge, "ERROR: Cannot connect bridge. System controller not present");
+                    return;
                 }
                 Debug.Console(0, bridge, "Linking to parent controller");
                 bridge.AddParent(parent);

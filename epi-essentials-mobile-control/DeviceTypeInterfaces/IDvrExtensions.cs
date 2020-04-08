@@ -3,7 +3,7 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class IDvrExtensions
+    public static class DvrExtensions
     {
         public static void LinkActions(this IDvr dev, MobileControlSystemController controller)
         {

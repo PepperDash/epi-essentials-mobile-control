@@ -4,11 +4,11 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class IPowerExtensions
+    public static class PowerExtensions
     {
         public static void LinkActions(this IPower dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.AddAction(prefix + "powerOn", new Action(dev.PowerOn));
             controller.AddAction(prefix + "powerOff", new Action(dev.PowerOff));
@@ -17,7 +17,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this IPower dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.RemoveAction(prefix + "powerOn");
             controller.RemoveAction(prefix + "powerOff");

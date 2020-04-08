@@ -3,11 +3,11 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class IColorExtensions
+    public static class ColorExtensions
     {
         public static void LinkActions(this IColor dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.AddAction(prefix + "red", new PressAndHoldAction(dev.Red));
             controller.AddAction(prefix + "green", new PressAndHoldAction(dev.Green));
@@ -17,7 +17,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this IColor dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.RemoveAction(prefix + "red");
             controller.RemoveAction(prefix + "green");

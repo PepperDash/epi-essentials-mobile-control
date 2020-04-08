@@ -179,6 +179,7 @@
     <Compile Include="Messengers\VideoCodecBaseMessenger.cs" />
     <Compile Include="MobileControlConfig.cs" />
     <Compile Include="MobileControlDdvc01DeviceBridge.cs" />
+    <Compile Include="MobileControlFactory.cs" />
     <Compile Include="MobileControlSystemController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoomBridges\MobileControlBridgeBase.cs" />

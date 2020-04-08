@@ -3,11 +3,11 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class IChannelExtensions
+    public static class ChannelExtensions
     {
         public static void LinkActions(this IChannel dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.AddAction(prefix + "chanUp", new PressAndHoldAction(dev.ChannelUp));
             controller.AddAction(prefix + "chanDown", new PressAndHoldAction(dev.ChannelDown));
@@ -19,7 +19,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this IChannel dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.RemoveAction(prefix + "chanUp");
             controller.RemoveAction(prefix + "chanDown");

@@ -3,11 +3,11 @@ using PepperDash.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class INumericExtensions
+    public static class NumericExtensions
     {
         public static void LinkActions(this INumericKeypad dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.AddAction(prefix + "num0", new PressAndHoldAction(dev.Digit0));
             controller.AddAction(prefix + "num1", new PressAndHoldAction(dev.Digit1));
@@ -26,7 +26,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this INumericKeypad dev, MobileControlSystemController controller)
         {
-            var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
             controller.RemoveAction(prefix + "num0");
             controller.RemoveAction(prefix + "num1");
