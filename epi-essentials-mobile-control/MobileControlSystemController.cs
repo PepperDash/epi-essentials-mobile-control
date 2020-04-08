@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.Net.Http;
@@ -11,13 +12,14 @@ using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.AppServer.Messengers;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : Device
+    public class MobileControlSystemController : EssentialsDevice
     {
 		//WebSocketClient WSClient;
 		WebSocket WSClient2;
@@ -115,13 +117,64 @@ namespace PepperDash.Essentials
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);	
 		
-            AddPostActivationAction(() => { });
+            AddPostActivationAction(CreateRoomBridges);
         }
 
         private void CreateRoomBridges()
         {
-            
+            var huddleRooms = DeviceManager.AllDevices.OfType<EssentialsHuddleSpaceRoom>();
+
+            foreach (var bridge in huddleRooms.Select(room => new MobileConrolEssentialsHuddleSpaceRoomBridge(room)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
+
+            var vtcRooms = DeviceManager.AllDevices.OfType<EssentialsHuddleVtc1Room>();
+
+            foreach (var bridge in vtcRooms.Select(room => new MobileConrolEssentialsHuddleSpaceRoomBridge(room)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
         }
+
+        private void LinkSystemMonitorToAppServer()
+        {
+            var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
+
+            var appServer = DeviceManager.GetDeviceForKey("appServer") as MobileControlSystemController;
+
+
+            if (sysMon == null || appServer == null) return;
+
+            var key = sysMon.Key + "-" + appServer.Key;
+            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
+
+            messenger.RegisterWithAppServer(appServer);
+
+            DeviceManager.AddDevice(messenger);
+        }
+
+        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
+        {
+            bridge.AddPostActivationAction(() =>
+            {
+                var parent = DeviceManager.AllDevices.SingleOrDefault(dev => dev.Key == "appServer") as MobileControlSystemController;
+
+                if (parent == null)
+                {
+                    Debug.Console(0, bridge,
+                        "ERROR: Cannot connect app server room bridge. System controller not present");
+                    return;
+                }
+
+                Debug.Console(0, bridge, "Linking to parent controller");
+                bridge.AddParent(parent);
+                parent.AddBridge(bridge);
+            });
+        }
+
         /// <summary>
         /// If config rooms is empty or null then go
         /// </summary>
