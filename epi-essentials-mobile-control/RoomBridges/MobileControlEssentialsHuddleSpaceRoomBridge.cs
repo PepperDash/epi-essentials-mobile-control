@@ -85,7 +85,7 @@ namespace PepperDash.Essentials
 					(volumeRoom.CurrentVolumeControls as IBasicVolumeWithFeedback).SetVolume(u)));
 				Parent.AddAction(string.Format(@"/room/{0}/volumes/master/muteToggle", Room.Key), new Action(() => 
 					volumeRoom.CurrentVolumeControls.MuteToggle()));
-				volumeRoom.CurrentVolumeDeviceChange += new EventHandler<VolumeDeviceChangeEventArgs>(Room_CurrentVolumeDeviceChange);
+				volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
 
 				// Registers for initial volume events, if possible
 				var currentVolumeDevice = volumeRoom.CurrentVolumeControls as IBasicVolumeWithFeedback;
@@ -98,7 +98,7 @@ namespace PepperDash.Essentials
 
 			var sscRoom = Room as IHasCurrentSourceInfoChange;
 			if(sscRoom != null)
-				sscRoom.CurrentSourceChange += new SourceInfoChangeHandler(Room_CurrentSingleSourceChange);
+				sscRoom.CurrentSourceChange += Room_CurrentSingleSourceChange;
 
 			var vcRoom = Room as IHasVideoCodec;
 			if (vcRoom != null && vcRoom.VideoCodec != null)
@@ -108,7 +108,7 @@ namespace PepperDash.Essentials
 				VCMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, "/device/videoCodec");
 				VCMessenger.RegisterWithAppServer(Parent);
 
-				vcRoom.IsSharingFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(IsSharingFeedback_OutputChange);
+				vcRoom.IsSharingFeedback.OutputChange += IsSharingFeedback_OutputChange;
 			}
 
             var acRoom = Room as IHasAudioCodec;

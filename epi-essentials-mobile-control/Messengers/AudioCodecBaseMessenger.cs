@@ -28,7 +28,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 throw new ArgumentNullException("codec");
 
             Codec = codec;
-            codec.CallStatusChange += new EventHandler<CodecCallStatusItemChangeEventArgs>(codec_CallStatusChange);
+            codec.CallStatusChange += codec_CallStatusChange;
 
         }
 

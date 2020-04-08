@@ -109,7 +109,7 @@ namespace PepperDash.Essentials
 
             CrestronConsole.AddNewConsoleCommand(s => ParseStreamRx(s), "mobilesimulateaction", "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
-            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 			//CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 
             // Config Messenger
@@ -271,7 +271,7 @@ namespace PepperDash.Essentials
 			if (b != null)
 			{
 				Debug.Console(0, this, "Adding room bridge with delayed configuration");
-				b.ConfigurationIsReady += new EventHandler<EventArgs>(bridge_ConfigurationIsReady);
+				b.ConfigurationIsReady += bridge_ConfigurationIsReady;
 			}
 			else
 			{

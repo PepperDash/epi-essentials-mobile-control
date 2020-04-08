@@ -30,20 +30,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
 				throw new ArgumentNullException("codec");
 
 			Codec = codec;
-			codec.CallStatusChange += new EventHandler<CodecCallStatusItemChangeEventArgs>(codec_CallStatusChange);
-			codec.IsReadyChange += new EventHandler<EventArgs>(codec_IsReadyChange);
+			codec.CallStatusChange += codec_CallStatusChange;
+			codec.IsReadyChange += codec_IsReadyChange;
 
 			var dirCodec = codec as IHasDirectory;
 			if (dirCodec != null)
 			{
-				dirCodec.DirectoryResultReturned += new EventHandler<DirectoryEventArgs>(dirCodec_DirectoryResultReturned);
+				dirCodec.DirectoryResultReturned += dirCodec_DirectoryResultReturned;
 
 			}
 
             var recCodec = codec as IHasCallHistory;
             if (recCodec != null)
             {
-                recCodec.CallHistory.RecentCallsListHasChanged += new EventHandler<EventArgs>(CallHistory_RecentCallsListHasChanged);
+                recCodec.CallHistory.RecentCallsListHasChanged += CallHistory_RecentCallsListHasChanged;
             }
 		}
 
@@ -203,7 +203,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 Debug.Console(2, this, "Adding IHasCodecCameras Actions");
 
-                cameraCodec.CameraSelected += new EventHandler<CameraSelectedEventArgs>(cameraCodec_CameraSelected);
+                cameraCodec.CameraSelected += cameraCodec_CameraSelected;
 
                 appServerController.AddAction(MessagePath + "/cameraSelect", new Action<string>(s => cameraCodec.SelectCamera(s)));
 
@@ -214,7 +214,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Debug.Console(2, this, "Adding IHasCodecRoomPresets Actions");
 
-                    presetsCodec.CodecRoomPresetsListHasChanged += new EventHandler<EventArgs>(presetsCodec_CameraPresetsListHasChanged);
+                    presetsCodec.CodecRoomPresetsListHasChanged += presetsCodec_CameraPresetsListHasChanged;
 
                     appServerController.AddAction(MessagePath + "/cameraPreset", new Action<int>(u => presetsCodec.CodecRoomPresetSelect(u)));
                     appServerController.AddAction(MessagePath + "/cameraPresetStore", new Action<CodecRoomPreset>(p => presetsCodec.CodecRoomPresetStore(p.ID, p.Description)));
@@ -225,7 +225,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Debug.Console(2, this, "Adding IHasCameraAutoMode Actions");
 
-                    speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraAutoModeIsOnFeedback_OutputChange);
+                    speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
 
                     appServerController.AddAction(MessagePath + "/cameraAuto", new Action(speakerTrackCodec.CameraAutoModeOn));
                     appServerController.AddAction(MessagePath + "/cameraManual", new Action(speakerTrackCodec.CameraAutoModeOff));
@@ -299,12 +299,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var camera = cameraCodec.SelectedCamera as IHasCameraPtzControl;
                 if (camera != null)
                 {
-                    AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.TiltUp(); else camera.TiltStop(); })));
-                    AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.TiltDown(); else camera.TiltStop(); })));
-                    AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.PanLeft(); else camera.PanStop(); })));
-                    AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.PanRight(); else camera.PanStop(); })));
-                    AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.ZoomIn(); else camera.ZoomStop(); })));
-                    AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction(new Action<bool>(b => { if (b)camera.ZoomOut(); else camera.ZoomStop(); })));
+                    AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(b => { if (b)camera.TiltUp(); else camera.TiltStop(); }));
+                    AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(b => { if (b)camera.TiltDown(); else camera.TiltStop(); }));
+                    AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction(b => { if (b)camera.PanLeft(); else camera.PanStop(); }));
+                    AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction(b => { if (b)camera.PanRight(); else camera.PanStop(); }));
+                    AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction(b => { if (b)camera.ZoomIn(); else camera.ZoomStop(); }));
+                    AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction(b => { if (b)camera.ZoomOut(); else camera.ZoomStop(); }));
                     AppServerController.AddAction(MessagePath + "/cameraHome", new Action(camera.PositionHome));
 
                     var focusCamera = cameraCodec as IHasCameraFocusControl;
@@ -316,8 +316,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     if (focusCamera != null)
                     {
                         AppServerController.AddAction(MessagePath + "/cameraAutoFocus", new Action(focusCamera.TriggerAutoFocus));
-                        AppServerController.AddAction(MessagePath + "/cameraFocusNear", new PressAndHoldAction(new Action<bool>(b => { if (b)focusCamera.FocusNear(); else focusCamera.FocusStop(); })));
-                        AppServerController.AddAction(MessagePath + "/cameraFocusFar", new PressAndHoldAction(new Action<bool>(b => { if (b)focusCamera.FocusFar(); else focusCamera.FocusStop(); })));
+                        AppServerController.AddAction(MessagePath + "/cameraFocusNear", new PressAndHoldAction(b => { if (b)focusCamera.FocusNear(); else focusCamera.FocusStop(); }));
+                        AppServerController.AddAction(MessagePath + "/cameraFocusFar", new PressAndHoldAction(b => { if (b)focusCamera.FocusFar(); else focusCamera.FocusStop(); }));
                     }
                 }
             }

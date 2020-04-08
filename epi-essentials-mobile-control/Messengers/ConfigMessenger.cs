@@ -14,7 +14,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             : base(key, messagePath)
         {
             ConfigUpdater.ConfigStatusChanged -= ConfigUpdater_ConfigStatusChanged;
-            ConfigUpdater.ConfigStatusChanged += new EventHandler<ConfigStatusEventArgs>(ConfigUpdater_ConfigStatusChanged);
+            ConfigUpdater.ConfigStatusChanged += ConfigUpdater_ConfigStatusChanged;
         }
 
         void ConfigUpdater_ConfigStatusChanged(object sender, ConfigStatusEventArgs e)

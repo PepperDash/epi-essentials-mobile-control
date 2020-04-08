@@ -23,7 +23,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (routingSink != null)
             {
-                routingSink.CurrentSourceChange += new SourceInfoChangeHandler(routingSink_CurrentSourceChange);
+                routingSink.CurrentSourceChange += routingSink_CurrentSourceChange;
             }
         }
 
@@ -44,10 +44,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
             if(sinkDevice != null)
             {
-                sinkDevice.CurrentSourceChange += new SourceInfoChangeHandler((o, a) =>
+                sinkDevice.CurrentSourceChange += (o, a) =>
                 {
                     SendRoutingFullMessageObject();
-                });
+                };
             }
         }
 

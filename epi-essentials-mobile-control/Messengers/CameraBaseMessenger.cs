@@ -30,7 +30,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (presetsCamera != null)
             {
-                presetsCamera.PresetsListHasChanged += new EventHandler<EventArgs>(presetsCamera_PresetsListHasChanged);
+                presetsCamera.PresetsListHasChanged += presetsCamera_PresetsListHasChanged;
             }
  
         }

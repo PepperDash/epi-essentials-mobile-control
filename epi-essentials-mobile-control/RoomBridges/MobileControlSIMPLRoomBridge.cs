@@ -333,22 +333,22 @@ namespace PepperDash.Essentials.Room.MobileControl
 				}));
 
 			// shutdown things
-			EISC.SetSigTrueAction(JoinMap.ShutdownCancel.JoinNumber, new Action(() =>
-				PostMessage("/room/shutdown/", new
-				{
-					state = "wasCancelled"
-				})));
-			EISC.SetSigTrueAction(JoinMap.ShutdownEnd.JoinNumber, new Action(() =>
-				PostMessage("/room/shutdown/", new
-				{
-					state = "hasFinished"
-				})));
-			EISC.SetSigTrueAction(JoinMap.ShutdownStart.JoinNumber, new Action(() =>
-				PostMessage("/room/shutdown/", new
-				{
-					state = "hasStarted",
-					duration = EISC.UShortOutput[JoinMap.ShutdownPromptDuration.JoinNumber].UShortValue
-				})));
+			EISC.SetSigTrueAction(JoinMap.ShutdownCancel.JoinNumber, () =>
+			    PostMessage("/room/shutdown/", new
+			    {
+			        state = "wasCancelled"
+			    }));
+			EISC.SetSigTrueAction(JoinMap.ShutdownEnd.JoinNumber, () =>
+			    PostMessage("/room/shutdown/", new
+			    {
+			        state = "hasFinished"
+			    }));
+			EISC.SetSigTrueAction(JoinMap.ShutdownStart.JoinNumber, () =>
+			    PostMessage("/room/shutdown/", new
+			    {
+			        state = "hasStarted",
+			        duration = EISC.UShortOutput[JoinMap.ShutdownPromptDuration.JoinNumber].UShortValue
+			    }));
 
 			// Config things
 			EISC.SetSigTrueAction(JoinMap.ConfigIsReady.JoinNumber, LoadConfigValues);
