@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using PepperDash.Core;
-using PepperDash.Core.JsonStandardObjects;
 using PepperDash.Essentials.Core;
-using DeviceConfig = PepperDash.Essentials.Core.Config.DeviceConfig;
+using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Room.MobileControl;
 
 namespace PepperDash.Essentials
 {
@@ -29,7 +30,22 @@ namespace PepperDash.Essentials
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
         {
-            throw new System.NotImplementedException();
+            var comm = CommFactory.GetControlPropertiesConfig(dc);
+
+            var bridge = new PepperDash.Essentials.Room.MobileControl.MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
+            bridge.AddPreActivationAction(() =>
+            {
+                var parent = DeviceManager.AllDevices.FirstOrDefault(d => d.Key == "appServer") as MobileControlSystemController;
+                if (parent == null)
+                {
+                    Debug.Console(0, bridge, "ERROR: Cannot connect bridge. System controller not present");
+                }
+                Debug.Console(0, bridge, "Linking to parent controller");
+                bridge.AddParent(parent);
+                parent.AddBridge(bridge);
+            });
+
+            return bridge;
         }
     }
 }
