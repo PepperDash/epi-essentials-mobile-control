@@ -7,11 +7,12 @@ using PepperDash.Essentials.Room.MobileControl;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlFactory : EssentialsDeviceFactory<MobileControlSystemController>
+    public class MobileControlFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
     {
         public MobileControlFactory()
         {
-            TypeNames = new List<string> {"appServer", "mobileControl"};
+            MinimumEssentialsFrameworkVersion = "1.4.33";
+            TypeNames = new List<string> {"appserver", "mobilecontrol"};
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
