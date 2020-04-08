@@ -7,7 +7,7 @@ using PepperDash.Essentials.Room.MobileControl;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlFactory:EssentialsDeviceFactory<MobileControlSystemController>
+    public class MobileControlFactory : EssentialsDeviceFactory<MobileControlSystemController>
     {
         public MobileControlFactory()
         {
@@ -35,7 +35,8 @@ namespace PepperDash.Essentials
             var bridge = new MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
             bridge.AddPreActivationAction(() =>
             {
-                var parent = DeviceManager.AllDevices.FirstOrDefault(d => d.Key == "appServer") as MobileControlSystemController;
+                var parent =
+                    DeviceManager.AllDevices.FirstOrDefault(d => d.Key == "appServer") as MobileControlSystemController;
                 if (parent == null)
                 {
                     Debug.Console(0, bridge, "ERROR: Cannot connect bridge. System controller not present");

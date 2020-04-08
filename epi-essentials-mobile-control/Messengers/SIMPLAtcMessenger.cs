@@ -6,11 +6,12 @@ using PepperDash.Essentials.Devices.Common.Codec;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-	public class SIMPLAtcMessenger : MessengerBase
-	{
-		BasicTriList EISC;
+// ReSharper disable once InconsistentNaming
+    public class SIMPLAtcMessenger : MessengerBase
+    {
+        private readonly BasicTriList _eisc;
 
-        public SIMPLAtcJoinMap JoinMap {get; private set;}
+        public SIMPLAtcJoinMap JoinMap { get; private set; }
 
         ///// <summary>
         ///// 221
@@ -82,85 +83,82 @@ namespace PepperDash.Essentials.AppServer.Messengers
         //    { "#", 212 },
         //};
 
-		/// <summary>
-		/// 
-		/// </summary>
-		CodecActiveCallItem CurrentCallItem;
+        /// <summary>
+        /// 
+        /// </summary>
+        private readonly CodecActiveCallItem _currentCallItem;
 
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="eisc"></param>
-		/// <param name="messagePath"></param>
-		public SIMPLAtcMessenger(string key, BasicTriList eisc, string messagePath)
-			: base(key, messagePath)
-		{
-            EISC = eisc;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="eisc"></param>
+        /// <param name="messagePath"></param>
+        public SIMPLAtcMessenger(string key, BasicTriList eisc, string messagePath)
+            : base(key, messagePath)
+        {
+            _eisc = eisc;
 
             JoinMap = new SIMPLAtcJoinMap(201);
 
-			CurrentCallItem = new CodecActiveCallItem();
-			CurrentCallItem.Type = eCodecCallType.Audio;
-			CurrentCallItem.Id = "-audio-";
-		}
+            _currentCallItem = new CodecActiveCallItem {Type = eCodecCallType.Audio, Id = "-audio-"};
+        }
 
-		/// <summary>
-		/// 
-		/// </summary>
-		void SendFullStatus()
-		{
-            
+        /// <summary>
+        /// 
+        /// </summary>
+        private void SendFullStatus()
+        {
+            PostStatusMessage(new
+            {
+                calls = GetCurrentCallList(),
+                currentCallString = _eisc.GetString(JoinMap.CurrentCallName.JoinNumber),
+                currentDialString = _eisc.GetString(JoinMap.CurrentDialString.JoinNumber),
+                isInCall = _eisc.GetString(JoinMap.HookState.JoinNumber) == "Connected"
+            });
+        }
 
-			this.PostStatusMessage(new
-			{				
-				calls = GetCurrentCallList(),
-				currentCallString = EISC.GetString(JoinMap.CurrentCallName.JoinNumber),
-				currentDialString = EISC.GetString(JoinMap.CurrentDialString.JoinNumber),
-                isInCall = EISC.GetString(JoinMap.HookState.JoinNumber) == "Connected"
-			});
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="appServerController"></param>
-		protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
-		{
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="appServerController"></param>
+        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        {
             //EISC.SetStringSigAction(SCurrentDialString, s => PostStatusMessage(new { currentDialString = s }));
 
-            EISC.SetStringSigAction(JoinMap.HookState.JoinNumber, s => 
-			{
-				CurrentCallItem.Status = (eCodecCallStatus)Enum.Parse(typeof(eCodecCallStatus), s, true);
+            _eisc.SetStringSigAction(JoinMap.HookState.JoinNumber, s =>
+            {
+                _currentCallItem.Status = (eCodecCallStatus) Enum.Parse(typeof (eCodecCallStatus), s, true);
                 //GetCurrentCallList();
-				SendFullStatus();
-			});
+                SendFullStatus();
+            });
 
-            EISC.SetStringSigAction(JoinMap.CurrentCallNumber.JoinNumber, s => 
-			{
-				CurrentCallItem.Number = s;
-                SendCallsList();
-			});
-
-            EISC.SetStringSigAction(JoinMap.CurrentCallName.JoinNumber, s =>
+            _eisc.SetStringSigAction(JoinMap.CurrentCallNumber.JoinNumber, s =>
             {
-                CurrentCallItem.Name = s;
+                _currentCallItem.Number = s;
                 SendCallsList();
             });
 
-            EISC.SetStringSigAction(JoinMap.CallDirection.JoinNumber, s =>
+            _eisc.SetStringSigAction(JoinMap.CurrentCallName.JoinNumber, s =>
             {
-                CurrentCallItem.Direction = (eCodecCallDirection)Enum.Parse(typeof(eCodecCallDirection), s, true);
+                _currentCallItem.Name = s;
                 SendCallsList();
             });
 
-			// Add press and holds using helper
-			Action<string, uint> addPHAction = (s, u) => 
-				AppServerController.AddAction(MessagePath + s, new PressAndHoldAction(b => EISC.SetBool(u, b)));
+            _eisc.SetStringSigAction(JoinMap.CallDirection.JoinNumber, s =>
+            {
+                _currentCallItem.Direction = (eCodecCallDirection) Enum.Parse(typeof (eCodecCallDirection), s, true);
+                SendCallsList();
+            });
 
-			// Add straight pulse calls
-			Action<string, uint> addAction = (s, u) =>
-				AppServerController.AddAction(MessagePath + s, new Action(() => EISC.PulseBool(u, 100)));
+            // Add press and holds using helper
+            //Action<string, uint> addPhAction = (s, u) => 
+            //    AppServerController.AddAction(MessagePath + s, new PressAndHoldAction(b => _eisc.SetBool(u, b)));
+
+            // Add straight pulse calls
+            Action<string, uint> addAction = (s, u) =>
+                AppServerController.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
             addAction("/endCallById", JoinMap.EndCall.JoinNumber);
             addAction("/endAllCalls", JoinMap.EndCall.JoinNumber);
             addAction("/acceptById", JoinMap.IncomingAnswer.JoinNumber);
@@ -176,28 +174,29 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 speedDialIndex++;
             }
 
-			// Get status
-			AppServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
-			// Dial on string
-            AppServerController.AddAction(MessagePath + "/dial", new Action<string>(s => EISC.SetString(JoinMap.CurrentDialString.JoinNumber, s)));
-			// Pulse DTMF
-			AppServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s =>
-			{
-                var join = JoinMap.Joins[s];           
+            // Get status
+            AppServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
+            // Dial on string
+            AppServerController.AddAction(MessagePath + "/dial",
+                new Action<string>(s => _eisc.SetString(JoinMap.CurrentDialString.JoinNumber, s)));
+            // Pulse DTMF
+            AppServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s =>
+            {
+                var join = JoinMap.Joins[s];
                 if (join != null)
                 {
                     if (join.JoinNumber > 0)
                     {
-                        EISC.PulseBool(join.JoinNumber, 100);
+                        _eisc.PulseBool(join.JoinNumber, 100);
                     }
                 }
-			}));
-		}
+            }));
+        }
 
-		/// <summary>
-		/// 
-		/// </summary>
-        void SendCallsList()
+        /// <summary>
+        /// 
+        /// </summary>
+        private void SendCallsList()
         {
             PostStatusMessage(new
             {
@@ -205,20 +204,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             });
         }
 
-		/// <summary>
-		/// Turns the 
-		/// </summary>
-		/// <returns></returns>
-		List<CodecActiveCallItem> GetCurrentCallList()
-		{
-			if (CurrentCallItem.Status == eCodecCallStatus.Disconnected)
-			{
-				return new List<CodecActiveCallItem>();
-			}
-			else
-			{
-				return new List<CodecActiveCallItem>() { CurrentCallItem };
-			}
-		}
-	}
+        /// <summary>
+        /// Turns the 
+        /// </summary>
+        /// <returns></returns>
+        private List<CodecActiveCallItem> GetCurrentCallList()
+        {
+            return _currentCallItem.Status == eCodecCallStatus.Disconnected
+                ? new List<CodecActiveCallItem>()
+                : new List<CodecActiveCallItem> {_currentCallItem};
+        }
+    }
 }

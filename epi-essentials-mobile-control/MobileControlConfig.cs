@@ -2,25 +2,24 @@
 
 namespace PepperDash.Essentials
 {
-
-	/// <summary>
-	/// 
-	/// </summary>
+    /// <summary>
+    /// 
+    /// </summary>
     public class MobileControlConfig
-    {       
-		[JsonProperty("serverUrl")]
+    {
+        [JsonProperty("serverUrl")]
         public string ServerUrl { get; set; }
 
-		[JsonProperty("clientAppUrl")]
-		public string ClientAppUrl { get; set; }
+        [JsonProperty("clientAppUrl")]
+        public string ClientAppUrl { get; set; }
     }
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public class MobileControlDdvc01RoomBridgePropertiesConfig
-	{
-		[JsonProperty("eiscId")]
-		public string EiscId { get; set; }
-	}
+    /// <summary>
+    /// 
+    /// </summary>
+    public class MobileControlDdvc01RoomBridgePropertiesConfig
+    {
+        [JsonProperty("eiscId")]
+        public string EiscId { get; set; }
+    }
 }

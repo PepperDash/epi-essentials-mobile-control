@@ -32,10 +32,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 presetsCamera.PresetsListHasChanged += presetsCamera_PresetsListHasChanged;
             }
- 
         }
 
-        void presetsCamera_PresetsListHasChanged(object sender, EventArgs e)
+        private void presetsCamera_PresetsListHasChanged(object sender, EventArgs e)
         {
             var presetsCamera = Camera as IHasCameraPresets;
 
@@ -58,15 +57,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (ptzCamera != null)
             {
-                
                 //  Need to evaluate how to pass through these P&H actions.  Need a method that takes a bool maybe?
                 AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(b =>
-                    {
-                        if (b)
-                            ptzCamera.TiltUp();
-                        else
-                            ptzCamera.TiltStop();
-                    }));
+                {
+                    if (b)
+                        ptzCamera.TiltUp();
+                    else
+                        ptzCamera.TiltStop();
+                }));
                 AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(b =>
                 {
                     if (b)
@@ -106,8 +104,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (Camera is IHasCameraAutoMode)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeAuto", new Action((Camera as IHasCameraAutoMode).CameraAutoModeOn));
-                appServerController.AddAction(MessagePath + "/cameraModeManual", new Action((Camera as IHasCameraAutoMode).CameraAutoModeOff));
+                appServerController.AddAction(MessagePath + "/cameraModeAuto",
+                    new Action((Camera as IHasCameraAutoMode).CameraAutoModeOn));
+                appServerController.AddAction(MessagePath + "/cameraModeManual",
+                    new Action((Camera as IHasCameraAutoMode).CameraAutoModeOff));
             }
 
             if (Camera is IPower)
@@ -119,10 +119,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (presetsCamera != null)
             {
-                for(int i = 1; i <= 6; i++)
+                for (int i = 1; i <= 6; i++)
                 {
                     var preset = i;
-                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, new Action<int>(p => presetsCamera.PresetSelect(preset)));
+                    appServerController.AddAction(MessagePath + "/cameraPreset" + i,
+                        new Action<int>(p => presetsCamera.PresetSelect(preset)));
                 }
             }
         }
@@ -130,7 +131,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// Helper method to update the full status of the camera
         /// </summary>
-        void SendCameraFullMessageObject()
+        private void SendCameraFullMessageObject()
         {
             var presetsCamera = Camera as IHasCameraPresets;
 
@@ -151,7 +152,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Computes the current camera mode
         /// </summary>
         /// <returns></returns>
-        string GetCameraMode()
+        private string GetCameraMode()
         {
             string m;
             if (Camera is IHasCameraAutoMode && (Camera as IHasCameraAutoMode).CameraAutoModeIsOnFeedback.BoolValue)

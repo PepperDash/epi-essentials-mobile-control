@@ -5,11 +5,12 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
+// ReSharper disable once InconsistentNaming
     public class SIMPLRouteMessenger : MessengerBase
     {
-        BasicTriList EISC;
+        private readonly BasicTriList _eisc;
 
-        uint JoinStart;
+        private readonly uint _joinStart;
 
         public class StringJoin
         {
@@ -22,24 +23,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public SIMPLRouteMessenger(string key, BasicTriList eisc, string messagePath, uint joinStart)
             : base(key, messagePath)
         {
-            EISC = eisc;
-            JoinStart = joinStart - 1;
+            _eisc = eisc;
+            _joinStart = joinStart - 1;
 
-            EISC.SetStringSigAction(JoinStart + StringJoin.CurrentSource, (s) => SendRoutingFullMessageObject(s));
+            _eisc.SetStringSigAction(_joinStart + StringJoin.CurrentSource, SendRoutingFullMessageObject);
         }
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(() =>
-                {
-                    SendRoutingFullMessageObject(EISC.GetString(JoinStart + StringJoin.CurrentSource));
-                }));
+            appServerController.AddAction(MessagePath + "/fullStatus",
+                new Action(() => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource))));
 
-            appServerController.AddAction(MessagePath +"/source", new Action<SourceSelectMessageContent>(c =>
-                {
-                    EISC.SetString(JoinStart + StringJoin.CurrentSource, c.SourceListItem);
-                }));
-
+            appServerController.AddAction(MessagePath + "/source",
+                new Action<SourceSelectMessageContent>(
+                    c => _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem)));
         }
 
         public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
@@ -47,13 +44,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.RemoveAction(MessagePath + "/fullStatus");
             appServerController.RemoveAction(MessagePath + "/source");
 
-            EISC.SetStringSigAction(JoinStart + StringJoin.CurrentSource, null);
+            _eisc.SetStringSigAction(_joinStart + StringJoin.CurrentSource, null);
         }
 
         /// <summary>
         /// Helper method to update full status of the routing device
         /// </summary>
-        void SendRoutingFullMessageObject(string sourceKey)
+        private void SendRoutingFullMessageObject(string sourceKey)
         {
             if (string.IsNullOrEmpty(sourceKey))
                 sourceKey = "none";

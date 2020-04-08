@@ -24,7 +24,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 p.Value.ProgramInfoChanged += ProgramInfoChanged;
             }
 
-            CrestronConsole.AddNewConsoleCommand(s => SendFullStatusMessage(), "SendFullSysMonStatus", "Sends the full System Monitor Status", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(s => SendFullStatusMessage(), "SendFullSysMonStatus",
+                "Sends the full System Monitor Status", ConsoleAccessLevelEnum.AccessOperator);
         }
 
         /// <summary>
@@ -32,7 +33,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void ProgramInfoChanged(object sender, ProgramInfoEventArgs e)
+        private void ProgramInfoChanged(object sender, ProgramInfoEventArgs e)
         {
             if (e.ProgramInfo != null)
             {
@@ -46,22 +47,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void SysMon_SystemMonitorPropertiesChanged(object sender, EventArgs e)
+        private void SysMon_SystemMonitorPropertiesChanged(object sender, EventArgs e)
         {
             SendSystemMonitorStatusMessage();
         }
 
-        void SendFullStatusMessage()
+        private void SendFullStatusMessage()
         {
             SendSystemMonitorStatusMessage();
 
             foreach (var p in SysMon.ProgramStatusFeedbackCollection)
             {
-                PostStatusMessage(p.Value.ProgramInfo);               
+                PostStatusMessage(p.Value.ProgramInfo);
             }
         }
 
-        void SendSystemMonitorStatusMessage()
+        private void SendSystemMonitorStatusMessage()
         {
             Debug.Console(1, "Posting System Monitor Status Message.");
 
@@ -81,6 +82,5 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             AppServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatusMessage));
         }
-
     }
 }

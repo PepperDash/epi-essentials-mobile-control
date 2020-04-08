@@ -29,7 +29,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             Codec = codec;
             codec.CallStatusChange += codec_CallStatusChange;
-
         }
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
@@ -63,12 +62,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        CodecActiveCallItem GetCallWithId(string id)
+        private CodecActiveCallItem GetCallWithId(string id)
         {
             return Codec.ActiveCalls.FirstOrDefault(c => c.Id == id);
         }
 
-        void codec_CallStatusChange(object sender, CodecCallStatusItemChangeEventArgs e)
+        private void codec_CallStatusChange(object sender, CodecCallStatusItemChangeEventArgs e)
         {
             SendAtcFullMessageObject();
         }
@@ -77,9 +76,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Helper method to build call status for vtc
         /// </summary>
         /// <returns></returns>
-        void SendAtcFullMessageObject()
+        private void SendAtcFullMessageObject()
         {
-
             var info = Codec.CodecInfo;
             PostStatusMessage(new
             {

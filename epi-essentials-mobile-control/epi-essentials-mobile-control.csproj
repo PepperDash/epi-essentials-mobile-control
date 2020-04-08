@@ -183,7 +183,7 @@
     <Compile Include="MobileControlSystemController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoomBridges\MobileControlBridgeBase.cs" />
-    <Compile Include="RoomBridges\MobileControlEssentialsHuddleSpaceRoomBridge.cs" />
+    <Compile Include="RoomBridges\MobileControlEssentialsRoomBridge.cs" />
     <Compile Include="RoomBridges\MobileControlSIMPLRoomBridge.cs" />
     <Compile Include="RoomBridges\SourceDeviceMapDictionary.cs" />
     <Compile Include="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />

@@ -22,7 +22,6 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.RemoveAction(prefix + "powerOn");
             controller.RemoveAction(prefix + "powerOff");
             controller.RemoveAction(prefix + "powerToggle");
-  
         }
     }
 }

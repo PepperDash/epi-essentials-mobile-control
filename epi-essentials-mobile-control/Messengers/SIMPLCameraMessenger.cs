@@ -7,25 +7,26 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
+// ReSharper disable once InconsistentNaming
     public class SIMPLCameraMessenger : MessengerBase
     {
-        BasicTriList EISC;
+        private readonly BasicTriList _eisc;
 
-        CameraControllerJoinMap JoinMap;
+        private readonly CameraControllerJoinMap _joinMap;
 
 
         public SIMPLCameraMessenger(string key, BasicTriList eisc, string messagePath, uint joinStart)
             : base(key, messagePath)
         {
-            EISC = eisc;
+            _eisc = eisc;
 
-            JoinMap = new CameraControllerJoinMap(joinStart);
+            _joinMap = new CameraControllerJoinMap(joinStart);
 
-            EISC.SetUShortSigAction(JoinMap.NumberOfPresets.JoinNumber, (u) => SendCameraFullMessageObject());
+            _eisc.SetUShortSigAction(_joinMap.NumberOfPresets.JoinNumber, u => SendCameraFullMessageObject());
 
-            EISC.SetBoolSigAction(JoinMap.CameraModeAuto.JoinNumber, (b) => PostCameraMode());
-            EISC.SetBoolSigAction(JoinMap.CameraModeManual.JoinNumber, (b) => PostCameraMode());
-            EISC.SetBoolSigAction(JoinMap.CameraModeOff.JoinNumber, (b) => PostCameraMode());
+            _eisc.SetBoolSigAction(_joinMap.CameraModeAuto.JoinNumber, b => PostCameraMode());
+            _eisc.SetBoolSigAction(_joinMap.CameraModeManual.JoinNumber, b => PostCameraMode());
+            _eisc.SetBoolSigAction(_joinMap.CameraModeOff.JoinNumber, b => PostCameraMode());
         }
 
 
@@ -36,24 +37,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
             asc.AddAction(MessagePath + "/fullStatus", new Action(SendCameraFullMessageObject));
 
             // Add press and holds using helper action
-            Action<string, uint> addPHAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new PressAndHoldAction(b => EISC.SetBool(u, b)));
-            addPHAction("/cameraUp", JoinMap.TiltUp.JoinNumber);
-            addPHAction("/cameraDown", JoinMap.TiltDown.JoinNumber);
-            addPHAction("/cameraLeft", JoinMap.PanLeft.JoinNumber);
-            addPHAction("/cameraRight", JoinMap.PanRight.JoinNumber);
-            addPHAction("/cameraZoomIn", JoinMap.ZoomIn.JoinNumber);
-            addPHAction("/cameraZoomOut", JoinMap.ZoomOut.JoinNumber);
+            Action<string, uint> addPhAction = (s, u) =>
+                asc.AddAction(MessagePath + s, new PressAndHoldAction(b => _eisc.SetBool(u, b)));
+            addPhAction("/cameraUp", _joinMap.TiltUp.JoinNumber);
+            addPhAction("/cameraDown", _joinMap.TiltDown.JoinNumber);
+            addPhAction("/cameraLeft", _joinMap.PanLeft.JoinNumber);
+            addPhAction("/cameraRight", _joinMap.PanRight.JoinNumber);
+            addPhAction("/cameraZoomIn", _joinMap.ZoomIn.JoinNumber);
+            addPhAction("/cameraZoomOut", _joinMap.ZoomOut.JoinNumber);
 
             Action<string, uint> addAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new Action(() => EISC.PulseBool(u, 100)));
+                asc.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
 
-            addAction("/cameraModeAuto", JoinMap.CameraModeAuto.JoinNumber);
-            addAction("/cameraModeManual", JoinMap.CameraModeManual.JoinNumber);
-            addAction("/cameraModeOff", JoinMap.CameraModeOff.JoinNumber);
+            addAction("/cameraModeAuto", _joinMap.CameraModeAuto.JoinNumber);
+            addAction("/cameraModeManual", _joinMap.CameraModeManual.JoinNumber);
+            addAction("/cameraModeOff", _joinMap.CameraModeOff.JoinNumber);
 
-            var presetStart = JoinMap.PresetRecallStart.JoinNumber;
-            var presetEnd = JoinMap.PresetRecallStart.JoinNumber + JoinMap.PresetRecallStart.JoinSpan;
+            var presetStart = _joinMap.PresetRecallStart.JoinNumber;
+            var presetEnd = _joinMap.PresetRecallStart.JoinNumber + _joinMap.PresetRecallStart.JoinSpan;
 
             int presetId = 1;
             // camera presets
@@ -78,30 +79,30 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.RemoveAction(MessagePath + "/cameraModeManual");
             appServerController.RemoveAction(MessagePath + "/cameraModeOff");
 
-            EISC.SetUShortSigAction(JoinMap.NumberOfPresets.JoinNumber, null);
+            _eisc.SetUShortSigAction(_joinMap.NumberOfPresets.JoinNumber, null);
 
-            EISC.SetBoolSigAction(JoinMap.CameraModeAuto.JoinNumber, null);
-            EISC.SetBoolSigAction(JoinMap.CameraModeManual.JoinNumber, null);
-            EISC.SetBoolSigAction(JoinMap.CameraModeOff.JoinNumber, null);
+            _eisc.SetBoolSigAction(_joinMap.CameraModeAuto.JoinNumber, null);
+            _eisc.SetBoolSigAction(_joinMap.CameraModeManual.JoinNumber, null);
+            _eisc.SetBoolSigAction(_joinMap.CameraModeOff.JoinNumber, null);
         }
 
         /// <summary>
         /// Helper method to update the full status of the camera
         /// </summary>
-        void SendCameraFullMessageObject()
+        private void SendCameraFullMessageObject()
         {
             var presetList = new List<CameraPreset>();
 
             // Build a list of camera presets based on the names and count 
-            if (EISC.GetBool(JoinMap.SupportsPresets.JoinNumber))
+            if (_eisc.GetBool(_joinMap.SupportsPresets.JoinNumber))
             {
-                var presetStart = JoinMap.PresetLabelStart.JoinNumber;
-                var presetEnd = JoinMap.PresetLabelStart.JoinNumber + JoinMap.NumberOfPresets.JoinNumber;
+                var presetStart = _joinMap.PresetLabelStart.JoinNumber;
+                var presetEnd = _joinMap.PresetLabelStart.JoinNumber + _joinMap.NumberOfPresets.JoinNumber;
 
                 var presetId = 1;
                 for (uint i = presetStart; i < presetEnd; i++)
                 {
-                    var presetName = EISC.GetString(i);
+                    var presetName = _eisc.GetString(i);
                     var preset = new CameraPreset(presetId, presetName, string.IsNullOrEmpty(presetName), true);
                     presetList.Add(preset);
                     presetId++;
@@ -111,7 +112,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(new
             {
                 cameraMode = GetCameraMode(),
-                hasPresets = EISC.GetBool(JoinMap.SupportsPresets.JoinNumber),
+                hasPresets = _eisc.GetBool(_joinMap.SupportsPresets.JoinNumber),
                 presets = presetList
             });
         }
@@ -119,7 +120,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// 
         /// </summary>
-        void PostCameraMode()
+        private void PostCameraMode()
         {
             PostStatusMessage(new
             {
@@ -131,11 +132,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Computes the current camera mode
         /// </summary>
         /// <returns></returns>
-        string GetCameraMode()
+        private string GetCameraMode()
         {
             string m;
-            if (EISC.GetBool(JoinMap.CameraModeAuto.JoinNumber)) m = eCameraControlMode.Auto.ToString().ToLower();
-            else if (EISC.GetBool(JoinMap.CameraModeManual.JoinNumber)) m = eCameraControlMode.Manual.ToString().ToLower();
+            if (_eisc.GetBool(_joinMap.CameraModeAuto.JoinNumber)) m = eCameraControlMode.Auto.ToString().ToLower();
+            else if (_eisc.GetBool(_joinMap.CameraModeManual.JoinNumber))
+                m = eCameraControlMode.Manual.ToString().ToLower();
             else m = eCameraControlMode.Off.ToString().ToLower();
             return m;
         }

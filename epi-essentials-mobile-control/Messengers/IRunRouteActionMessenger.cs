@@ -4,14 +4,14 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class IRunRouteActionMessenger : MessengerBase
+    public class RunRouteActionMessenger : MessengerBase
     {
         /// <summary>
         /// Device being bridged
         /// </summary>
-        public IRunRouteAction RoutingDevice {get; private set;}
+        public IRunRouteAction RoutingDevice { get; private set; }
 
-        public IRunRouteActionMessenger(string key, IRunRouteAction routingDevice, string messagePath)
+        public RunRouteActionMessenger(string key, IRunRouteAction routingDevice, string messagePath)
             : base(key, messagePath)
         {
             if (routingDevice == null)
@@ -27,7 +27,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-        void routingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
+        private void routingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
         {
             SendRoutingFullMessageObject();
         }
@@ -36,29 +36,25 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
 
-            appServerController.AddAction(MessagePath + "/source", new Action<SourceSelectMessageContent>(c =>
-                    {
-                        RoutingDevice.RunRouteAction(c.SourceListItem, c.SourceListKey);
-                    }));
+            appServerController.AddAction(MessagePath + "/source",
+                new Action<SourceSelectMessageContent>(
+                    c => RoutingDevice.RunRouteAction(c.SourceListItem, c.SourceListKey)));
 
             var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
-            if(sinkDevice != null)
+            if (sinkDevice != null)
             {
-                sinkDevice.CurrentSourceChange += (o, a) =>
-                {
-                    SendRoutingFullMessageObject();
-                };
+                sinkDevice.CurrentSourceChange += (o, a) => SendRoutingFullMessageObject();
             }
         }
 
         /// <summary>
         /// Helper method to update full status of the routing device
         /// </summary>
-        void SendRoutingFullMessageObject()
+        private void SendRoutingFullMessageObject()
         {
             var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
 
-            if(sinkDevice != null) 
+            if (sinkDevice != null)
             {
                 var sourceKey = sinkDevice.CurrentSourceInfoKey;
 

@@ -2,14 +2,12 @@
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-
     /// <summary>
     /// Contains all of the default joins that map to API funtions
     /// </summary>
     public class SourceDeviceMapDictionary : Dictionary<string, uint>
     {
-
-        public SourceDeviceMapDictionary(): base()
+        public SourceDeviceMapDictionary()
         {
             var dictionary = new Dictionary<string, uint>
             {
@@ -37,7 +35,6 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"preset22", 122},
                 {"preset23", 123},
                 {"preset24", 124},
-
                 {"num0", 130},
                 {"num1", 131},
                 {"num2", 132},
@@ -77,7 +74,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"guide", 166},
                 {"reboot", 167},
                 {"dvrList", 168},
-                {"replay", 169},           
+                {"replay", 169},
                 {"play", 170},
                 {"select", 171},
                 {"record", 172},
@@ -88,12 +85,11 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"powerOn", 177},
                 {"powerOff", 178},
                 {"dot", 179}
-
             };
 
             foreach (var item in dictionary)
             {
-                this.Add(item.Key, item.Value);
+                Add(item.Key, item.Value);
             }
         }
     }
