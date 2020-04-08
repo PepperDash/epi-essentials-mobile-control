@@ -42,19 +42,6 @@ jobs:
       # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
-      # check if the branch is master and if current commit is tagged
-      - name: Check for master
-        run: |
-          if (($(git describe --tags --exact-match $Env:GITHUB_SHA) -Contains "fatal") -and $($Env:GITHUB_REF) -contains "master") {
-            exit 0
-          }
-      # Set the BUILD_TYPE environment variable
-      - name: Set Build to Release if triggered from Master
-        run: |
-          if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
-            Write-Host "Setting build type to Release"
-            Write-Output "::set-env name=BUILD_TYPE::Release"
-          }
       # Generate the appropriate version number
       - name: Set Version Number
         shell: powershell
