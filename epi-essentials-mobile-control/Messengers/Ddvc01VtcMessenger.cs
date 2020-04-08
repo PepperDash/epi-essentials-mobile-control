@@ -9,7 +9,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
 	public class Ddvc01VtcMessenger : MessengerBase
 	{
-		BasicTriList EISC;
+	    readonly BasicTriList _eisc;
 
 		/********* Bools *********/
 		/// <summary>
@@ -208,7 +208,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		/// <summary>
 		/// 701-712 0-9*#
 		/// </summary>
-		Dictionary<string, uint> DTMFMap = new Dictionary<string, uint>
+		readonly Dictionary<string, uint> _dtmfMap = new Dictionary<string, uint>
 		{
 			{ "1", 701 },
 			{ "2", 702 },
@@ -224,24 +224,23 @@ namespace PepperDash.Essentials.AppServer.Messengers
 			{ "#", 712 },
 		};
 
-		CodecActiveCallItem CurrentCallItem;
-		CodecActiveCallItem IncomingCallItem;
+	    readonly CodecActiveCallItem _currentCallItem;
+		CodecActiveCallItem _incomingCallItem;
 
-		ushort PreviousDirectoryLength = 0;
+		ushort _previousDirectoryLength;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="eisc"></param>
-		/// <param name="messagePath"></param>
-		public Ddvc01VtcMessenger(string key, BasicTriList eisc, string messagePath)
+	    /// <summary>
+	    /// 
+	    /// </summary>
+	    /// <param name="key"></param>
+	    /// <param name="eisc"></param>
+	    /// <param name="messagePath"></param>
+	    public Ddvc01VtcMessenger(string key, BasicTriList eisc, string messagePath)
 			: base(key, messagePath)
 		{
-			EISC = eisc;
+			_eisc = eisc;
 
-			CurrentCallItem = new CodecActiveCallItem();
-			CurrentCallItem.Type = eCodecCallType.Video;
-			CurrentCallItem.Id = "-video-";
+			_currentCallItem = new CodecActiveCallItem {Type = eCodecCallType.Video, Id = "-video-"};
 		}
 
 		/// <summary>
@@ -251,21 +250,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 		{
 			var asc = appServerController;
-			EISC.SetStringSigAction(SHookState, s => 
+			_eisc.SetStringSigAction(SHookState, s => 
 			{
-				CurrentCallItem.Status = (eCodecCallStatus)Enum.Parse(typeof(eCodecCallStatus), s, true);
+				_currentCallItem.Status = (eCodecCallStatus)Enum.Parse(typeof(eCodecCallStatus), s, true);
 				PostFullStatus(); // SendCallsList();
 			});
 
-			EISC.SetStringSigAction(SCurrentCallNumber, s => 
+			_eisc.SetStringSigAction(SCurrentCallNumber, s => 
 			{
-				CurrentCallItem.Number = s;
+				_currentCallItem.Number = s;
                 PostCallsList();
 			});
 
-            EISC.SetStringSigAction(SCurrentCallName, s =>
+            _eisc.SetStringSigAction(SCurrentCallName, s =>
             {
-                CurrentCallItem.Name = s;
+                _currentCallItem.Name = s;
                 PostCallsList();
             });
 
@@ -275,109 +274,97 @@ namespace PepperDash.Essentials.AppServer.Messengers
 			//    PostCallsList();
 			//});
 
-			EISC.SetBoolSigAction(BCallIncoming, b =>
+			_eisc.SetBoolSigAction(BCallIncoming, b =>
 			{
 				if (b)
 				{
-					var ica = new CodecActiveCallItem()
+					var ica = new CodecActiveCallItem
 					{
 						Direction = eCodecCallDirection.Incoming,
 						Id = "-video-incoming",
-						Name = EISC.GetString(SIncomingCallName),
-						Number = EISC.GetString(SIncomingCallNumber),
+						Name = _eisc.GetString(SIncomingCallName),
+						Number = _eisc.GetString(SIncomingCallNumber),
 						Status = eCodecCallStatus.Ringing,
 						Type = eCodecCallType.Video
 					};
-					IncomingCallItem = ica;
+					_incomingCallItem = ica;
 				}
 				else
 				{
-					IncomingCallItem = null;
+					_incomingCallItem = null;
 				}
 				PostCallsList();
 			});
 
-			EISC.SetBoolSigAction(BCameraSupportsAutoMode, b =>
+			_eisc.SetBoolSigAction(BCameraSupportsAutoMode, b => PostStatusMessage(new
+			{	
+			    cameraSupportsAutoMode = b
+			}));
+			_eisc.SetBoolSigAction(BCameraSupportsOffMode, b => PostStatusMessage(new
 			{
-				PostStatusMessage(new
-				{	
-					cameraSupportsAutoMode = b
-				});
-			});
-			EISC.SetBoolSigAction(BCameraSupportsOffMode, b =>
-			{
-				PostStatusMessage(new
-				{
-					cameraSupportsOffMode = b
-				});
-			});
+			    cameraSupportsOffMode = b
+			}));
 
 			// Directory insanity
-			EISC.SetUShortSigAction(UDirectoryRowCount, u =>
+			_eisc.SetUShortSigAction(UDirectoryRowCount, u =>
 			{
 				// The length of the list comes in before the list does.
 				// Splice the sig change operation onto the last string sig that will be changing
 				// when the directory entries make it through.
-				if (PreviousDirectoryLength > 0)
+				if (_previousDirectoryLength > 0)
 				{
-					EISC.ClearStringSigAction(SDirectoryEntriesStart + PreviousDirectoryLength - 1);
+					_eisc.ClearStringSigAction(SDirectoryEntriesStart + _previousDirectoryLength - 1);
 				}
-				EISC.SetStringSigAction(SDirectoryEntriesStart + u - 1, s => PostDirectory());
-				PreviousDirectoryLength = u;
+				_eisc.SetStringSigAction(SDirectoryEntriesStart + u - 1, s => PostDirectory());
+				_previousDirectoryLength = u;
 			});
 
-			EISC.SetStringSigAction(SDirectoryEntrySelectedName, s =>
+			_eisc.SetStringSigAction(SDirectoryEntrySelectedName, s => PostStatusMessage(new
 			{
-				PostStatusMessage(new
-				{
-					directoryContactSelected = new
-					{
-						name = EISC.GetString(SDirectoryEntrySelectedName),
-					}
-				});
-			});
-
-			EISC.SetStringSigAction(SDirectoryEntrySelectedNumber, s =>
-			{
-				PostStatusMessage(new
-				{
-					directoryContactSelected = new
-					{
-						number = EISC.GetString(SDirectoryEntrySelectedNumber),
-					}
-				});
-			});
-
-			EISC.SetStringSigAction(SDirectorySelectedFolderName, s => PostStatusMessage(new
-			{
-				directorySelectedFolderName = EISC.GetString(SDirectorySelectedFolderName)
+			    directoryContactSelected = new
+			    {
+			        name = _eisc.GetString(SDirectoryEntrySelectedName),
+			    }
 			}));
 
-			EISC.SetSigTrueAction(BCameraModeAuto, () => PostCameraMode());
-			EISC.SetSigTrueAction(BCameraModeManual, () => PostCameraMode());
-			EISC.SetSigTrueAction(BCameraModeOff, () => PostCameraMode());
+			_eisc.SetStringSigAction(SDirectoryEntrySelectedNumber, s => PostStatusMessage(new
+			{
+			    directoryContactSelected = new
+			    {
+			        number = _eisc.GetString(SDirectoryEntrySelectedNumber),
+			    }
+			}));
 
-			EISC.SetBoolSigAction(BCameraSelfView, b => PostStatusMessage(new 
+			_eisc.SetStringSigAction(SDirectorySelectedFolderName, s => PostStatusMessage(new
+			{
+				directorySelectedFolderName = _eisc.GetString(SDirectorySelectedFolderName)
+			}));
+
+			_eisc.SetSigTrueAction(BCameraModeAuto, PostCameraMode);
+			_eisc.SetSigTrueAction(BCameraModeManual, PostCameraMode);
+			_eisc.SetSigTrueAction(BCameraModeOff, PostCameraMode);
+
+			_eisc.SetBoolSigAction(BCameraSelfView, b => PostStatusMessage(new 
 				{
 					cameraSelfView = b
 				}));
 
-			EISC.SetUShortSigAction(UCameraNumberSelect, (u) => PostSelectedCamera());
+			_eisc.SetUShortSigAction(UCameraNumberSelect, (u) => PostSelectedCamera());
 
 
 			// Add press and holds using helper action
-			Action<string, uint> addPHAction = (s, u) => 
-				AppServerController.AddAction(MessagePath + s, new PressAndHoldAction(b => EISC.SetBool(u, b)));
-			addPHAction("/cameraUp", BCameraControlUp);
-			addPHAction("/cameraDown", BCameraControlDown);
-			addPHAction("/cameraLeft", BCameraControlLeft);
-			addPHAction("/cameraRight", BCameraControlRight);
-			addPHAction("/cameraZoomIn", BCameraControlZoomIn);
-			addPHAction("/cameraZoomOut", BCameraControlZoomOut);
+			Action<string, uint> addPhAction = (s, u) => 
+				AppServerController.AddAction(MessagePath + s, new PressAndHoldAction(b => _eisc.SetBool(u, b)));
+			addPhAction("/cameraUp", BCameraControlUp);
+			addPhAction("/cameraDown", BCameraControlDown);
+			addPhAction("/cameraLeft", BCameraControlLeft);
+			addPhAction("/cameraRight", BCameraControlRight);
+			addPhAction("/cameraZoomIn", BCameraControlZoomIn);
+			addPhAction("/cameraZoomOut", BCameraControlZoomOut);
 
 			// Add straight pulse calls using helper action
 			Action<string, uint> addAction = (s, u) =>
-				AppServerController.AddAction(MessagePath + s, new Action(() => EISC.PulseBool(u, 100)));
+				AppServerController.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
 			addAction("/endCallById", BDialHangup);
 			addAction("/endAllCalls", BDialHangup);
             addAction("/acceptById", BIncomingAnswer);
@@ -405,27 +392,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
 			asc.AddAction(MessagePath + "/fullStatus", new Action(PostFullStatus));
 			// Dial on string
 			asc.AddAction(MessagePath + "/dial", new Action<string>(s => 
-				EISC.SetString(SCurrentDialString, s)));
+				_eisc.SetString(SCurrentDialString, s)));
 			// Pulse DTMF
 			asc.AddAction(MessagePath + "/dtmf", new Action<string>(s =>
 			{
-				if (DTMFMap.ContainsKey(s))
+				if (_dtmfMap.ContainsKey(s))
 				{
-					EISC.PulseBool(DTMFMap[s], 100);
+					_eisc.PulseBool(_dtmfMap[s], 100);
 				}
 			}));
 
 			// Directory madness
-			asc.AddAction(MessagePath + "/directoryRoot", new Action(() => EISC.PulseBool(BDirectoryRoot)));
-			asc.AddAction(MessagePath + "/directoryBack", new Action(() => EISC.PulseBool(BDirectoryFolderBack)));
+			asc.AddAction(MessagePath + "/directoryRoot", new Action(() => _eisc.PulseBool(BDirectoryRoot)));
+			asc.AddAction(MessagePath + "/directoryBack", new Action(() => _eisc.PulseBool(BDirectoryFolderBack)));
 			asc.AddAction(MessagePath + "/directoryById", new Action<string>(s =>
 			{
 				// the id should contain the line number to forward to simpl
 				try
 				{
 					var u = ushort.Parse(s);
-					EISC.SetUshort(UDirectorySelectRow, u);
-					EISC.PulseBool(BDirectoryLineSelected);
+					_eisc.SetUshort(UDirectorySelectRow, u);
+					_eisc.PulseBool(BDirectoryLineSelected);
 				}
 				catch (Exception)
 				{
@@ -439,26 +426,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
 				try
 				{
 					var u = ushort.Parse(s);
-					EISC.SetUshort(UDirectorySelectRow, u);
-					EISC.PulseBool(BDirectoryLineSelected);
+					_eisc.SetUshort(UDirectorySelectRow, u);
+					_eisc.PulseBool(BDirectoryLineSelected);
 				}
-				catch
+				catch(FormatException)
 				{
-					
+				    Debug.Console(2, this, "error parsing string to ushort for path /directorySelectContact");
 				}
 			}));
-			asc.AddAction(MessagePath + "/directoryDialContact", new Action(() => {
-				EISC.PulseBool(BDirectoryDialSelectedLine);
-			}));
+			asc.AddAction(MessagePath + "/directoryDialContact", new Action(() => _eisc.PulseBool(BDirectoryDialSelectedLine)));
 			asc.AddAction(MessagePath + "/getDirectory", new Action(() =>
 			{
-				if (EISC.GetUshort(UDirectoryRowCount) > 0)
+				if (_eisc.GetUshort(UDirectoryRowCount) > 0)
 				{
 					PostDirectory();
 				}
 				else
 				{
-					EISC.PulseBool(BDirectoryRoot);
+					_eisc.PulseBool(BDirectoryRoot);
 				}
 			}));
 		}
@@ -468,27 +453,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		/// </summary>
 		void PostFullStatus()
 		{
-			this.PostStatusMessage(new
+			PostStatusMessage(new
 			{
 				calls = GetCurrentCallList(),
 				cameraMode = GetCameraMode(),
-				cameraSelfView = EISC.GetBool(BCameraSelfView),
-				cameraSupportsAutoMode = EISC.GetBool(BCameraSupportsAutoMode),
-				cameraSupportsOffMode = EISC.GetBool(BCameraSupportsOffMode),
-				currentCallString = EISC.GetString(SCurrentCallNumber),
-				currentDialString = EISC.GetString(SCurrentDialString),
+				cameraSelfView = _eisc.GetBool(BCameraSelfView),
+				cameraSupportsAutoMode = _eisc.GetBool(BCameraSupportsAutoMode),
+				cameraSupportsOffMode = _eisc.GetBool(BCameraSupportsOffMode),
+				currentCallString = _eisc.GetString(SCurrentCallNumber),
+				currentDialString = _eisc.GetString(SCurrentDialString),
 				directoryContactSelected = new
 				{
-					name = EISC.GetString(SDirectoryEntrySelectedName),
-					number = EISC.GetString(SDirectoryEntrySelectedNumber)
+					name = _eisc.GetString(SDirectoryEntrySelectedName),
+					number = _eisc.GetString(SDirectoryEntrySelectedNumber)
 				},
-				directorySelectedFolderName = EISC.GetString(SDirectorySelectedFolderName),
-				isInCall = EISC.GetString(SHookState) == "Connected",
+				directorySelectedFolderName = _eisc.GetString(SDirectorySelectedFolderName),
+				isInCall = _eisc.GetString(SHookState) == "Connected",
 				hasDirectory = true,
 				hasDirectorySearch = false,
-				hasRecents = !EISC.BooleanOutput[502].BoolValue,
+				hasRecents = !_eisc.BooleanOutput[502].BoolValue,
 				hasCameras = true,
-				showCamerasWhenNotInCall = EISC.BooleanOutput[503].BoolValue,
+				showCamerasWhenNotInCall = _eisc.BooleanOutput[503].BoolValue,
 				selectedCamera = GetSelectedCamera(),
 				
 			});
@@ -499,27 +484,25 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		/// </summary>
 		void PostDirectory()
 		{
-			var u = EISC.GetUshort(UDirectoryRowCount);
+			var u = _eisc.GetUshort(UDirectoryRowCount);
 			var items = new List<object>();
 			for (uint i = 0; i < u; i++)
 			{
-				var name = EISC.GetString(SDirectoryEntriesStart + i);
+				var name = _eisc.GetString(SDirectoryEntriesStart + i);
 				var id = (i + 1).ToString();
 				// is folder or contact?
 				if (name.StartsWith("[+]"))
 				{
 					items.Add(new
 					{
-						folderId = id,
-						name = name
+						folderId = id, name
 					});
 				}
 				else
 				{
 					items.Add(new
 					{
-						contactId = id,
-						name = name
+						contactId = id, name
 					});
 				}
 			}
@@ -528,7 +511,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 			{
 				currentDirectory = new
 				{
-					isRootDirectory = EISC.GetBool(BDirectoryIsRoot),
+					isRootDirectory = _eisc.GetBool(BDirectoryIsRoot),
 					directoryResults = items
 				}
 			};
@@ -546,15 +529,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
 			});
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="mode"></param>
-		string GetCameraMode()
+	    /// <summary>
+	    /// 
+	    /// </summary>
+	    string GetCameraMode()
 		{
 			string m;
-			if (EISC.GetBool(BCameraModeAuto)) m = "auto";
-			else if (EISC.GetBool(BCameraModeManual)) m = "manual";
+			if (_eisc.GetBool(BCameraModeAuto)) m = "auto";
+			else if (_eisc.GetBool(BCameraModeManual)) m = "manual";
 			else m = "off";
 			return m;
 		}
@@ -572,7 +554,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		/// </summary>
 		string GetSelectedCamera()
 		{
-			var num = EISC.GetUshort(UCameraNumberSelect);
+			var num = _eisc.GetUshort(UCameraNumberSelect);
 			string m;
 			if (num == 100)
 			{
@@ -613,33 +595,26 @@ namespace PepperDash.Essentials.AppServer.Messengers
 		/// <param name="s"></param>
 		void SelectCamera(string s)
 		{
-			var cam = s.Substring(6);
-			if (cam.ToLower() == "far")
-			{
-				EISC.SetUshort(UCameraNumberSelect, 100);
-			}
-			else
-			{
-				EISC.SetUshort(UCameraNumberSelect, UInt16.Parse(cam));
-			}
+		    var cam = s.Substring(6);
+		    _eisc.SetUshort(UCameraNumberSelect, (ushort) (cam.ToLower() == "far" ? 100 : UInt16.Parse(cam)));
 		}
 
-		/// <summary>
+	    /// <summary>
 		/// Turns the 
 		/// </summary>
 		/// <returns></returns>
 		List<CodecActiveCallItem> GetCurrentCallList()
 		{
 			var list = new List<CodecActiveCallItem>();
-			if (CurrentCallItem.Status != eCodecCallStatus.Disconnected)
+			if (_currentCallItem.Status != eCodecCallStatus.Disconnected)
 			{
-				if (CurrentCallItem.Direction != eCodecCallDirection.Incoming)
+				if (_currentCallItem.Direction != eCodecCallDirection.Incoming)
 				{
-					CurrentCallItem.Direction = eCodecCallDirection.Outgoing;
+					_currentCallItem.Direction = eCodecCallDirection.Outgoing;
 				}
-				list.Add(CurrentCallItem);
+				list.Add(_currentCallItem);
 			}
-			if (EISC.GetBool(BCallIncoming)) {
+			if (_eisc.GetBool(BCallIncoming)) {
 
 			}
 			return list;

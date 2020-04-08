@@ -60,42 +60,42 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 
                 //  Need to evaluate how to pass through these P&H actions.  Need a method that takes a bool maybe?
-                AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(b =>
                     {
                         if (b)
                             ptzCamera.TiltUp();
                         else
                             ptzCamera.TiltStop();
                     }));
-                AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(b =>
                 {
                     if (b)
                         ptzCamera.TiltDown();
                     else
                         ptzCamera.TiltStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction(b =>
                 {
                     if (b)
                         ptzCamera.PanLeft();
                     else
                         ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction(b =>
                 {
                     if (b)
                         ptzCamera.PanRight();
                     else
                         ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction(b =>
                 {
                     if (b)
                         ptzCamera.ZoomIn();
                     else
                         ptzCamera.ZoomStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction((b) =>
+                AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction(b =>
                 {
                     if (b)
                         ptzCamera.ZoomOut();
@@ -122,7 +122,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 for(int i = 1; i <= 6; i++)
                 {
                     var preset = i;
-                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, new Action<int>((p) => presetsCamera.PresetSelect(preset)));
+                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, new Action<int>(p => presetsCamera.PresetSelect(preset)));
                 }
             }
         }

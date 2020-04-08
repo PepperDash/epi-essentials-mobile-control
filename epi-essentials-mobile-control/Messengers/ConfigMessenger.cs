@@ -24,7 +24,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(MessagePath + "/updateConfig", new Action<string>(s => GetConfigFile(s)));
+            appServerController.AddAction(MessagePath + "/updateConfig", new Action<string>(GetConfigFile));
         }
 
         /// <summary>
