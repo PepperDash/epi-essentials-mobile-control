@@ -871,6 +871,16 @@ namespace PepperDash.Essentials
                                 (action as Action<SourceSelectMessageContent>)(messageObj["content"]
                                     .ToObject<SourceSelectMessageContent>());
                             }
+                            else if (action is ClientSpecificUpdateRequest)
+                            {
+                                var clientId = Int32.Parse(messageObj["clientId"].ToString());
+
+                                var respObj = (action as ClientSpecificUpdateRequest).ResponseMethod() as MobileControlResponseMessage;
+
+                                respObj.ClientId = clientId;
+
+                                SendMessageToServer(JObject.FromObject(respObj));
+                            }
                         }
                         else
                         {
@@ -943,5 +953,26 @@ namespace PepperDash.Essentials
         {
             CrestronConsole.ConsoleCommandResponse("Usage: mobilehttprequest:N get/post url\r");
         }
+       
+    }
+
+    public class ClientSpecificUpdateRequest
+    {
+        public Func<object> ResponseMethod { get; private set; }
+
+        public ClientSpecificUpdateRequest(Func<object> func)
+        {
+            ResponseMethod = func;
+        }
+    }
+
+    public class MobileControlResponseMessage
+    {
+        [JsonProperty("type")]
+        public string Type { get; set; }
+        [JsonProperty("clientId")]
+        public int ClientId { get; set; }
+        [JsonProperty("content")]
+        public object Content { get; set; }
     }
 }

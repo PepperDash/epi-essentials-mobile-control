@@ -55,7 +55,7 @@ namespace PepperDash.Essentials
             // doesn't need to know about everything.
 
             // Source Changes and room off
-            Parent.AddAction(string.Format(@"/room/{0}/status", Room.Key), new Action(() => SendFullStatus(Room)));
+            Parent.AddAction(string.Format(@"/room/{0}/status", Room.Key), new ClientSpecificUpdateRequest(() => GetFullStatus(Room)));
 
             var routeRoom = Room as IRunRouteAction;
             if (routeRoom != null)
@@ -427,14 +427,27 @@ namespace PepperDash.Essentials
         }
 
         /// <summary>
-        /// Posts the full status of the room to the server
+        /// Sends the full status of the room to the server
         /// </summary>
         /// <param name="room"></param>
         private void SendFullStatus(EssentialsRoomBase room)
         {
-            var sourceKey = room is IHasCurrentSourceInfoChange
-                ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey
-                : null;
+            Parent.SendMessageToServer(JObject.FromObject(new
+            {
+                type = "/room/status/",
+                content = GetFullStatus(room)
+            }));
+        }
+
+
+        /// <summary>
+        /// Gets full room status
+        /// </summary>
+        /// <param name="room">The room to get status of</param>
+        /// <returns>The status response message</returns>
+        MobileControlResponseMessage GetFullStatus(EssentialsRoomBase room)
+        {
+            var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
 
             var rmVc = room as IHasCurrentVolumeControls;
             var volumes = new Volumes();
@@ -443,22 +456,29 @@ namespace PepperDash.Essentials
                 var vc = rmVc.CurrentVolumeControls as IBasicVolumeWithFeedback;
                 if (vc != null)
                 {
-                    volumes.Master = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue,
-                        "Volume", true, "");
+                    volumes.Master = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
                 }
             }
 
-            PostStatusMessage(new
+            var contentObject = new
             {
-                //calls = GetCallsMessageObject(),
                 activityMode = 1,
                 isOn = room.OnFeedback.BoolValue,
                 selectedSourceKey = sourceKey,
-                //vtc = GetVtcCallsMessageObject(),
-                volumes
-            });
+                volumes = volumes,
+            };
+
+            var messageObject = new MobileControlResponseMessage()
+            {
+                Type = "/room/status/",
+                Content = contentObject
+            };
+
+            return messageObject;
         }
     }
+
+
 
     /// <summary>
     /// 
