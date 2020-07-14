@@ -11,7 +11,7 @@ namespace PepperDash.Essentials
     {
         public MobileControlFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.4.33";
+            MinimumEssentialsFrameworkVersion = "1.5.7";
             TypeNames = new List<string> {"appserver", "mobilecontrol"};
         }
 
@@ -22,7 +22,7 @@ namespace PepperDash.Essentials
         }
     }
 
-    public class MobileControlDdvcFactory : EssentialsDeviceFactory<MobileControlSystemController>
+    public class MobileControlDdvcFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
     {
         public MobileControlDdvcFactory()
         {

@@ -7,7 +7,7 @@ using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using PepperDash_Essentials_Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Devices.DeviceTypeInterfaces;
 using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -19,7 +19,7 @@ using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : EssentialsDevice, IMobileControl
+    public class MobileControlSystemController : EssentialsDevice
     {
         //WebSocketClient WSClient;
         private WebSocket _wsClient2;
