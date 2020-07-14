@@ -329,65 +329,13 @@ namespace PepperDash.Essentials
                 Debug.Console(0, this, "Authorizing to: {0}", url);
 
                 if (Host.StartsWith("https:"))
-                {
-                    var req = new HttpsClientRequest();
-                    req.Url.Parse(url);
-                    var c = new HttpsClient();
-
-                    Debug.Console(0, "  host and peer verification disabled");
-                    c.HostVerification = false;
-                    c.PeerVerification = false;
-                    c.Verbose = true;
-
-
-                    c.DispatchAsync(req, (r, e) =>
-                    {
-                        if (e == HTTPS_CALLBACK_ERROR.COMPLETED)
-                        {
-                            if (r.Code == 200)
-                            {
-                                Debug.Console(0, "System authorized, sending config.");
-                                RegisterSystemToServer();
-                            }
-                            else if (r.Code == 404)
-                            {
-                                if (r.ContentString.Contains("codeNotFound"))
-                                {
-                                    Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
-                                        SystemUuid);
-                                }
-                                else if (r.ContentString.Contains("uuidNotFound"))
-                                {
-                                    Debug.Console(0,
-                                        "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
-                                        SystemUuid);
-                                }
-                            }
-                            else
-                            {
-                                Debug.Console(0, "https authorization failed, code {0}: {1}", r.Code, r.ContentString);
-                            }
-                        }
-                        else
-                        {
-                            if (r != null)
-                            {
-                                Debug.Console(0, this, "Error in https authorization (A) {0}: {1}", r.Code, e);
-                            }
-                            else
-                            {
-                                Debug.Console(0, this, "Error in https authorization (B) {0}", e);
-                            }
-                        }
-                    });
-                }
-
+                    DispatchHttpsAuthorizationRequest(url);
                 else
                 {
                     var req = new HttpClientRequest();
                     req.Url.Parse(url);
 
-                    var c = new HttpClient {AllowAutoRedirect = false};
+                    var c = new HttpClient { AllowAutoRedirect = false };
                     c.DispatchAsync(req, (r, e) =>
                     {
                         CheckHttpDebug(r, e);
@@ -445,7 +393,92 @@ namespace PepperDash.Essentials
             }
             catch (Exception e)
             {
-                Debug.Console(0, this, "Error in authorizing (C): {0}", e);
+                Debug.Console(0, this, "Error in authorizing (C): {0}", e.Message);
+            }
+        }
+
+        /// <summary>
+        /// Dispatchs and handles an Https Authorization Request
+        /// </summary>
+        /// <param name="url">Url to dispatch request to</param>
+        private void DispatchHttpsAuthorizationRequest(string url)
+        {
+            var req = new HttpsClientRequest();
+            req.Url.Parse(url);
+
+            var c = new HttpsClient();
+            c.HostVerification = false;
+            c.PeerVerification = false;
+            c.Verbose = true;
+
+            c.DispatchAsync(req, (r, e) =>
+            {
+                if (e == HTTPS_CALLBACK_ERROR.COMPLETED)
+                {
+                    Debug.Console(0, "Received authorization response: {0}", r.Code);
+                    ProcessAuthorizationResponse(r);
+                }
+                else
+                {
+                    if (r != null)
+                    {
+                        Debug.Console(0, this, "Error in http authorization (A) {0}: {1}", r.Code, e);
+                    }
+                    else
+                    {
+                        Debug.Console(0, this, "Error in http authorization (B) {0}", e);
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Processes HttpsClientResponse and registers system to server as necessary
+        /// </summary>
+        /// <param name="r">Response from authorization request</param>
+        private void ProcessAuthorizationResponse(HttpsClientResponse r)
+        {
+            if (r.Code == 200)
+            {
+                Debug.Console(0, "System authorized, sending config.");
+                RegisterSystemToServer();
+            }
+            else if (r.Code == 404 && r.ContentString != null)
+            {
+                Debug.Console(0, "https authorization failed, code {0}", r.Code);
+                if (r.ContentString != null)
+                    Debug.Console(0, "content: {0}", r.ContentString);
+
+                if (r.ContentString.Contains("codeNotFound"))
+                {
+                    Debug.Console(0, "code not found for system UUID {0}",
+                        SystemUuid);
+                }
+                else if (r.ContentString.Contains("uuidNotFound"))
+                {
+                    Debug.Console(0,
+                        "uuid {0} not found. Check Essentials configuration is correct",
+                        SystemUuid);
+                }
+            }
+            else if (r.Code == 301 && r.Header != null)
+            {
+                Debug.Console(0, "https authorization failed, code {0}", r.Code);
+                if (r.ContentString != null)
+                    Debug.Console(0, "Content {0}", r.ContentString);
+
+                var newUrl = r.Header.GetHeaderValue("Location");
+                var newHostValue = newUrl.Substring(0,
+                    newUrl.IndexOf(r.ResponseUrl, StringComparison.Ordinal));
+                Debug.Console(0, this,
+                    "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
+                    newHostValue);
+            }
+            else
+            {
+                Debug.Console(0, "https authorization failed, code {0}", r.Code);
+                if (r.ContentString != null)
+                    Debug.Console(0, "Content {0}", r.ContentString);
             }
         }
 
