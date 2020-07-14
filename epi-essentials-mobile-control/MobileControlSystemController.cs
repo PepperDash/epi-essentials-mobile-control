@@ -415,7 +415,6 @@ namespace PepperDash.Essentials
             {
                 if (e == HTTPS_CALLBACK_ERROR.COMPLETED)
                 {
-                    Debug.Console(0, "Received authorization response: {0}", r.Code);
                     ProcessAuthorizationResponse(r);
                 }
                 else
@@ -443,10 +442,10 @@ namespace PepperDash.Essentials
                 Debug.Console(0, "System authorized, sending config.");
                 RegisterSystemToServer();
             }
-            else if (r.Code == 404 && r.ContentString != null)
+            else if (r.Code == 404 && String.IsNullOrEmpty(r.ContentString))
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (r.ContentString != null)
+                if (String.IsNullOrEmpty(r.ContentString))
                     Debug.Console(0, "content: {0}", r.ContentString);
 
                 if (r.ContentString.Contains("codeNotFound"))
@@ -464,8 +463,8 @@ namespace PepperDash.Essentials
             else if (r.Code == 301 && r.Header != null)
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (r.ContentString != null)
-                    Debug.Console(0, "Content {0}", r.ContentString);
+                if (String.IsNullOrEmpty(r.ContentString))
+                    Debug.Console(0, "content {0}", r.ContentString);
 
                 var newUrl = r.Header.GetHeaderValue("Location");
                 var newHostValue = newUrl.Substring(0,
@@ -477,7 +476,7 @@ namespace PepperDash.Essentials
             else
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (r.ContentString != null)
+                if (String.IsNullOrEmpty(r.ContentString))
                     Debug.Console(0, "Content {0}", r.ContentString);
             }
         }
