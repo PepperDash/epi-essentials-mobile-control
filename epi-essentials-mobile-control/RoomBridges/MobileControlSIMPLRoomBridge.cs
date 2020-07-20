@@ -121,11 +121,11 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 // TODO: Update Source Bridge to use new JoinMap scheme
                 //_sourceBridge.JoinMap.PrintJoinMapInfo();
-            }, "printmobilecontrolbridge", "Prints SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
+            }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
 
             return base.CustomActivate();
         }
-
+        
         private void UseEssentialsConfig()
         {
             ConfigIsLoaded = false;
