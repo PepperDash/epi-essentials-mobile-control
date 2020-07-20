@@ -492,7 +492,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         public SIMPLVtcJoinMap(uint joinStart)
-            : base(joinStart)
+            : base(joinStart, typeof(SIMPLVtcJoinMap))
         {
         }
     }

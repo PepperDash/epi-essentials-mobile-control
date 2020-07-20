@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Bridges;
+using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.Cameras;
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -20,7 +20,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             _eisc = eisc;
 
-            _joinMap = new CameraControllerJoinMap(joinStart);
+            _joinMap = new CameraControllerJoinMap(joinStart, typeof(CameraControllerJoinMap));
 
             _eisc.SetUShortSigAction(_joinMap.NumberOfPresets.JoinNumber, u => SendCameraFullMessageObject());
 

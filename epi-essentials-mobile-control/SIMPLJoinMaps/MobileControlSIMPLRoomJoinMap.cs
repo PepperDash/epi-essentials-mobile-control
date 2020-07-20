@@ -369,7 +369,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         public MobileControlSIMPLRoomJoinMap(uint joinStart)
-            : base(joinStart)
+            : base(joinStart, typeof(MobileControlSIMPLRoomJoinMap))
         {
         }
     }
