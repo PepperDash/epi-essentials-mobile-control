@@ -53,7 +53,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         ///// </summary>
         //const uint BDirectorySearchBusy = 800;
         ///// <summary>
-        ///// 801 
+        ///// 801   
         ///// </summary>
         //const uint BDirectoryLineSelected = 801;
         ///// <summary>
@@ -628,6 +628,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
             if (_eisc.GetBool(JoinMap.IncomingCall.JoinNumber))
             {
+                list.Add(_incomingCallItem);
             }
             return list;
         }
