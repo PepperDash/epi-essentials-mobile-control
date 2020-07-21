@@ -1,7 +1,11 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
+using Crestron.SimplSharp.Reflection;
 
-[assembly: AssemblyTitle("EssentialsPluginTemplateEpi")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("EssentialsPluginTemplateEpi")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
-[assembly: AssemblyVersion("1.0.0.*")]
+[assembly: System.Reflection.AssemblyTitle("EssentialsPluginTemplateEpi")]
+[assembly: System.Reflection.AssemblyCompany("")]
+[assembly: System.Reflection.AssemblyProduct("EssentialsPluginTemplateEpi")]
+[assembly: System.Reflection.AssemblyCopyright("Copyright ©  2019")]
+[assembly: System.Reflection.AssemblyVersion("0.0.0.*")]
+[assembly: System.Reflection.AssemblyInformationalVersion("0.0.0-buildType-buildNumber")]
+[assembly: Crestron.SimplSharp.Reflection.AssemblyInformationalVersion("0.0.0-buildType-buildNumber")]

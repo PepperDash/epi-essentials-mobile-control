@@ -113,28 +113,19 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             CrestronConsole.AddNewConsoleCommand(s =>
             {
-                for (uint i = 1; i < 1000; i++)
-                {
-                    if (s.ToLower().Equals("b"))
-                    {
-                        CrestronConsole.ConsoleCommandResponse("D{0,6} {1} - ", i, Eisc.BooleanOutput[i].BoolValue);
-                    }
-                    else if (s.ToLower().Equals("u"))
-                    {
-                        CrestronConsole.ConsoleCommandResponse("U{0,6} {1,8} - ", i, Eisc.UShortOutput[i].UShortValue);
-                    }
-                    else if (s.ToLower().Equals("s"))
-                    {
-                        var val = Eisc.StringOutput[i].StringValue;
-                        if (!string.IsNullOrEmpty(val))
-                            CrestronConsole.ConsoleCommandResponse("S{0,6} {1}\r", i, Eisc.StringOutput[i].StringValue);
-                    }
-                }
-            }, "mobilebridgedump", "Dumps DDVC01 bridge EISC data b,u,s", ConsoleAccessLevelEnum.AccessOperator);
+                JoinMap.PrintJoinMapInfo();
+
+                _atcMessenger.JoinMap.PrintJoinMapInfo();
+
+                _vtcMessenger.JoinMap.PrintJoinMapInfo();
+
+                // TODO: Update Source Bridge to use new JoinMap scheme
+                //_sourceBridge.JoinMap.PrintJoinMapInfo();
+            }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
 
             return base.CustomActivate();
         }
-
+        
         private void UseEssentialsConfig()
         {
             ConfigIsLoaded = false;
