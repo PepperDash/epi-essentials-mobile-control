@@ -296,6 +296,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 PostCallsList();
             });
 
+            _eisc.SetStringSigAction(JoinMap.IncomingCallName.JoinNumber, s => 
+                {
+                    if(_incomingCallItem != null)
+                    {
+                        _incomingCallItem.Name = s;
+                        PostCallsList();
+                    }          
+                });
+
+            _eisc.SetStringSigAction(JoinMap.IncomingCallNumber.JoinNumber, s =>
+            {
+                if (_incomingCallItem != null)
+                {
+                    _incomingCallItem.Number = s;
+                    PostCallsList();
+                }
+            });
+
             _eisc.SetBoolSigAction(JoinMap.CameraSupportsAutoMode.JoinNumber, b => PostStatusMessage(new
             {
                 cameraSupportsAutoMode = b

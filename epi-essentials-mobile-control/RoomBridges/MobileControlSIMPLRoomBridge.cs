@@ -362,7 +362,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void LoadConfigValues()
         {
-            Debug.Console(1, this, "Loading configuration from DDVC01 EISC bridge");
+            Debug.Console(1, this, "Loading configuration from SIMPL EISC bridge");
             ConfigIsLoaded = false;
 
             var co = ConfigReader.ConfigObject;
@@ -389,7 +389,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
             rm.Name = Eisc.StringOutput[JoinMap.ConfigRoomName.JoinNumber].StringValue;
             rm.Key = "room1";
-            rm.Type = "ddvc01";
+            rm.Type = "simpl";
 
             var rmProps = rm.Properties == null
                 ? new DDVC01RoomPropertiesConfig()
