@@ -362,7 +362,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void LoadConfigValues()
         {
-            Debug.Console(1, this, "Loading configuration from DDVC01 EISC bridge");
+            Debug.Console(1, this, "Loading configuration from SIMPL EISC bridge");
             ConfigIsLoaded = false;
 
             var co = ConfigReader.ConfigObject;
