@@ -389,7 +389,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
             rm.Name = Eisc.StringOutput[JoinMap.ConfigRoomName.JoinNumber].StringValue;
             rm.Key = "room1";
-            rm.Type = "simpl";
+            rm.Type = "ddvc01";
 
             var rmProps = rm.Properties == null
                 ? new DDVC01RoomPropertiesConfig()
