@@ -53,7 +53,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         ///// </summary>
         //const uint BDirectorySearchBusy = 800;
         ///// <summary>
-        ///// 801 
+        ///// 801   
         ///// </summary>
         //const uint BDirectoryLineSelected = 801;
         ///// <summary>
@@ -294,6 +294,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     _incomingCallItem = null;
                 }
                 PostCallsList();
+            });
+
+            _eisc.SetStringSigAction(JoinMap.IncomingCallName.JoinNumber, s => 
+                {
+                    if(_incomingCallItem != null)
+                    {
+                        _incomingCallItem.Name = s;
+                        PostCallsList();
+                    }          
+                });
+
+            _eisc.SetStringSigAction(JoinMap.IncomingCallNumber.JoinNumber, s =>
+            {
+                if (_incomingCallItem != null)
+                {
+                    _incomingCallItem.Number = s;
+                    PostCallsList();
+                }
             });
 
             _eisc.SetBoolSigAction(JoinMap.CameraSupportsAutoMode.JoinNumber, b => PostStatusMessage(new
@@ -628,6 +646,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
             if (_eisc.GetBool(JoinMap.IncomingCall.JoinNumber))
             {
+                list.Add(_incomingCallItem);
             }
             return list;
         }

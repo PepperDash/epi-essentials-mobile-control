@@ -217,7 +217,7 @@ namespace PepperDash.Essentials.AppServer
         /// </summary>
         /// <param name="joinStart"></param>
         public SIMPLAtcJoinMap(uint joinStart)
-            : base(joinStart)
+            : base(joinStart, typeof(SIMPLAtcJoinMap))
         {
         }
     }

@@ -113,28 +113,19 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             CrestronConsole.AddNewConsoleCommand(s =>
             {
-                for (uint i = 1; i < 1000; i++)
-                {
-                    if (s.ToLower().Equals("b"))
-                    {
-                        CrestronConsole.ConsoleCommandResponse("D{0,6} {1} - ", i, Eisc.BooleanOutput[i].BoolValue);
-                    }
-                    else if (s.ToLower().Equals("u"))
-                    {
-                        CrestronConsole.ConsoleCommandResponse("U{0,6} {1,8} - ", i, Eisc.UShortOutput[i].UShortValue);
-                    }
-                    else if (s.ToLower().Equals("s"))
-                    {
-                        var val = Eisc.StringOutput[i].StringValue;
-                        if (!string.IsNullOrEmpty(val))
-                            CrestronConsole.ConsoleCommandResponse("S{0,6} {1}\r", i, Eisc.StringOutput[i].StringValue);
-                    }
-                }
-            }, "mobilebridgedump", "Dumps DDVC01 bridge EISC data b,u,s", ConsoleAccessLevelEnum.AccessOperator);
+                JoinMap.PrintJoinMapInfo();
+
+                _atcMessenger.JoinMap.PrintJoinMapInfo();
+
+                _vtcMessenger.JoinMap.PrintJoinMapInfo();
+
+                // TODO: Update Source Bridge to use new JoinMap scheme
+                //_sourceBridge.JoinMap.PrintJoinMapInfo();
+            }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
 
             return base.CustomActivate();
         }
-
+        
         private void UseEssentialsConfig()
         {
             ConfigIsLoaded = false;
@@ -371,7 +362,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void LoadConfigValues()
         {
-            Debug.Console(1, this, "Loading configuration from DDVC01 EISC bridge");
+            Debug.Console(1, this, "Loading configuration from SIMPL EISC bridge");
             ConfigIsLoaded = false;
 
             var co = ConfigReader.ConfigObject;
@@ -757,11 +748,11 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(new
             {
                 type = "/room/status/",
                 content = contentObject
-            }));
+            });
         }
 
         /// <summary>
@@ -771,11 +762,11 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject"></param>
         private void PostMessage(string messageType, object contentObject)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(new
             {
                 type = messageType,
                 content = contentObject
-            }));
+            });
         }
 
 

@@ -5,7 +5,7 @@ using PepperDash.Core;
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     /// <summary>
-    /// Provides a messaging bridge for a VideoCodecBase
+    /// Provides a messaging bridge
     /// </summary>
     public abstract class MessengerBase : IKeyed
     {
@@ -61,11 +61,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (AppServerController != null)
             {
-                AppServerController.SendMessageToServer(JObject.FromObject(new
+                AppServerController.SendMessageObjectToServer(new
                 {
                     type = MessagePath,
                     content = contentObject
-                }));
+                });
             }
         }
     }
