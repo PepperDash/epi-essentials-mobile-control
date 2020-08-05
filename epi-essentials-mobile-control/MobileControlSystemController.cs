@@ -181,7 +181,7 @@ namespace PepperDash.Essentials
                 {
                     var message = TransmitQueue.Dequeue();
 
-                    SendMessageToServer(message);
+                    SendMessageToServer(JObject.FromObject(message));
                 }
             }
             catch (Exception e)
@@ -701,14 +701,22 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         public void SendMessageObjectToServer(object o)
         {
-            SendMessageToServer(JObject.FromObject(o));
+            TransmitQueue.Enqueue(o);
+
+            // If the receive thread has for some reason stopped, this will restart it
+            if (TransmitThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+            {
+                TransmitThread.Start();
+            }
+
+            //SendMessageToServer(JObject.FromObject(o));
         }
 
         /// <summary>
         /// Sends a message to the server from a room
         /// </summary>
         /// <param name="o">object to be serialized and sent in post body</param>
-        public void SendMessageToServer(JObject o)
+        private void SendMessageToServer(JObject o)
         {
             if (_wsClient2 != null && _wsClient2.IsAlive)
             {
@@ -809,10 +817,10 @@ namespace PepperDash.Essentials
         /// <param name="content"></param>
         private void HandleHeartBeat(JToken content)
         {
-            SendMessageToServer(JObject.FromObject(new
+            SendMessageObjectToServer(new
             {
                 type = "/system/heartbeatAck"
-            }));
+            });
 
             var code = content["userCode"];
             if (code != null)
@@ -985,7 +993,7 @@ namespace PepperDash.Essentials
 
                                 respObj.ClientId = clientId;
 
-                                SendMessageToServer(JObject.FromObject(respObj));
+                                SendMessageObjectToServer(respObj);
                             }
                         }
                         else
