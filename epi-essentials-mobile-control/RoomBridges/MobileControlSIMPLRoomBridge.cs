@@ -748,11 +748,11 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(new
             {
                 type = "/room/status/",
                 content = contentObject
-            }));
+            });
         }
 
         /// <summary>
@@ -762,11 +762,11 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject"></param>
         private void PostMessage(string messageType, object contentObject)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(new
             {
                 type = messageType,
                 content = contentObject
-            }));
+            });
         }
 
 

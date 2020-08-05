@@ -61,11 +61,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (AppServerController != null)
             {
-                AppServerController.SendMessageToServer(JObject.FromObject(new
+                AppServerController.SendMessageObjectToServer(new
                 {
                     type = MessagePath,
                     content = contentObject
-                }));
+                });
             }
         }
     }

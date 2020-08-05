@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
+using Crestron.SimplSharp;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -99,7 +100,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         isRootDirectory = isRoot
                     }
                 };
-                PostStatusMessage(directoryMessage);
+
+                //Spool up a thread in case this is a large quantity of data
+                CrestronInvoke.BeginInvoke((o) => PostStatusMessage(directoryMessage));            
             }
         }
 

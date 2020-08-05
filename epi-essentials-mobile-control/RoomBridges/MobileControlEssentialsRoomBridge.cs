@@ -213,7 +213,7 @@ namespace PepperDash.Essentials
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(JObject.FromObject(new
             {
                 type = "/room/status/",
                 content = contentObject
@@ -229,7 +229,7 @@ namespace PepperDash.Essentials
         {
             var roomStatus = new JObject {{"state", "wasCancelled"}};
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
-            Parent.SendMessageToServer(message);
+            Parent.SendMessageObjectToServer(message);
         }
 
         /// <summary>
@@ -241,7 +241,7 @@ namespace PepperDash.Essentials
         {
             var roomStatus = new JObject {{"state", "hasFinished"}};
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
-            Parent.SendMessageToServer(message);
+            Parent.SendMessageObjectToServer(message);
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace PepperDash.Essentials
                 {"duration", Room.ShutdownPromptTimer.SecondsToCount}
             };
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
-            Parent.SendMessageToServer(message);
+            Parent.SendMessageObjectToServer(message);
             // equivalent JS message:
             //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
         }
@@ -432,11 +432,11 @@ namespace PepperDash.Essentials
         /// <param name="room"></param>
         private void SendFullStatus(EssentialsRoomBase room)
         {
-            Parent.SendMessageToServer(JObject.FromObject(new
+            Parent.SendMessageObjectToServer(new
             {
                 type = "/room/status/",
                 content = GetFullStatus(room)
-            }));
+            });
         }
 
 
