@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Crestron.SimplSharpPro.CrestronThread;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
@@ -23,6 +24,14 @@ namespace PepperDash.Essentials
     {
         //WebSocketClient WSClient;
         private WebSocket _wsClient2;
+
+        private Thread ReceiveThread;
+
+        private Thread TransmitThread;
+
+        private CrestronQueue<string> ReceiveQueue;
+
+        private CrestronQueue<object> TransmitQueue;
 
         //bool LinkUp;
 
@@ -75,6 +84,20 @@ namespace PepperDash.Essentials
         {
             Config = config;
 
+            // The queue that will collect the incoming messages in the order they are received
+            ReceiveQueue = new CrestronQueue<string>(25);
+
+            // The queue that will collect the outgoing messages in the order they are received
+            TransmitQueue = new CrestronQueue<object>(25);
+
+            // The thread responsible for dequeuing and processing the messages
+            ReceiveThread = new Thread((o) => ProcessRecieveQueue(), null);
+            ReceiveThread.Priority = Thread.eThreadPriority.HighPriority;
+
+            TransmitThread = new Thread((o) => ProcessTransmitQueue(), null);
+            TransmitThread.Priority = Thread.eThreadPriority.HighPriority;
+
+
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
             {
@@ -123,6 +146,53 @@ namespace PepperDash.Essentials
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
         }
+
+        /// <summary>
+        /// Runs in it's own thread to dequeue messages in the order they were received to be processed
+        /// </summary>
+        /// <returns></returns>
+        object ProcessRecieveQueue()
+        {
+            try
+            {
+                while (true)
+                {
+                    var message = ReceiveQueue.Dequeue();
+
+                    ParseStreamRx(message);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, "Error Processing Queue: {0}", e);
+            }
+
+            return null;
+        }
+
+        /// Runs in it's own thread to dequeue messages in the order they were received to be processed
+        /// </summary>
+        /// <returns></returns>
+        object ProcessTransmitQueue()
+        {
+            try
+            {
+                while (true)
+                {
+                    var message = TransmitQueue.Dequeue();
+
+                    SendMessageToServer(message);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, "Error Processing Queue: {0}", e);
+            }
+
+            return null;
+        }
+
+
 
         public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
         {
@@ -569,7 +639,11 @@ namespace PepperDash.Essentials
         {
             if (e.IsText && e.Data.Length > 0)
             {
-                ParseStreamRx(e.Data);
+                ReceiveQueue.Enqueue(e.Data);
+
+                // If the receive thread has for some reason stopped, this will restart it
+                if (ReceiveThread.ThreadState != Thread.eThreadStates.ThreadRunning)
+                    ReceiveThread.Start();
             }
         }
 
