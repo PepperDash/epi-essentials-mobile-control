@@ -13,6 +13,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 
 namespace PepperDash.Essentials.Room.MobileControl
@@ -814,12 +815,12 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         protected override void UserCodeChange()
         {
-            Debug.Console(1, this, "Server user code changed: {0}", UserCode);
+            base.UserCodeChange();
+
             Eisc.StringInput[JoinMap.UserCodeToSystem.JoinNumber].StringValue = UserCode;
-            Eisc.StringInput[JoinMap.ServerUrl.JoinNumber].StringValue = Parent.Config.ClientAppUrl;
-            var qrUrl = string.Format("{0}/api/system/{1}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
-            Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
-            Eisc.StringInput[JoinMap.QrCodeUrl.JoinNumber].StringValue = qrUrl;
+            Eisc.StringInput[JoinMap.ServerUrl.JoinNumber].StringValue = McServerUrl;
+            Eisc.StringInput[JoinMap.QrCodeUrl.JoinNumber].StringValue = QrCodeUrl;
+
         }
     }
 }

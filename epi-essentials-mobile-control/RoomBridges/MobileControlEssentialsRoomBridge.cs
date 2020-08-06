@@ -36,7 +36,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room"></param>
         public MobileControlEssentialsRoomBridge(EssentialsRoomBase room) :
-            base("mobileControlBridge-essentialsHuddle", "Essentials Mobile Control Bridge-Huddle")
+            base(string.Format("mobileControlBridge-{0}", room.Key), "Essentials Mobile Control Bridge")
         {
             Room = room;
         }
