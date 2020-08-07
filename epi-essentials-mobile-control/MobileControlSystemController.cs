@@ -282,10 +282,8 @@ namespace PepperDash.Essentials
                 //&& WSClient != null
                 //&& WSClient.Connected)
             {
-                CleanUpWebsocketClient();
-
-                ReceiveThread.Abort();
-                TransmitThread.Abort();
+                StopServerReconnectTimer();
+                CleanUpWebsocketClient();            
             }
 
         }
@@ -748,6 +746,16 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Disconnecting websocket");
             _wsClient2.Close();
             _wsClient2 = null;
+
+            try
+            {
+                ReceiveThread.Abort();
+                TransmitThread.Abort();
+            }
+            catch (Exception e)
+            {
+                Debug.Console(2, this, "Error aborting threads: {0}", e);
+            }
         }
 
         /// <summary>
