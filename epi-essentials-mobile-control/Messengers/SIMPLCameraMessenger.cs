@@ -20,7 +20,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             _eisc = eisc;
 
-            _joinMap = new CameraControllerJoinMap(joinStart, typeof(CameraControllerJoinMap));
+            _joinMap = new CameraControllerJoinMap(joinStart);
 
             _eisc.SetUShortSigAction(_joinMap.NumberOfPresets.JoinNumber, u => SendCameraFullMessageObject());
 
