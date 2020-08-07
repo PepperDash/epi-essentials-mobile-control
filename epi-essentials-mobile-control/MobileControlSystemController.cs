@@ -97,7 +97,6 @@ namespace PepperDash.Essentials
             TransmitThread = new Thread((o) => ProcessTransmitQueue(), null);
             TransmitThread.Priority = Thread.eThreadPriority.HighPriority;
 
-
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
             {
@@ -284,7 +283,11 @@ namespace PepperDash.Essentials
                 //&& WSClient.Connected)
             {
                 CleanUpWebsocketClient();
+
+                ReceiveThread.Abort();
+                TransmitThread.Abort();
             }
+
         }
 
         public void PrintActionDictionaryPaths(object o)
