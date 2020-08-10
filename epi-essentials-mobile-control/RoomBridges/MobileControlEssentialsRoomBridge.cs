@@ -63,19 +63,26 @@ namespace PepperDash.Essentials
                     new Action<SourceSelectMessageContent>(c =>
                         {
                             // assume the default source list
-                            var sourceListKey = "default";
+                            var sourceListKey = string.Empty;
 
                             
-                            if (!string.IsNullOrEmpty(c.SourceListKey))
-                            {
-                                // Check for source list in content of message
-                                sourceListKey = c.SourceListKey;
-                            }
-                            else if (!string.IsNullOrEmpty(Room.SourceListKey))
-                            {
-                                // Check if source list is set on room
-                                sourceListKey = Room.SourceListKey;
-                            }
+                            //if (!string.IsNullOrEmpty(c.SourceListKey))
+                            //{
+                            //    // Check for source list in content of message
+                            //    Debug.Console(1, this, "sourceListKey found in message");
+                            //    sourceListKey = c.SourceListKey;
+                            //}
+                            //else if (!string.IsNullOrEmpty(Room.SourceListKey))
+                            //{
+                            //    // Check if source list is set on room
+                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  Attempting to use Room.SourceListKey");
+                            //    sourceListKey = Room.SourceListKey;
+                            //}
+                            //else
+                            //{
+                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  uuing default");
+                            //    sourceListKey = string.Empty;
+                            //}
 
                             routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
 
@@ -505,7 +512,8 @@ namespace PepperDash.Essentials
     {
         public string SourceListItem { get; set; }
         public string SourceListKey { get; set; }
-    }
+
+  }
 
     /// <summary>
     /// 

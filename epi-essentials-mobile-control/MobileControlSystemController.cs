@@ -284,6 +284,8 @@ namespace PepperDash.Essentials
             {
                 _wsClient2.OnClose -= HandleClose;
 
+                ReceiveQueue.Clear();
+                TransmitQueue.Clear();
                 _serverHeartbeatCheckTimer.Stop();
                 StopServerReconnectTimer();
                 CleanUpWebsocketClient();            
