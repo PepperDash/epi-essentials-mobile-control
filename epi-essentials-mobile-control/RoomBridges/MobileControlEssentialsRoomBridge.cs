@@ -60,8 +60,26 @@ namespace PepperDash.Essentials
             var routeRoom = Room as IRunRouteAction;
             if (routeRoom != null)
                 Parent.AddAction(string.Format(@"/room/{0}/source", Room.Key),
-                    new Action<SourceSelectMessageContent>(c => routeRoom.RunRouteAction(c.SourceListItem,
-                        string.IsNullOrEmpty(c.SourceListKey) ? Room.SourceListKey : c.SourceListKey)));
+                    new Action<SourceSelectMessageContent>(c =>
+                        {
+                            // assume the default source list
+                            var sourceListKey = "default";
+
+                            
+                            if (!string.IsNullOrEmpty(c.SourceListKey))
+                            {
+                                // Check for source list in content of message
+                                sourceListKey = c.SourceListKey;
+                            }
+                            else if (!string.IsNullOrEmpty(Room.SourceListKey))
+                            {
+                                // Check if source list is set on room
+                                sourceListKey = Room.SourceListKey;
+                            }
+
+                            routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
+
+                        }));
 
 
             var defaultRoom = Room as IRunDefaultPresentRoute;

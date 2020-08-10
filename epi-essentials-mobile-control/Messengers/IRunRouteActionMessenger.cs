@@ -37,8 +37,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
 
             appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(
-                    c => RoutingDevice.RunRouteAction(c.SourceListItem, c.SourceListKey)));
+                new Action<SourceSelectMessageContent>(c =>
+                {
+                    // assume the default source list
+                    var sourceListKey = "default";
+                    
+                    if (!string.IsNullOrEmpty(c.SourceListKey))
+                    {
+                        // Check for source list in content of message
+                        sourceListKey = c.SourceListKey;
+                    }
+
+                    RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
+                }));
 
             var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
             if (sinkDevice != null)
