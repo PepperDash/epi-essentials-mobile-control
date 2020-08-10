@@ -1,5 +1,6 @@
 ﻿using System;
 using PepperDash.Essentials.Core;
+using PepperDash.Core;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -37,8 +38,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
 
             appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(
-                    c => RoutingDevice.RunRouteAction(c.SourceListItem, c.SourceListKey)));
+                new Action<SourceSelectMessageContent>(c =>
+                {
+                    // assume no sourceListKey
+                    var sourceListKey = string.Empty;
+                    
+                    if (!string.IsNullOrEmpty(c.SourceListKey))
+                    {
+                        // Check for source list in content of message
+                        Debug.Console(1, this, "sourceListKey found in message");
+                        sourceListKey = c.SourceListKey;
+                    }
+
+                    RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
+                }));
 
             var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
             if (sinkDevice != null)
