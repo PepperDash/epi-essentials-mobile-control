@@ -236,9 +236,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
 
-                    appServerController.AddAction(MessagePath + "/cameraAuto",
+                    appServerController.AddAction(MessagePath + "/cameraModeAuto",
                         new Action(speakerTrackCodec.CameraAutoModeOn));
-                    appServerController.AddAction(MessagePath + "/cameraManual",
+                    appServerController.AddAction(MessagePath + "/cameraModeManual",
                         new Action(speakerTrackCodec.CameraAutoModeOff));
                 }
             }
