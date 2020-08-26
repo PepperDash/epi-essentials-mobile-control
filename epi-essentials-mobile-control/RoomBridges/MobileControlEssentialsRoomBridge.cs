@@ -36,7 +36,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room"></param>
         public MobileControlEssentialsRoomBridge(EssentialsRoomBase room) :
-            base("mobileControlBridge-essentialsHuddle", "Essentials Mobile Control Bridge-Huddle")
+            base(string.Format("mobileControlBridge-{0}", room.Key), "Essentials Mobile Control Bridge")
         {
             Room = room;
         }
@@ -60,8 +60,33 @@ namespace PepperDash.Essentials
             var routeRoom = Room as IRunRouteAction;
             if (routeRoom != null)
                 Parent.AddAction(string.Format(@"/room/{0}/source", Room.Key),
-                    new Action<SourceSelectMessageContent>(c => routeRoom.RunRouteAction(c.SourceListItem,
-                        string.IsNullOrEmpty(c.SourceListKey) ? Room.SourceListKey : c.SourceListKey)));
+                    new Action<SourceSelectMessageContent>(c =>
+                        {
+                            // assume the default source list
+                            var sourceListKey = string.Empty;
+
+                            
+                            //if (!string.IsNullOrEmpty(c.SourceListKey))
+                            //{
+                            //    // Check for source list in content of message
+                            //    Debug.Console(1, this, "sourceListKey found in message");
+                            //    sourceListKey = c.SourceListKey;
+                            //}
+                            //else if (!string.IsNullOrEmpty(Room.SourceListKey))
+                            //{
+                            //    // Check if source list is set on room
+                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  Attempting to use Room.SourceListKey");
+                            //    sourceListKey = Room.SourceListKey;
+                            //}
+                            //else
+                            //{
+                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  uuing default");
+                            //    sourceListKey = string.Empty;
+                            //}
+
+                            routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
+
+                        }));
 
 
             var defaultRoom = Room as IRunDefaultPresentRoute;
@@ -487,7 +512,8 @@ namespace PepperDash.Essentials
     {
         public string SourceListItem { get; set; }
         public string SourceListKey { get; set; }
-    }
+
+  }
 
     /// <summary>
     /// 

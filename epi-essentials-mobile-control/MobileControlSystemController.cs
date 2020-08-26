@@ -97,7 +97,6 @@ namespace PepperDash.Essentials
             TransmitThread = new Thread((o) => ProcessTransmitQueue(), null);
             TransmitThread.Priority = Thread.eThreadPriority.HighPriority;
 
-
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
             {
@@ -283,8 +282,15 @@ namespace PepperDash.Essentials
                 //&& WSClient != null
                 //&& WSClient.Connected)
             {
-                CleanUpWebsocketClient();
+                _wsClient2.OnClose -= HandleClose;
+
+                ReceiveQueue.Clear();
+                TransmitQueue.Clear();
+                _serverHeartbeatCheckTimer.Stop();
+                StopServerReconnectTimer();
+                CleanUpWebsocketClient();            
             }
+
         }
 
         public void PrintActionDictionaryPaths(object o)
@@ -603,16 +609,21 @@ namespace PepperDash.Essentials
             CleanUpWebsocketClient();
             var wsHost = Host.Replace("http", "ws");
             var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+
+            CleanUpWebsocketClient();
+            
             _wsClient2 = new WebSocket(url)
             {
-                Log = {Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld)}
+                Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
+
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
             Debug.Console(1, this, "Initializing mobile control client to {0}", url);
             _wsClient2.Connect();
+
         }
 
         /// <summary>
@@ -743,8 +754,24 @@ namespace PepperDash.Essentials
             if (_wsClient2 == null) return;
 
             Debug.Console(1, this, "Disconnecting websocket");
+
+            _wsClient2.OnMessage -= HandleMessage;
+            _wsClient2.OnOpen -= HandleOpen;
+            _wsClient2.OnError -= HandleError;
+            _wsClient2.OnClose -= HandleClose;
+
             _wsClient2.Close();
             _wsClient2 = null;
+
+            //try
+            //{
+            //    ReceiveThread.Abort();
+            //    TransmitThread.Abort();
+            //}
+            //catch (Exception e)
+            //{
+            //    Debug.Console(2, this, "Error aborting threads: {0}", e);
+            //}
         }
 
         /// <summary>

@@ -1,15 +1,27 @@
-﻿using PepperDash.Essentials.Core;
+﻿using System;
+using PepperDash.Essentials.Core;
+
+using PepperDash.Core;
+
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+
 
 namespace PepperDash.Essentials
 {
     /// <summary>
     /// 
     /// </summary>
-    public abstract class MobileControlBridgeBase : EssentialsDevice
+    public abstract class MobileControlBridgeBase : EssentialsDevice, IMobileControlRoomBridge
     {
+        public event EventHandler<EventArgs> UserCodeChanged;
+
         public MobileControlSystemController Parent { get; private set; }
 
         public string UserCode { get; private set; }
+
+        public string QrCodeUrl { get; private set; }
+
+        public string McServerUrl { get; private set; }
 
         public abstract string RoomName { get; }
 
@@ -26,6 +38,8 @@ namespace PepperDash.Essentials
         public virtual void AddParent(MobileControlSystemController parent)
         {
             Parent = parent;
+
+            McServerUrl = Parent.Config.ClientAppUrl;
         }
 
         /// <summary>
@@ -49,6 +63,22 @@ namespace PepperDash.Essentials
         /// </summary>
         protected virtual void UserCodeChange()
         {
+            Debug.Console(1, this, "Server user code changed: {0}", UserCode);
+
+            var qrUrl = string.Format("{0}/api/system/{1}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
+            QrCodeUrl = qrUrl;
+            Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
+
+            OnUserCodeChanged();
+        }
+
+        void OnUserCodeChanged()
+        {
+            var handler = UserCodeChanged;
+            if (handler != null)
+            {
+                handler(this, new EventArgs());
+            }
         }
     }
 }
