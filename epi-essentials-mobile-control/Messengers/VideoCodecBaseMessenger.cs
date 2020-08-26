@@ -251,6 +251,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 appServerController.AddAction(MessagePath + "/cameraSelfView",
                     new Action(selfViewCodec.SelfViewModeToggle));
+
+                selfViewCodec.SelfviewIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(SelfviewIsOnFeedback_OutputChange);
             }
 
             var layoutsCodec = Codec as IHasCodecLayouts;
@@ -272,6 +274,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
             appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
+        }
+
+        void SelfviewIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            PostCameraSelfView();
         }
 
         private void presetsCodec_CameraPresetsListHasChanged(object sender, EventArgs e)
@@ -538,9 +545,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 };
             }
 
+            var selfView = Codec is IHasCodecSelfView 
+                ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue 
+                : false;
+
             var info = Codec.CodecInfo;
             PostStatusMessage(new
             {
+                cameraSelfView = selfView,
                 isInCall = Codec.IsInCall,
                 privacyModeIsOn = Codec.PrivacyModeIsOnFeedback.BoolValue,
                 sharingContentIsOn = Codec.SharingContentIsOnFeedback.BoolValue,
@@ -563,6 +575,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 hasCameras = Codec is IHasCameras,
                 cameras = cameraInfo,
                 presets = GetCurrentPresets()
+            });
+        }
+
+        private void PostCameraSelfView()
+        {
+            var selfView = Codec is IHasCodecSelfView
+                ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue
+                : false;
+
+            PostStatusMessage(new
+            {
+                cameraSelfView = selfView
+                
             });
         }
 
