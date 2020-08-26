@@ -19,18 +19,26 @@ namespace PepperDash.Essentials
         private readonly CrestronQueue<object> _queue;
         private readonly Thread _worker;
         private readonly CEvent _wh = new CEvent();
-        private readonly WebSocket _wsClient;
+        private WebSocket _wsClient;
+
+        public WebSocket WsClient
+        {
+            set
+            {
+                _wsClient = value;
+                _wh.Set();
+            }
+        }
 
         public bool Disposed { get; private set; }
 
-        public TransmitQueue(string key, WebSocket wsClient)
+        public TransmitQueue(string key)
         {
             _queue = new CrestronQueue<object>();
             _worker = new Thread(ProcessMessage, null, Thread.eThreadStartOptions.Running)
             {
                 Priority = Thread.eThreadPriority.HighPriority
             };
-            _wsClient = wsClient;
 
             Key = key;
 
@@ -80,6 +88,9 @@ namespace PepperDash.Essentials
         public void EnqueueMessage(object message)
         {
             _queue.Enqueue(message);
+            if (_wsClient == null)
+                return;
+
             _wh.Set();
         }
 

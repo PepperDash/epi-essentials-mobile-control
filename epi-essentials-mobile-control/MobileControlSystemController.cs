@@ -25,13 +25,9 @@ namespace PepperDash.Essentials
         //WebSocketClient WSClient;
         private WebSocket _wsClient2;
 
-        private Thread ReceiveThread;
+        private readonly ReceiveQueue _receiveQueue;
 
-        private Thread TransmitThread;
-
-        private CrestronQueue<string> ReceiveQueue;
-
-        private CrestronQueue<object> TransmitQueue;
+        private readonly TransmitQueue _transmitQueue;
 
         //bool LinkUp;
 
@@ -85,17 +81,10 @@ namespace PepperDash.Essentials
             Config = config;
 
             // The queue that will collect the incoming messages in the order they are received
-            ReceiveQueue = new CrestronQueue<string>(25);
+            _receiveQueue = new ReceiveQueue(key, ParseStreamRx);
 
             // The queue that will collect the outgoing messages in the order they are received
-            TransmitQueue = new CrestronQueue<object>(25);
-
-            // The thread responsible for dequeuing and processing the messages
-            ReceiveThread = new Thread((o) => ProcessRecieveQueue(), null);
-            ReceiveThread.Priority = Thread.eThreadPriority.HighPriority;
-
-            TransmitThread = new Thread((o) => ProcessTransmitQueue(), null);
-            TransmitThread.Priority = Thread.eThreadPriority.HighPriority;
+            _transmitQueue = new TransmitQueue(key);
 
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
@@ -146,7 +135,7 @@ namespace PepperDash.Essentials
             ConfigMessenger.RegisterWithAppServer(this);
         }
 
-        /// <summary>
+        /*/// <summary>
         /// Runs in it's own thread to dequeue messages in the order they were received to be processed
         /// </summary>
         /// <returns></returns>
@@ -156,7 +145,7 @@ namespace PepperDash.Essentials
             {
                 while (true)
                 {
-                    var message = ReceiveQueue.Dequeue();
+                    var message = _receiveQueue.Dequeue();
 
                     ParseStreamRx(message);
                 }
@@ -178,7 +167,7 @@ namespace PepperDash.Essentials
             {
                 while (true)
                 {
-                    var message = TransmitQueue.Dequeue();
+                    var message = _transmitQueue.Dequeue();
 
                     SendMessageToServer(JObject.FromObject(message));
                 }
@@ -189,9 +178,7 @@ namespace PepperDash.Essentials
             }
 
             return null;
-        }
-
-
+        }*/
 
         public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
         {
@@ -284,8 +271,6 @@ namespace PepperDash.Essentials
             {
                 _wsClient2.OnClose -= HandleClose;
 
-                ReceiveQueue.Clear();
-                TransmitQueue.Clear();
                 _serverHeartbeatCheckTimer.Stop();
                 StopServerReconnectTimer();
                 CleanUpWebsocketClient();            
@@ -616,6 +601,7 @@ namespace PepperDash.Essentials
             {
                 Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
+            _transmitQueue.WsClient = _wsClient2;
 
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
@@ -650,11 +636,7 @@ namespace PepperDash.Essentials
         {
             if (e.IsText && e.Data.Length > 0)
             {
-                ReceiveQueue.Enqueue(e.Data);
-
-                // If the receive thread has for some reason stopped, this will restart it
-                if (ReceiveThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-                    ReceiveThread.Start();
+                _receiveQueue.EnqueueResponse(e.Data);
             }
         }
 
@@ -712,15 +694,7 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         public void SendMessageObjectToServer(object o)
         {
-            TransmitQueue.Enqueue(o);
-
-            // If the receive thread has for some reason stopped, this will restart it
-            if (TransmitThread.ThreadState != Thread.eThreadStates.ThreadRunning)
-            {
-                TransmitThread.Start();
-            }
-
-            //SendMessageToServer(JObject.FromObject(o));
+            _transmitQueue.EnqueueMessage(o);
         }
 
         /// <summary>

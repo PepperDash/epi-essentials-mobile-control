@@ -62,7 +62,7 @@ namespace PepperDash.Essentials
                     }
                     catch (Exception ex)
                     {
-                        Debug.ConsoleWithLog(0, this, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                        Debug.ConsoleWithLog(0, this, "Caught an exception in the Response Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
                     }
                 }
                 else _wh.Wait();
