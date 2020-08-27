@@ -236,9 +236,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
 
-                    appServerController.AddAction(MessagePath + "/cameraAuto",
+                    appServerController.AddAction(MessagePath + "/cameraModeAuto",
                         new Action(speakerTrackCodec.CameraAutoModeOn));
-                    appServerController.AddAction(MessagePath + "/cameraManual",
+                    appServerController.AddAction(MessagePath + "/cameraModeManual",
                         new Action(speakerTrackCodec.CameraAutoModeOff));
                 }
             }
@@ -383,15 +383,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (speakerTrackCodec != null)
             {
                 m = speakerTrackCodec.CameraAutoModeIsOnFeedback.BoolValue
-                    ? eCameraControlMode.Auto.ToString()
-                    : eCameraControlMode.Manual.ToString();
+                    ? eCameraControlMode.Auto.ToString().ToLower()
+                    : eCameraControlMode.Manual.ToString().ToLower();
             }
 
             var cameraOffCodec = Codec as IHasCameraOff;
             if (cameraOffCodec != null)
             {
                 if (cameraOffCodec.CameraIsOffFeedback.BoolValue)
-                    m = eCameraControlMode.Off.ToString();
+                    m = eCameraControlMode.Off.ToString().ToLower();
             }
 
             return m;
