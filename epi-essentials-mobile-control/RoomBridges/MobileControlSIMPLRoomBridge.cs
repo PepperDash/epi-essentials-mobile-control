@@ -409,8 +409,15 @@ namespace PepperDash.Essentials.Room.MobileControl
             rmProps.SpeedDials = new List<DDVC01SpeedDial>();
 
             // This MAY need a check 
-            rmProps.AudioCodecKey = "audioCodec";
-            rmProps.VideoCodecKey = "videoCodec";
+            if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
+            {
+                rmProps.AudioCodecKey = "audioCodec";
+            }
+
+            if (Eisc.BooleanOutput[JoinMap.ActivityVideoCallEnable.JoinNumber].BoolValue)
+            {
+                rmProps.VideoCodecKey = "videoCodec";
+            }
 
             // volume control names
 
