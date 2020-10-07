@@ -220,7 +220,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 401, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "User Ccde",
+                    Label = "User Code",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
