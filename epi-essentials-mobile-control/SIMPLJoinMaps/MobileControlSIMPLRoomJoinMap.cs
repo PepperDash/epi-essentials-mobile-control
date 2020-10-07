@@ -60,6 +60,26 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Digital
                 });
 
+        [JoinName("ActivityPhoneCallEnable")]
+        public JoinDataComplete ActivityPhoneCallEnable =
+            new JoinDataComplete(new JoinData { JoinNumber = 48, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Label = "Enable Activity Phone Call",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("ActivityVideoCallEnable")]
+        public JoinDataComplete ActivityVideoCallEnable =
+            new JoinDataComplete(new JoinData { JoinNumber = 49, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Label = "Enable Activity Video Call",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
         [JoinName("ActivityShare")] public JoinDataComplete ActivityShare =
             new JoinDataComplete(new JoinData {JoinNumber = 51, JoinSpan = 1},
                 new JoinMetadata
