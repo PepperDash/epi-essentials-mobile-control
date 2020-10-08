@@ -142,6 +142,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             PostStatusMessage(new
             {
+                cameraManualSupported = Camera is IHasCameraControls,
+                cameraAutoSupported = Camera is IHasCameraAutoMode,
+                cameraOffSupported = Camera is IHasCameraOff,
                 cameraMode = GetCameraMode(),
                 hasPresets = Camera is IHasCameraPresets,
                 presets = presetList

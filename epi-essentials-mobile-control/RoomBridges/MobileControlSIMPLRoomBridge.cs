@@ -812,7 +812,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"laptop", "pc"},
                 {"pc", "pc"},
                 {"wireless", "genericsource"},
-                {"iptv", "settopbox"}
+                {"iptv", "settopbox"},
+                {"camera", "camera"},
+
             };
             return d;
         }
