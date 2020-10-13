@@ -411,7 +411,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             // This MAY need a check 
             if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
             {
-                rmProps.AudioCodecKey = "audioCodec";
+                rmProps.AudioCodecKey = "audioCodec"; 
             }
 
             if (Eisc.BooleanOutput[JoinMap.ActivityVideoCallEnable.JoinNumber].BoolValue)
@@ -511,6 +511,18 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     SetupSourceFunctions(key);
                 }
+
+                if (group.ToLower().Equals("simplmessenger"))
+                {
+                    if(type.ToLower().Equals("simplecameramessenger"))
+                    {
+                        var props = new SimplMessengerPropertiesConfig();
+                        props.DeviceKey = Key;
+                        props.JoinMapKey = "";
+                        var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
+                        props.JoinStart = joinStart;
+                    }
+                }
             }
 
             co.SourceLists.Add("default", newSl);
@@ -599,7 +611,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             SetupDeviceMessengers();
 
-            Debug.Console(0, this, "******* CONFIG FROM DDVC: \r{0}",
+            Debug.Console(0, this, "******* CONFIG FROM SIMPL: \r{0}",
                 JsonConvert.SerializeObject(ConfigReader.ConfigObject, Formatting.Indented));
 
             var handler = ConfigurationIsReady;
@@ -813,7 +825,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"pc", "pc"},
                 {"wireless", "genericsource"},
                 {"iptv", "settopbox"},
-                {"camera", "camera"},
+                {"simplcameramessenger", "simplmessenger"},
 
             };
             return d;
