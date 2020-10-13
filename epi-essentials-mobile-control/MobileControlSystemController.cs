@@ -660,12 +660,35 @@ namespace PepperDash.Essentials
             return 0;
         }
 
+        /// <summary>
+        /// Callback to catch possible errors in sending via the websocket
+        /// </summary>
+        /// <param name="result"></param>
+        /// <returns></returns>
+        int Websocket_SendCallback(Crestron.SimplSharp.CrestronWebSocketClient.WebSocketClient.WEBSOCKET_RESULT_CODES result)
+        {
+            if (result != WebSocketClient.WEBSOCKET_RESULT_CODES.WEBSOCKET_CLIENT_SUCCESS)
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "SendCallback questionable result: {0}", result);
+            return 1;
+        }
+
+        int Websocket_DisconnectCallback(WebSocketClient.WEBSOCKET_RESULT_CODES code, object o)
+        {
+            Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Websocket disconnected with code: {0}", code);
+
+            if (_serverHeartbeatCheckTimer != null)
+                _serverHeartbeatCheckTimer.Stop();
+            // Start the reconnect timer
+            StartServerReconnectTimer();
+            return 0;
+        }
+
         int Websocket_ReceiveCallback(byte[] data, uint length, WebSocketClient.WEBSOCKET_PACKET_TYPES opcode,
             WebSocketClient.WEBSOCKET_RESULT_CODES err)
         {
             if (opcode == WebSocketClient.WEBSOCKET_PACKET_TYPES.LWS_WS_OPCODE_07__TEXT_FRAME)
             {
-                var rx = System.Text.Encoding.UTF8.GetString(data, 0, (int)length);
+                var rx = Encoding.UTF8.GetString(data, 0, (int)length);
                 if (rx.Length > 0)
                     ParseStreamRx(rx);
                 _wsClient.ReceiveAsync();
