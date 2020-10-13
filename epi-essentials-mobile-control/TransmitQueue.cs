@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronWebSocketClient;
 using Crestron.SimplSharpPro.CrestronThread;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,9 +20,9 @@ namespace PepperDash.Essentials
         private readonly CrestronQueue<object> _queue;
         private readonly Thread _worker;
         private readonly CEvent _wh = new CEvent();
-        private WebSocket _wsClient;
+        private WebSocketClient _wsClient;
 
-        public WebSocket WsClient
+        public WebSocketClient WsClient
         {
             set
             {
@@ -100,7 +101,7 @@ namespace PepperDash.Essentials
         /// <param name="o">object to be serialized and sent in post body</param>
         private void SendMessageToServer(JObject o)
         {
-            if (_wsClient != null && _wsClient.IsAlive)
+            if (_wsClient != null && _wsClient.Connected)
             {
                 var message = JsonConvert.SerializeObject(o, Formatting.None,
                     new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
@@ -109,7 +110,11 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(1, this, "Message TX: {0}", message);
                 }
-                _wsClient.Send(message);
+                var messageBytes = Encoding.UTF8.GetBytes(message);
+
+                _wsClient.Send(messageBytes, (uint) messageBytes.Length,
+                    WebSocketClient.WEBSOCKET_PACKET_TYPES.LWS_WS_OPCODE_07__TEXT_FRAME);
+                //_wsClient.Send(message);
             }
             else if (_wsClient == null)
             {

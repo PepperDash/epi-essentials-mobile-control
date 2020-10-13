@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronWebSocketClient;
 using Crestron.SimplSharpPro.CrestronThread;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.Net.Http;
@@ -9,6 +11,7 @@ using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -22,8 +25,8 @@ namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
-        //WebSocketClient WSClient;
-        private WebSocket _wsClient2;
+        private WebSocketClient _wsClient;
+        //private WebSocket _wsClient2;
 
         private readonly ReceiveQueue _receiveQueue;
 
@@ -264,13 +267,11 @@ namespace PepperDash.Essentials
         private void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType == eProgramStatusEventType.Stopping
-                && _wsClient2 != null
-                && _wsClient2.IsAlive)
+                && _wsClient != null
+                && _wsClient.Connected)
                 //&& WSClient != null
                 //&& WSClient.Connected)
             {
-                _wsClient2.OnClose -= HandleClose;
-
                 _serverHeartbeatCheckTimer.Stop();
                 StopServerReconnectTimer();
                 CleanUpWebsocketClient();            
@@ -560,8 +561,8 @@ namespace PepperDash.Essentials
                 name = "No config";
                 code = "Not available";
             }
-            //var conn = WSClient == null ? "No client" : (WSClient.Connected ? "Yes" : "No");
-            var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
+            var conn = _wsClient == null ? "No client" : (_wsClient.Connected ? "Yes" : "No");
+            //var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
 
@@ -596,20 +597,91 @@ namespace PepperDash.Essentials
             var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
             CleanUpWebsocketClient();
-            
-            _wsClient2 = new WebSocket(url)
-            {
-                Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
-            };
-            _transmitQueue.WsClient = _wsClient2;
 
-            _wsClient2.OnMessage += HandleMessage;
+            _wsClient = new WebSocketClient
+            {
+                URL = url,
+                SSL = true,
+                VerifyServerCertificate = false,
+                ConnectionCallBack = Websocket_ConnectCallback
+            };
+
+            /*{
+                Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
+            };*/
+            _transmitQueue.WsClient = _wsClient;
+
+            /*_wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
             Debug.Console(1, this, "Initializing mobile control client to {0}", url);
-            _wsClient2.Connect();
+            _wsClient2.Connect();*/
 
+            _wsClient.Connect();
+
+        }
+
+        int Websocket_ConnectCallback(WebSocketClient.WEBSOCKET_RESULT_CODES code)
+        {
+            if (code == WebSocketClient.WEBSOCKET_RESULT_CODES.WEBSOCKET_CLIENT_SUCCESS)
+            {
+                StopServerReconnectTimer();
+                Debug.Console(1, this, "Websocket connected");
+                _wsClient.DisconnectCallBack = Websocket_DisconnectCallback;
+                _wsClient.SendCallBack = Websocket_SendCallback;
+                _wsClient.ReceiveCallBack = Websocket_ReceiveCallback;
+                _wsClient.ReceiveAsync();
+                SendMessageObjectToServer(new
+                {
+                    type = "hello"
+                });
+            }
+            else
+            {
+                Debug.Console(1, this, "Websocket protocol: {0}", _wsClient.Protocol);
+                if (code == WebSocketClient.WEBSOCKET_RESULT_CODES.WEBSOCKET_CLIENT_HTTP_HANDSHAKE_TOKEN_ERROR)
+                {
+                    // This is the case when app server is running behind a websever and app server is down
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Web socket connection failed. Check that app server is running behind web server");
+                }
+                else if (code == WebSocketClient.WEBSOCKET_RESULT_CODES.WEBSOCKET_CLIENT_SOCKET_CONNECTION_FAILED)
+                {
+                    // this will be the case when webserver is unreachable
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Web socket connection failed");
+                }
+                else
+                {
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Web socket connection failure: {0}", code);
+                }
+                StartServerReconnectTimer();
+            }
+
+            return 0;
+        }
+
+        int Websocket_ReceiveCallback(byte[] data, uint length, WebSocketClient.WEBSOCKET_PACKET_TYPES opcode,
+            WebSocketClient.WEBSOCKET_RESULT_CODES err)
+        {
+            if (opcode == WebSocketClient.WEBSOCKET_PACKET_TYPES.LWS_WS_OPCODE_07__TEXT_FRAME)
+            {
+                var rx = System.Text.Encoding.UTF8.GetString(data, 0, (int)length);
+                if (rx.Length > 0)
+                    ParseStreamRx(rx);
+                _wsClient.ReceiveAsync();
+            }
+
+            else if (opcode == WebSocketClient.WEBSOCKET_PACKET_TYPES.LWS_WS_OPCODE_07__CLOSE)
+            {
+                Debug.Console(1, this, "Websocket disconnect received from remote");
+                CleanUpWebsocketClient();
+            }
+            else
+            {
+                Debug.Console(1, this, "websocket rx opcode/err {0}/{1}", opcode, err);
+                _wsClient.ReceiveAsync();
+            }
+            return 0;
         }
 
         /// <summary>
@@ -703,7 +775,7 @@ namespace PepperDash.Essentials
         /// <param name="o">object to be serialized and sent in post body</param>
         private void SendMessageToServer(JObject o)
         {
-            if (_wsClient2 != null && _wsClient2.IsAlive)
+            if (_wsClient != null && _wsClient.Connected)
             {
                 string message = JsonConvert.SerializeObject(o, Formatting.None,
                     new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
@@ -712,9 +784,11 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(1, this, "Message TX: {0}", message);
                 }
-                _wsClient2.Send(message);
+                var msgBytes = Encoding.UTF8.GetBytes(message);
+                _wsClient.Send(msgBytes, (uint) msgBytes.Length,
+                    WebSocketClient.WEBSOCKET_PACKET_TYPES.LWS_WS_OPCODE_07__TEXT_FRAME);
             }
-            else if (_wsClient2 == null)
+            else if (_wsClient == null)
             {
                 Debug.Console(1, this, "Cannot send. No client.");
             }
@@ -725,17 +799,12 @@ namespace PepperDash.Essentials
         /// </summary>
         private void CleanUpWebsocketClient()
         {
-            if (_wsClient2 == null) return;
+            if (_wsClient == null) return;
 
             Debug.Console(1, this, "Disconnecting websocket");
 
-            _wsClient2.OnMessage -= HandleMessage;
-            _wsClient2.OnOpen -= HandleOpen;
-            _wsClient2.OnError -= HandleError;
-            _wsClient2.OnClose -= HandleClose;
-
-            _wsClient2.Close();
-            _wsClient2 = null;
+            _wsClient.Disconnect();
+            _wsClient = null;
 
             //try
             //{
