@@ -114,9 +114,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpThreadingLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpWebSocketClientLibrary, Version=1.0.2.31317, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpWebSocketLibrary, Version=1.0.2.39499, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSharpWebSocketClientLibrary.dll</HintPath>
+      <HintPath>..\references\SSharpWebSocketLibrary.dll</HintPath>
     </Reference>
     <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.30805, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
