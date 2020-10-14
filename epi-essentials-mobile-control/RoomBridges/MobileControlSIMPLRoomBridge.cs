@@ -12,6 +12,7 @@ using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Devices.Common.Codec;
+using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -29,6 +30,9 @@ namespace PepperDash.Essentials.Room.MobileControl
         public ThreeSeriesTcpIpEthernetIntersystemCommunications Eisc { get; private set; }
 
         public MobileControlSIMPLRoomJoinMap JoinMap { get; private set; }
+
+        public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
+
 
         /// <summary>
         /// 
@@ -480,48 +484,66 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var disableShare = Eisc.BooleanOutput[JoinMap.SourceShareDisableJoinStart.JoinNumber + i].BoolValue;
 
                 Debug.Console(0, this, "Adding source {0} '{1}'", key, name);
+
+                var sourceKey = Eisc.StringOutput[JoinMap.SourceControlDeviceKeyJoinStart.JoinNumber + i].StringValue;
+
                 var newSli = new SourceListItem
                 {
                     Icon = icon,
                     Name = name,
                     Order = (int) i + 10,
-                    SourceKey = key,
+                    SourceKey = string.IsNullOrEmpty(sourceKey) ? key : sourceKey, // Use the value from the join if defined
                     Type = eSourceListItemType.Route,
                     DisableCodecSharing = disableShare,
                 };
                 newSl.Add(key, newSli);
 
-                var group = "genericsource";
-                if (groupMap.ContainsKey(type))
+                var existingSourceDevice = DeviceManager.GetDeviceForKey(newSli.SourceKey);
+
+                // Look to see if this is a device that already exists in Essentials and get it
+                if (existingSourceDevice != null)
                 {
-                    group = groupMap[type];
+                    var devConf = ConfigReader.ConfigObject.GetDeviceForKey(newSli.SourceKey);
+
+                    Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
                 }
-
-                // add dev to devices list
-                var devConf = new DeviceConfig
+                else
                 {
-                    Group = group,
-                    Key = key,
-                    Name = name,
-                    Type = type
-                };
-                co.Devices.Add(devConf);
-
-                if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
-                {
-                    SetupSourceFunctions(key);
-                }
-
-                if (group.ToLower().Equals("simplmessenger"))
-                {
-                    if(type.ToLower().Equals("simplecameramessenger"))
+                    // If not, synthesize the device config
+                    var group = "genericsource";
+                    if (groupMap.ContainsKey(type))
                     {
-                        var props = new SimplMessengerPropertiesConfig();
-                        props.DeviceKey = Key;
-                        props.JoinMapKey = "";
-                        var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
-                        props.JoinStart = joinStart;
+                        group = groupMap[type];
                     }
+
+                    // add dev to devices list
+                    var devConf = new DeviceConfig
+                    {
+                        Group = group,
+                        Key = key,
+                        Name = name,
+                        Type = type
+                    };
+
+                    if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
+                    {
+                        SetupSourceFunctions(key);
+                    }
+
+                    if (group.ToLower().Equals("simplmessenger"))
+                    {
+                        if (type.ToLower().Equals("simplcameramessenger"))
+                        {
+                            var props = new SimplMessengerPropertiesConfig();
+                            props.DeviceKey = key;
+                            props.JoinMapKey = "";
+                            var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
+                            props.JoinStart = joinStart;
+                            devConf.Properties = JToken.FromObject(props);
+                        }
+                    }
+
+                    co.Devices.Add(devConf);
                 }
             }
 
@@ -628,6 +650,8 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void SetupDeviceMessengers()
         {
+            DeviceMessengers = new Dictionary<string, MessengerBase>();
+
             try
             {
                 foreach (var device in ConfigReader.ConfigObject.Devices)
@@ -672,12 +696,32 @@ namespace PepperDash.Essentials.Room.MobileControl
                         if (messenger != null)
                         {
                             DeviceManager.AddDevice(messenger);
+                            DeviceMessengers.Add(device.Key, messenger);
                             messenger.RegisterWithAppServer(Parent);
                         }
                         else
                         {
                             Debug.Console(2, this, "Unable to add messenger for device: '{0}' of type: '{1}'",
                                 props.DeviceKey, type);
+                        }
+                    }
+                    else
+                    {
+                        var dev = DeviceManager.GetDeviceForKey(device.Key);
+
+                        if (dev != null)
+                        {
+                            if (dev is CameraBase)
+                            {
+                                var camDevice = dev as CameraBase;
+                                Debug.Console(1, this, "Adding CameraBaseMessenger for device: {0}", dev.Key);
+                                var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
+                                    "/device/" + device.Key);
+                                DeviceMessengers.Add(device.Key, cameraMessenger);
+                                DeviceManager.AddDevice(cameraMessenger);
+                                cameraMessenger.RegisterWithAppServer(Parent);
+                                continue;
+                            }
                         }
                     }
                 }
@@ -826,6 +870,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {"wireless", "genericsource"},
                 {"iptv", "settopbox"},
                 {"simplcameramessenger", "simplmessenger"},
+                {"camera", "camera"},
 
             };
             return d;
