@@ -251,7 +251,7 @@ namespace PepperDash.Essentials
 //                args.EthernetAdapter, args.EthernetEventType);
 
 //#warning See if this is even necessary for this new client
-//            //if (args.EthernetEventType == eEthernetEventType.LinkDown && WSClient != null && args.EthernetAdapter == WSClient.EthernetAdapter)
+//            //if (args.EthernetEventType == eEthernetEventType.LinkDown && _wsClient != null && args.EthernetAdapter == _wsClient.EthernetAdapter)
 //            //{
 //            //    CleanUpWebsocketClient();
 //            //}
