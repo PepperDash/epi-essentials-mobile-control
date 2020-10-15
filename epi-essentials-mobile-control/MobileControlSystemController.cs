@@ -16,6 +16,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.AppServer.Messengers;
+using Crestron.SimplSharp.Security.Authentication;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
@@ -263,19 +264,14 @@ namespace PepperDash.Essentials
         /// <param name="programEventType"></param>
         private void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
-            if (programEventType == eProgramStatusEventType.Stopping
-                && _wsClient2 != null
-                && _wsClient2.IsAlive)
-                //&& WSClient != null
-                //&& WSClient.Connected)
+            if (programEventType != eProgramStatusEventType.Stopping || _wsClient2 == null || !_wsClient2.IsAlive)
             {
-                _wsClient2.OnClose -= HandleClose;
-
-                _serverHeartbeatCheckTimer.Stop();
-                StopServerReconnectTimer();
-                CleanUpWebsocketClient();            
+                return;
             }
 
+            _serverHeartbeatCheckTimer.Stop();
+            StopServerReconnectTimer();
+            CleanUpWebsocketClient();
         }
 
         public void PrintActionDictionaryPaths(object o)
@@ -601,6 +597,10 @@ namespace PepperDash.Essentials
             {
                 Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
+
+            _wsClient2.Log.Level = LogLevel.Debug;
+
+            _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12;
             _transmitQueue.WsClient = _wsClient2;
 
             _wsClient2.OnMessage += HandleMessage;
