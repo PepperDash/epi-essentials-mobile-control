@@ -102,9 +102,21 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSCoreTupleLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpCrestronExtensionsLibrary, Version=1.0.0.30754, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpBouncyCastleCryptoLibrary, Version=1.8.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpBouncyCastleCryptoLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpBouncyCastleCryptoSslStreamLibrary, Version=1.0.0.31177, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpBouncyCastleCryptoSslStreamLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpCrestronExtensionsLibrary, Version=1.0.0.17701, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpCrestronExtensionsLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpCrestronIOExtensionsLibrary, Version=1.0.0.30936, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpCrestronIOExtensionsLibrary.dll</HintPath>
     </Reference>
     <Reference Include="SSharpReflectionExtensionsLibrary, Version=1.0.0.30759, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -114,9 +126,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpThreadingLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpWebSocketClientLibrary, Version=1.0.2.31317, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpWebSocketLibrary, Version=1.0.2.18290, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSharpWebSocketClientLibrary.dll</HintPath>
+      <HintPath>..\references\SSharpWebSocketLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoConcurrentCollectionsLibrary, Version=1.0.0.30837, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoConcurrentCollectionsLibrary.dll</HintPath>
     </Reference>
     <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.30805, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -134,13 +150,21 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoNetLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoSslStreamLibrary, Version=1.0.0.31025, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoProTaskLibrary, Version=1.0.0.31132, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSMonoSslStreamLibrary.dll</HintPath>
+      <HintPath>..\references\SSMonoProTaskLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoProThreadingLibrary, Version=1.0.0.31080, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoProThreadingLibrary.dll</HintPath>
     </Reference>
     <Reference Include="SSMonoSupportLibrary, Version=1.0.0.30770, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoSupportLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSMonoThreadingLibrary, Version=1.0.0.30812, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSMonoThreadingLibrary.dll</HintPath>
     </Reference>
     <Reference Include="SSMonoThreadPoolLibrary, Version=1.0.0.30785, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
