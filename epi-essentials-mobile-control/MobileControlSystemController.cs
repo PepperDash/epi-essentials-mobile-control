@@ -596,14 +596,18 @@ namespace PepperDash.Essentials
             var wsHost = Host.Replace("http", "ws");
             var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
-            CleanUpWebsocketClient();
+            var urlParsed = new UrlParser(url);
+
+            Debug.Console(1, this, "Parsed URL\r\nProtocol: {2}\r\nHostname: {0}\r\nPort: {1}", urlParsed.Hostname,
+                urlParsed.Port, urlParsed.Protocol);
 
             _wsClient = new WebSocketClient
             {
                 URL = url,
-                SSL = true,
+                SSL = urlParsed.Protocol == "wss",
                 VerifyServerCertificate = false,
-                ConnectionCallBack = Websocket_ConnectCallback
+                ConnectionCallBack = Websocket_ConnectCallback,
+                Host = urlParsed.Hostname
             };
 
             /*{
@@ -618,7 +622,8 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Initializing mobile control client to {0}", url);
             _wsClient2.Connect();*/
 
-            _wsClient.Connect();
+            Debug.Console(1, this, "Initializing mobile control client to {0}", url);
+            _wsClient.ConnectAsync();
 
         }
 
@@ -690,7 +695,8 @@ namespace PepperDash.Essentials
             {
                 var rx = Encoding.UTF8.GetString(data, 0, (int)length);
                 if (rx.Length > 0)
-                    ParseStreamRx(rx);
+                    _receiveQueue.EnqueueResponse(rx);
+                    //ParseStreamRx(rx);
                 _wsClient.ReceiveAsync();
             }
 
