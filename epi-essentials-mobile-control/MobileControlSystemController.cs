@@ -9,6 +9,7 @@ using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -598,9 +599,12 @@ namespace PepperDash.Essentials
                 Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
 
-            _wsClient2.Log.Level = LogLevel.Debug;
+            #if (DEBUG_WEBSOCKET)
+              _wsClient2.Log.Level = LogLevel.Debug;
+            #endif
 
-            _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12;
+
+            _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
             _transmitQueue.WsClient = _wsClient2;
 
             _wsClient2.OnMessage += HandleMessage;
@@ -608,7 +612,16 @@ namespace PepperDash.Essentials
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
             Debug.Console(1, this, "Initializing mobile control client to {0}", url);
-            _wsClient2.Connect();
+
+            try
+            {
+                _wsClient2.Connect();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                    ex.Message, ex.StackTrace);
+            }
 
         }
 
