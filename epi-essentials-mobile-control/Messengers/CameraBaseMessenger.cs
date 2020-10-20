@@ -113,6 +113,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (Camera is IPower)
             {
                 appServerController.AddAction(MessagePath + "/cameraModeOff", new Action((Camera as IPower).PowerOff));
+                appServerController.AddAction(MessagePath + "/cameraModeManual", new Action((Camera as IPower).PowerOn));
             }
 
             var presetsCamera = Camera as IHasCameraPresets;
