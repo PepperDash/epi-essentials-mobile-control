@@ -17,7 +17,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.AppServer.Messengers;
-using Crestron.SimplSharp.Security.Authentication;
+
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
@@ -603,8 +603,8 @@ namespace PepperDash.Essentials
               _wsClient2.Log.Level = LogLevel.Debug;
             #endif
 
-
-            _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
+            //This version of the websocket client is TLS1.2 ONLY
+            //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
             _transmitQueue.WsClient = _wsClient2;
 
             _wsClient2.OnMessage += HandleMessage;
