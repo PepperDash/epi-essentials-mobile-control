@@ -109,7 +109,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpReflectionInterface.dll</HintPath>
     </Reference>
-    <Reference Include="SSCoreTupleLibrary, Version=1.0.0.30762, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSCoreTupleLibrary, Version=1.0.0.21526, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSCoreTupleLibrary.dll</HintPath>
     </Reference>
@@ -117,75 +117,67 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpBouncyCastleCryptoLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpBouncyCastleCryptoSslStreamLibrary, Version=1.0.0.31177, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpBouncyCastleCryptoSslStreamLibrary, Version=1.0.0.24496, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpBouncyCastleCryptoSslStreamLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpCrestronExtensionsLibrary, Version=1.0.0.17701, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpBouncyWebSocketClientLibrary, Version=1.0.2.29214, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\references\SSharpBouncyWebSocketClientLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SSharpCrestronExtensionsLibrary, Version=1.0.0.21509, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpCrestronExtensionsLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpCrestronIOExtensionsLibrary, Version=1.0.0.30936, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpCrestronIOExtensionsLibrary, Version=1.0.0.21661, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpCrestronIOExtensionsLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpReflectionExtensionsLibrary, Version=1.0.0.30759, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpReflectionExtensionsLibrary, Version=1.0.0.21517, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpReflectionExtensionsLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpThreadingLibrary, Version=1.0.0.30781, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSharpThreadingLibrary, Version=1.0.0.21520, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSharpThreadingLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSharpWebSocketLibrary, Version=1.0.2.18290, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSharpWebSocketLibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="SSMonoConcurrentCollectionsLibrary, Version=1.0.0.30837, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSMonoConcurrentCollectionsLibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.30805, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoCryptographyExtensions, Version=1.0.0.21574, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoCryptographyExtensions.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoCryptographyLibrary, Version=1.0.0.30776, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoCryptographyLibrary, Version=1.0.0.21532, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoCryptographyLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoIOLibrary, Version=1.0.0.30801, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoIOLibrary, Version=1.0.0.21560, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoIOLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoNetLibrary, Version=1.0.0.30797, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoNetLibrary, Version=1.0.0.29167, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoNetLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoProTaskLibrary, Version=1.0.0.31132, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoNetWebLibrary, Version=1.0.0.21902, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSMonoProTaskLibrary.dll</HintPath>
+      <HintPath>..\references\SSMonoNetWebLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoProThreadingLibrary, Version=1.0.0.31080, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoSslStreamLibrary, Version=1.0.0.21782, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSMonoProThreadingLibrary.dll</HintPath>
+      <HintPath>..\references\SSMonoSslStreamLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoSupportLibrary, Version=1.0.0.30770, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoSupportLibrary, Version=1.0.0.21522, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoSupportLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoThreadingLibrary, Version=1.0.0.30812, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\references\SSMonoThreadingLibrary.dll</HintPath>
-    </Reference>
-    <Reference Include="SSMonoThreadPoolLibrary, Version=1.0.0.30785, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoThreadPoolLibrary, Version=1.0.0.21537, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoThreadPoolLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoWebLibrary, Version=1.0.0.31028, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoWebLibrary, Version=1.0.0.21775, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoWebLibrary.dll</HintPath>
     </Reference>
-    <Reference Include="SSMonoX509CertificatesLibrary, Version=1.0.0.31018, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="SSMonoX509CertificatesLibrary, Version=1.0.0.21754, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\references\SSMonoX509CertificatesLibrary.dll</HintPath>
     </Reference>
