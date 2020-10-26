@@ -9,6 +9,7 @@ using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -16,6 +17,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.AppServer.Messengers;
+
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
@@ -28,6 +30,8 @@ namespace PepperDash.Essentials
         private readonly ReceiveQueue _receiveQueue;
 
         private readonly TransmitQueue _transmitQueue;
+
+        private LogLevel _wsLogLevel = LogLevel.Error;
 
         //bool LinkUp;
 
@@ -126,6 +130,9 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
                 "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
+            CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
+                ConsoleAccessLevelEnum.AccessProgrammer);
+
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
             //CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 
@@ -133,6 +140,35 @@ namespace PepperDash.Essentials
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
+        }
+
+        private void SetWebsocketDebugLevel(string cmdparameters)
+        {
+            if (String.IsNullOrEmpty(cmdparameters))
+            {
+                Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
+                return;
+            }
+
+            if (cmdparameters.ToLower().Contains("help") || cmdparameters.ToLower().Contains("?"))
+            {
+                Debug.Console(0, this, "valid options are:\r\n{0}\r\n{1}\r\n{2}\r\n{3}\r\n{4}\r\n{5}\r\n",
+                    LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
+            }
+
+            try
+            {
+                var debugLevel = (LogLevel) Enum.Parse(typeof (LogLevel), cmdparameters, true);
+
+                _wsLogLevel = debugLevel;
+
+                Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
+            }
+            catch
+            {
+                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",
+                    LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
+            }            
         }
 
         /*/// <summary>
@@ -263,19 +299,14 @@ namespace PepperDash.Essentials
         /// <param name="programEventType"></param>
         private void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
-            if (programEventType == eProgramStatusEventType.Stopping
-                && _wsClient2 != null
-                && _wsClient2.IsAlive)
-                //&& WSClient != null
-                //&& WSClient.Connected)
+            if (programEventType != eProgramStatusEventType.Stopping || _wsClient2 == null || !_wsClient2.IsAlive)
             {
-                _wsClient2.OnClose -= HandleClose;
-
-                _serverHeartbeatCheckTimer.Stop();
-                StopServerReconnectTimer();
-                CleanUpWebsocketClient();            
+                return;
             }
 
+            _serverHeartbeatCheckTimer.Stop();
+            StopServerReconnectTimer();
+            CleanUpWebsocketClient();
         }
 
         public void PrintActionDictionaryPaths(object o)
@@ -601,6 +632,11 @@ namespace PepperDash.Essentials
             {
                 Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
+
+            _wsClient2.Log.Level = _wsLogLevel;
+
+            //This version of the websocket client is TLS1.2 ONLY
+            //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
             _transmitQueue.WsClient = _wsClient2;
 
             _wsClient2.OnMessage += HandleMessage;
@@ -608,7 +644,16 @@ namespace PepperDash.Essentials
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
             Debug.Console(1, this, "Initializing mobile control client to {0}", url);
-            _wsClient2.Connect();
+
+            try
+            {
+                _wsClient2.Connect();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                    ex.Message, ex.StackTrace);
+            }
 
         }
 
