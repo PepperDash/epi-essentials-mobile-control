@@ -31,6 +31,8 @@ namespace PepperDash.Essentials
 
         private readonly TransmitQueue _transmitQueue;
 
+        private LogLevel _wsLogLevel = LogLevel.Error;
+
         //bool LinkUp;
 
         /// <summary>
@@ -128,6 +130,9 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
                 "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
+            CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
+                ConsoleAccessLevelEnum.AccessProgrammer);
+
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
             //CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 
@@ -135,6 +140,35 @@ namespace PepperDash.Essentials
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
+        }
+
+        private void SetWebsocketDebugLevel(string cmdparameters)
+        {
+            if (String.IsNullOrEmpty(cmdparameters))
+            {
+                Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
+                return;
+            }
+
+            if (cmdparameters.ToLower().Contains("help") || cmdparameters.ToLower().Contains("?"))
+            {
+                Debug.Console(0, this, "valid options are:\r\n{0}\r\n{1}\r\n{2}\r\n{3}\r\n{4}\r\n{5}\r\n",
+                    LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
+            }
+
+            try
+            {
+                var debugLevel = (LogLevel) Enum.Parse(typeof (LogLevel), cmdparameters, true);
+
+                _wsLogLevel = debugLevel;
+
+                Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
+            }
+            catch
+            {
+                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",
+                    LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
+            }            
         }
 
         /*/// <summary>
@@ -599,9 +633,7 @@ namespace PepperDash.Essentials
                 Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
             };
 
-            #if (DEBUG_WEBSOCKET)
-              _wsClient2.Log.Level = LogLevel.Debug;
-            #endif
+            _wsClient2.Log.Level = _wsLogLevel;
 
             //This version of the websocket client is TLS1.2 ONLY
             //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
