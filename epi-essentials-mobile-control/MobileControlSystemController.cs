@@ -162,6 +162,11 @@ namespace PepperDash.Essentials
 
                 _wsLogLevel = debugLevel;
 
+                if (_wsClient2 != null)
+                {
+                    _wsClient2.Log.Level = _wsLogLevel;
+                }
+
                 Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
             }
             catch
