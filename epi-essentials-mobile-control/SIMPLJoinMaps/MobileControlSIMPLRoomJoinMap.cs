@@ -361,6 +361,16 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Serial
                 });
 
+        [JoinName("SourceControlDeviceKeyJoinStart")]
+        public JoinDataComplete SourceControlDeviceKeyJoinStart =
+            new JoinDataComplete(new JoinData { JoinNumber = 701, JoinSpan = 20 },
+            new JoinMetadata
+            {
+                Label = "Source Control Device Keys",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
         [JoinName("SourceTypeJoinStart")] public JoinDataComplete SourceTypeJoinStart =
             new JoinDataComplete(new JoinData {JoinNumber = 661, JoinSpan = 20},
                 new JoinMetadata
