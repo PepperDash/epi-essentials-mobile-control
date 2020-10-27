@@ -8,6 +8,7 @@ using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using WebSocketSharp;
@@ -62,6 +63,10 @@ namespace PepperDash.Essentials
         private const long ServerReconnectInterval = 5000;
 
         private DateTime _lastAckMessage;
+
+        private CTimer _pingTimer;
+
+        private const long PingInterval = 11000;
 
         public string SystemUuid;
 
@@ -644,6 +649,9 @@ namespace PepperDash.Essentials
             //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
             _transmitQueue.WsClient = _wsClient2;
 
+            //Fires OnMessage event when PING is received.
+            _wsClient2.EmitOnPing = true;
+
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
@@ -670,6 +678,7 @@ namespace PepperDash.Essentials
         private void HandleOpen(object sender, EventArgs e)
         {
             StopServerReconnectTimer();
+            StartPingTimer();
             Debug.Console(1, this, "Mobile Control API connected");
             SendMessageObjectToServer(new
             {
@@ -684,6 +693,11 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void HandleMessage(object sender, MessageEventArgs e)
         {
+            if (e.IsPing)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {1}", DateTime.Now);
+                ResetPingTimer();
+            }
             if (e.IsText && e.Data.Length > 0)
             {
                 _receiveQueue.EnqueueResponse(e.Data);
@@ -798,6 +812,34 @@ namespace PepperDash.Essentials
             //}
         }
 
+        private void ResetPingTimer()
+        {
+            _pingTimer.Reset(PingInterval);
+        }
+
+        private void StartPingTimer()
+        {
+            StopPingTimer();
+            _pingTimer = new CTimer(PingTimerCallback, null, PingInterval);
+        }
+
+        private void StopPingTimer()
+        {
+            if (_pingTimer == null) return;
+
+            _pingTimer.Stop();
+            _pingTimer.Dispose();
+            _pingTimer = null;
+        }
+
+        private void PingTimerCallback(object o)
+        {
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
+            _wsClient2.Close(CloseStatusCode.ServerError, "ping not recieved");
+
+            StartServerReconnectTimer();
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -881,7 +923,19 @@ namespace PepperDash.Essentials
                     b.SetUserCode(code.Value<string>());
                 }
             }
-            ResetOrStartHearbeatTimer();
+            //ResetOrStartHearbeatTimer();
+        }
+
+        private void HandleUserCode(JToken content)
+        {
+            var code = content["userCode"];
+
+            if (code == null) return;
+
+            foreach (var bridge in _roomBridges)
+            {
+                bridge.SetUserCode(code.Value<string>());
+            }
         }
 
         /// <summary>
@@ -942,10 +996,13 @@ namespace PepperDash.Essentials
                 {
                     case "hello":
                         SendInitialMessage();
-                        ResetOrStartHearbeatTimer();
+                        //ResetOrStartHearbeatTimer();
                         break;
                     case "/system/heartbeat":
                         HandleHeartBeat(messageObj["content"]);
+                        break;
+                    case "/system/userCode":
+                        HandleUserCode(messageObj["content"]);
                         break;
                     case "raw":
                     {
@@ -1061,6 +1118,8 @@ namespace PepperDash.Essentials
                 Debug.Console(1, this, "Unable to parse message: {0}", err);
             }
         }
+
+
 
 
         /// <summary>
