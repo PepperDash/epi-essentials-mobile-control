@@ -399,6 +399,7 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         private void ReconnectToServerTimerCallback(object o)
         {
+            Debug.Console(1, this, "Attempting to reconnect to server...");
             RegisterSystemToServer();
         }
 
@@ -634,11 +635,10 @@ namespace PepperDash.Essentials
         /// </summary>
         private void ConnectWebsocketClient()
         {
-            CleanUpWebsocketClient();
-
             try
             {
                 _wsCriticalSection.Enter();
+                CleanUpWebsocketClient();
                 var wsHost = Host.Replace("http", "ws");
                 var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
@@ -798,10 +798,6 @@ namespace PepperDash.Essentials
         /// </summary>
         private void CleanUpWebsocketClient()
         {
-            try
-            {
-                _wsCriticalSection.Enter();
-
                 if (_wsClient2 == null) return;
 
                 Debug.Console(1, this, "Disconnecting websocket");
@@ -813,11 +809,6 @@ namespace PepperDash.Essentials
 
                 _wsClient2.Close();
                 _wsClient2 = null;
-            }
-            finally
-            {
-                _wsCriticalSection.Leave();
-            }
         }
 
         private void ResetPingTimer()
