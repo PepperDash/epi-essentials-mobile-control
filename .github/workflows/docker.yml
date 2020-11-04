@@ -29,8 +29,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          submodules: true
-          token: ${{ secrets.PLUGIN_ACTION_TOKEN }}
       # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
@@ -39,13 +37,15 @@ jobs:
         shell: powershell
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
-          Write-Output "::set-env name=VERSION::$version"
+          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       # Use the version number to set the version of the assemblies
       - name: Update AssemblyInfo.cs
         shell: powershell
         run: |
           Write-Output ${{ env.VERSION }}
           ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      - name: restore Nuget Packages
+        run: nuget install .\packages.config -OutputDirectory .\packages -ExcludeVersion
       # Login to Docker
       - name: Login to Docker
         uses: azure/docker-login@v1
