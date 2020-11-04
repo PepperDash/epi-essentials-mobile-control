@@ -2,15 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
-using Crestron.SimplSharpPro.CrestronThread;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
 using WebSocketSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -25,7 +22,6 @@ namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
-        //WebSocketClient WSClient;
         private WebSocket _wsClient2;
 
         private readonly ReceiveQueue _receiveQueue;
@@ -54,15 +50,9 @@ namespace PepperDash.Essentials
 
         public ConfigMessenger ConfigMessenger { get; private set; }
 
-        private CTimer _serverHeartbeatCheckTimer;
-
-        private const long ServerHeartbeatInterval = 20000;
-
         private CTimer _serverReconnectTimer;
 
         private const long ServerReconnectInterval = 5000;
-
-        private DateTime _lastAckMessage;
 
         private CTimer _pingTimer;
 
@@ -139,7 +129,6 @@ namespace PepperDash.Essentials
                 ConsoleAccessLevelEnum.AccessProgrammer);
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-            //CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 
             // Config Messenger
             var cmKey = Key + "-config";
@@ -286,23 +275,6 @@ namespace PepperDash.Essentials
             return base.CustomActivate();
         }
 
-
-//        /// <summary>
-//        /// 
-//        /// </summary>
-//        /// <param name="ethernetEventArgs"></param>
-//        void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs args)
-//        {
-//            Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Ethernet status change, port {0}: {1}",
-//                args.EthernetAdapter, args.EthernetEventType);
-
-//#warning See if this is even necessary for this new client
-//            //if (args.EthernetEventType == eEthernetEventType.LinkDown && WSClient != null && args.EthernetAdapter == WSClient.EthernetAdapter)
-//            //{
-//            //    CleanUpWebsocketClient();
-//            //}
-//        }
-
         /// <summary>
         /// Sends message to server to indicate the system is shutting down
         /// </summary>
@@ -314,8 +286,9 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            _serverHeartbeatCheckTimer.Stop();
+            //_serverHeartbeatCheckTimer.Stop();
             StopServerReconnectTimer();
+            StopPingTimer();
             CleanUpWebsocketClient();
         }
 
@@ -426,8 +399,8 @@ namespace PepperDash.Essentials
 
             try
             {
-                string path = string.Format("/api/system/grantcode/{0}/{1}", code, SystemUuid);
-                string url = string.Format("{0}{1}", Host, path);
+                var path = string.Format("/api/system/grantcode/{0}/{1}", code, SystemUuid);
+                var url = string.Format("{0}{1}", Host, path);
                 Debug.Console(0, this, "Authorizing to: {0}", url);
 
                 if (Host.StartsWith("https:"))
@@ -443,28 +416,26 @@ namespace PepperDash.Essentials
                         CheckHttpDebug(r, e);
                         if (e == HTTP_CALLBACK_ERROR.COMPLETED)
                         {
-                            if (r.Code == 200)
+                            switch (r.Code)
                             {
-                                Debug.Console(0, "System authorized, sending config.");
-                                RegisterSystemToServer();
-                            }
-                            else if (r.Code == 404)
-                            {
-                                if (r.ContentString.Contains("codeNotFound"))
-                                {
-                                    Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
-                                        SystemUuid);
-                                }
-                                else if (r.ContentString.Contains("uuidNotFound"))
-                                {
-                                    Debug.Console(0,
-                                        "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
-                                        SystemUuid);
-                                }
-                            }
-                            else
-                            {
-                                if (r.Code == 301)
+                                case 200:
+                                    Debug.Console(0, "System authorized, sending config.");
+                                    RegisterSystemToServer();
+                                    break;
+                                case 404:
+                                    if (r.ContentString.Contains("codeNotFound"))
+                                    {
+                                        Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
+                                            SystemUuid);
+                                    }
+                                    else if (r.ContentString.Contains("uuidNotFound"))
+                                    {
+                                        Debug.Console(0,
+                                            "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
+                                            SystemUuid);
+                                    }
+                                    break;
+                                case 301:
                                 {
                                     var newUrl = r.Header.GetHeaderValue("Location");
                                     var newHostValue = newUrl.Substring(0,
@@ -473,10 +444,10 @@ namespace PepperDash.Essentials
                                         "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
                                         newHostValue);
                                 }
-                                else
-                                {
+                                    break;
+                                default:
                                     Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
-                                }
+                                    break;
                             }
                         }
                         else
@@ -508,10 +479,7 @@ namespace PepperDash.Essentials
             var req = new HttpsClientRequest();
             req.Url.Parse(url);
 
-            var c = new HttpsClient();
-            c.HostVerification = false;
-            c.PeerVerification = false;
-            c.Verbose = true;
+            var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
 
             c.DispatchAsync(req, (r, e) =>
             {
@@ -604,19 +572,15 @@ namespace PepperDash.Essentials
             //var conn = WSClient == null ? "No client" : (WSClient.Connected ? "Yes" : "No");
             var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
 
-            var secSinceLastAck = DateTime.Now - _lastAckMessage;
-
-
             CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
 	Server address: {0}
 	System Name: {1}
     System URL: {2}
 	System UUID: {3}
 	System User code: {4}
-	Connected?: {5}
-    Seconds Since Last Ack: {6}"
+	Connected?: {5}"
                 , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
-                code, conn, secSinceLastAck.Seconds);
+                code, conn);
         }
 
         /// <summary>
@@ -695,8 +659,9 @@ namespace PepperDash.Essentials
         {
             if (e.IsPing)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {1}", DateTime.Now);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {0}", DateTime.Now);
                 ResetPingTimer();
+                return;
             }
             if (e.IsText && e.Data.Length > 0)
             {
@@ -712,6 +677,7 @@ namespace PepperDash.Essentials
         private void HandleError(object sender, ErrorEventArgs e)
         {
             Debug.Console(1, this, "Websocket error {0}", e.Message);
+            StopPingTimer();
             StartServerReconnectTimer();
         }
 
@@ -722,9 +688,9 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void HandleClose(object sender, CloseEventArgs e)
         {
+            StopPingTimer();
             Debug.Console(1, this, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
-            if (_serverHeartbeatCheckTimer != null)
-                _serverHeartbeatCheckTimer.Stop();
+
             // Start the reconnect timer
             StartServerReconnectTimer();
         }
@@ -769,7 +735,7 @@ namespace PepperDash.Essentials
         {
             if (_wsClient2 != null && _wsClient2.IsAlive)
             {
-                string message = JsonConvert.SerializeObject(o, Formatting.None,
+                var message = JsonConvert.SerializeObject(o, Formatting.None,
                     new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
 
                 if (!message.Contains("/system/heartbeat"))
@@ -800,16 +766,6 @@ namespace PepperDash.Essentials
 
             _wsClient2.Close();
             _wsClient2 = null;
-
-            //try
-            //{
-            //    ReceiveThread.Abort();
-            //    TransmitThread.Abort();
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.Console(2, this, "Error aborting threads: {0}", e);
-            //}
         }
 
         private void ResetPingTimer()
@@ -840,9 +796,6 @@ namespace PepperDash.Essentials
             StartServerReconnectTimer();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         private void StartServerReconnectTimer()
         {
             StopServerReconnectTimer();
@@ -850,57 +803,14 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Reconnect Timer Started.");
         }
 
-        /// <summary>
-        /// Does what it says
-        /// </summary>
         private void StopServerReconnectTimer()
         {
-            if (_serverReconnectTimer != null)
+            if (_serverReconnectTimer == null)
             {
-                _serverReconnectTimer.Stop();
-                _serverReconnectTimer = null;
+                return;
             }
-        }
-
-        /// <summary>
-        /// Executes when we don't get a heartbeat message in time.  Triggers reconnect.
-        /// </summary>
-        /// <param name="o">For CTimer callback. Not used</param>
-        private void HeartbeatExpiredTimerCallback(object o)
-        {
-            Debug.Console(1, this, "Heartbeat Timer Expired.");
-            if (_serverHeartbeatCheckTimer != null)
-            {
-                _serverHeartbeatCheckTimer.Stop();
-                _serverHeartbeatCheckTimer = null;
-            }
-            CleanUpWebsocketClient();
-            StartServerReconnectTimer();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private void ResetOrStartHearbeatTimer()
-        {
-            if (_serverHeartbeatCheckTimer == null)
-            {
-                _serverHeartbeatCheckTimer = new CTimer(HeartbeatExpiredTimerCallback, null, ServerHeartbeatInterval,
-                    ServerHeartbeatInterval);
-                Debug.Console(1, this, "Heartbeat Timer Started.");
-            }
-            else
-            {
-                _serverHeartbeatCheckTimer.Reset(ServerHeartbeatInterval, ServerHeartbeatInterval);
-            }
-        }
-
-        /// <summary>
-        /// Waits two and goes again
-        /// </summary>
-        private void ReconnectStreamClient()
-        {
-            var timer = new CTimer(o => ConnectWebsocketClient(), 2000);
+            _serverReconnectTimer.Stop();
+            _serverReconnectTimer = null;
         }
 
 
@@ -916,14 +826,14 @@ namespace PepperDash.Essentials
             });
 
             var code = content["userCode"];
-            if (code != null)
+            if (code == null)
             {
-                foreach (var b in _roomBridges)
-                {
-                    b.SetUserCode(code.Value<string>());
-                }
+                return;
             }
-            //ResetOrStartHearbeatTimer();
+            foreach (var b in _roomBridges)
+            {
+                b.SetUserCode(code.Value<string>());
+            }
         }
 
         private void HandleUserCode(JToken content)
@@ -969,9 +879,6 @@ namespace PepperDash.Essentials
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         private void ParseStreamRx(string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -980,10 +887,6 @@ namespace PepperDash.Essentials
             if (!message.Contains("/system/heartbeat"))
             {
                 Debug.Console(1, this, "Message RX: {0}", message);
-            }
-            else
-            {
-                _lastAckMessage = DateTime.Now;
             }
 
             try
@@ -996,7 +899,6 @@ namespace PepperDash.Essentials
                 {
                     case "hello":
                         SendInitialMessage();
-                        //ResetOrStartHearbeatTimer();
                         break;
                     case "/system/heartbeat":
                         HandleHeartBeat(messageObj["content"]);
@@ -1012,8 +914,7 @@ namespace PepperDash.Essentials
                         break;
                     case "close":
                         Debug.Console(1, this, "Received close message from server.");
-                        if (_serverHeartbeatCheckTimer != null)
-                            _serverHeartbeatCheckTimer.Stop();
+                        StopPingTimer();
                         break;
                     default:
                         if (_actionDictionary.ContainsKey(type))
@@ -1099,9 +1000,12 @@ namespace PepperDash.Essentials
 
                                 var respObj = (action as ClientSpecificUpdateRequest).ResponseMethod() as MobileControlResponseMessage;
 
-                                respObj.ClientId = clientId;
+                                if (respObj != null)
+                                {
+                                    respObj.ClientId = clientId;
 
-                                SendMessageObjectToServer(respObj);
+                                    SendMessageObjectToServer(respObj);
+                                }
                             }
                         }
                         else
@@ -1113,8 +1017,6 @@ namespace PepperDash.Essentials
             }
             catch (Exception err)
             {
-                //Debug.Console(1, "SseMessageLengthBeforeFailureCount: {0}", SseMessageLengthBeforeFailureCount);
-                //SseMessageLengthBeforeFailureCount = 0;
                 Debug.Console(1, this, "Unable to parse message: {0}", err);
             }
         }
@@ -1146,21 +1048,24 @@ namespace PepperDash.Essentials
                 try
                 {
                     var url = tokens[1];
-                    if (tokens[0].ToLower() == "get")
+                    switch (tokens[0].ToLower())
                     {
-                        var resp = new HttpClient().Get(url);
-                        CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                    }
-                    else if (tokens[0].ToLower() == "post")
-                    {
-                        var resp = new HttpClient().Post(url, new byte[] {});
-                        CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                    }
-
-                    else
-                    {
-                        CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
-                        PrintTestHttpRequestUsage();
+                        case "get":
+                        {
+                            var resp = new HttpClient().Get(url);
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
+                            break;
+                        case "post":
+                        {
+                            var resp = new HttpClient().Post(url, new byte[] {});
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
+                            break;
+                        default:
+                            CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
+                            PrintTestHttpRequestUsage();
+                            break;
                     }
                 }
                 catch (HttpException e)
