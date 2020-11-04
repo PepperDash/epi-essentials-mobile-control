@@ -372,6 +372,7 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         private void ReconnectToServerTimerCallback(object o)
         {
+            Debug.Console(1, this, "Attempting to reconnect to server...");
             RegisterSystemToServer();
         }
 
@@ -598,11 +599,10 @@ namespace PepperDash.Essentials
         /// </summary>
         private void ConnectWebsocketClient()
         {
-            CleanUpWebsocketClient();
-
             try
             {
                 _wsCriticalSection.Enter();
+                CleanUpWebsocketClient();
                 var wsHost = Host.Replace("http", "ws");
                 var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
