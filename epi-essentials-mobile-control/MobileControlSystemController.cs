@@ -34,6 +34,8 @@ namespace PepperDash.Essentials
 
         private LogLevel _wsLogLevel = LogLevel.Error;
 
+        private CCriticalSection _wsCriticalSection = new CCriticalSection();
+
         //bool LinkUp;
 
         /// <summary>
@@ -633,39 +635,46 @@ namespace PepperDash.Essentials
         private void ConnectWebsocketClient()
         {
             CleanUpWebsocketClient();
-            var wsHost = Host.Replace("http", "ws");
-            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-
-            CleanUpWebsocketClient();
-            
-            _wsClient2 = new WebSocket(url)
-            {
-                Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
-            };
-
-            _wsClient2.Log.Level = _wsLogLevel;
-
-            //This version of the websocket client is TLS1.2 ONLY
-            //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
-            _transmitQueue.WsClient = _wsClient2;
-
-            //Fires OnMessage event when PING is received.
-            _wsClient2.EmitOnPing = true;
-
-            _wsClient2.OnMessage += HandleMessage;
-            _wsClient2.OnOpen += HandleOpen;
-            _wsClient2.OnError += HandleError;
-            _wsClient2.OnClose += HandleClose;
-            Debug.Console(1, this, "Initializing mobile control client to {0}", url);
 
             try
             {
-                _wsClient2.Connect();
+                _wsCriticalSection.Enter();
+                var wsHost = Host.Replace("http", "ws");
+                var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+
+                _wsClient2 = new WebSocket(url)
+                {
+                    Log = {Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld)}
+                };
+
+                _wsClient2.Log.Level = _wsLogLevel;
+
+                //This version of the websocket client is TLS1.2 ONLY
+                //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
+                _transmitQueue.WsClient = _wsClient2;
+
+                //Fires OnMessage event when PING is received.
+                _wsClient2.EmitOnPing = true;
+
+                _wsClient2.OnMessage += HandleMessage;
+                _wsClient2.OnOpen += HandleOpen;
+                _wsClient2.OnError += HandleError;
+                _wsClient2.OnClose += HandleClose;
+                Debug.Console(1, this, "Initializing mobile control client to {0}", url);
+
+                try
+                {
+                    _wsClient2.Connect();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                        ex.Message, ex.StackTrace);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
-                    ex.Message, ex.StackTrace);
+                _wsCriticalSection.Leave();
             }
 
         }
@@ -789,27 +798,26 @@ namespace PepperDash.Essentials
         /// </summary>
         private void CleanUpWebsocketClient()
         {
-            if (_wsClient2 == null) return;
+            try
+            {
+                _wsCriticalSection.Enter();
 
-            Debug.Console(1, this, "Disconnecting websocket");
+                if (_wsClient2 == null) return;
 
-            _wsClient2.OnMessage -= HandleMessage;
-            _wsClient2.OnOpen -= HandleOpen;
-            _wsClient2.OnError -= HandleError;
-            _wsClient2.OnClose -= HandleClose;
+                Debug.Console(1, this, "Disconnecting websocket");
 
-            _wsClient2.Close();
-            _wsClient2 = null;
+                _wsClient2.OnMessage -= HandleMessage;
+                _wsClient2.OnOpen -= HandleOpen;
+                _wsClient2.OnError -= HandleError;
+                _wsClient2.OnClose -= HandleClose;
 
-            //try
-            //{
-            //    ReceiveThread.Abort();
-            //    TransmitThread.Abort();
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.Console(2, this, "Error aborting threads: {0}", e);
-            //}
+                _wsClient2.Close();
+                _wsClient2 = null;
+            }
+            finally
+            {
+                _wsCriticalSection.Leave();
+            }
         }
 
         private void ResetPingTimer()
