@@ -735,20 +735,32 @@ namespace PepperDash.Essentials
         private void SendInitialMessage()
         {
             Debug.Console(1, this, "Sending initial join message");
-            var confObject = ConfigReader.ConfigObject;
+            
+            // Populate the application name and version number
+            var confObject = ConfigReader.ConfigObject as MobileControlEssentialsConfig;
             confObject.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            confObject.Info.RuntimeInfo.AssemblyVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor,
-                version.Build);
+
+            var essentialsVersion = Global.AssemblyVersion;
+            confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
+
+            // Populate the plugin version 
+            var pluginVersion = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+
+            AssemblyInformationalVersionAttribute fullVersionAtt = pluginVersion[0] as AssemblyInformationalVersionAttribute;
+
+            var pluginInformationalVersion = fullVersionAtt.InformationalVersion;
+
+            confObject.PluginVersion = pluginInformationalVersion;
 
             var msg = new
             {
                 type = "join",
                 content = new
                 {
-                    config = confObject
+                    config = confObject,
                 }
             };
+
             SendMessageObjectToServer(msg);
         }
 
