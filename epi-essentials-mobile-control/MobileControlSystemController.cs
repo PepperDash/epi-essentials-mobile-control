@@ -737,7 +737,8 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Sending initial join message");
             
             // Populate the application name and version number
-            var confObject = ConfigReader.ConfigObject as MobileControlEssentialsConfig;
+            MobileControlEssentialsConfig confObject = new MobileControlEssentialsConfig(ConfigReader.ConfigObject);
+            
             confObject.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
 
             var essentialsVersion = Global.AssemblyVersion;

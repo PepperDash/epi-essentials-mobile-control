@@ -263,6 +263,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 appServerController.AddAction(MessagePath + "/cameraRemoteView",
                     new Action(layoutsCodec.LocalLayoutToggle));
+
+                appServerController.AddAction(MessagePath + "/cameraLayout",
+                    new Action(layoutsCodec.LocalLayoutToggle));
+
             }
 
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
