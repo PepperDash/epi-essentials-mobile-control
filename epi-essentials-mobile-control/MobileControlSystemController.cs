@@ -2,39 +2,53 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
-using Crestron.SimplSharpPro.CrestronThread;
-using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
+using Crestron.SimplSharp.Reflection;
+using Crestron.SimplSharpPro.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto.Prng;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using PepperDash.Essentials.Devices.Common.VideoCodec.Cisco;
-using WebSocketSharp;
 using PepperDash.Core;
+using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Room.MobileControl;
-using PepperDash.Essentials.AppServer.Messengers;
-
-using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
+using WebSocketSharp;
 
 namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
         //WebSocketClient WSClient;
-        private WebSocket _wsClient2;
 
+        private const long ServerHeartbeatInterval = 20000;
+        private const long ServerReconnectInterval = 5000;
+        private const long PingInterval = 11000;
+        private const long ButtonHeartbeatInterval = 1000;
+
+        private readonly Dictionary<string, Object> _actionDictionary =
+            new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
+
+        private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
         private readonly ReceiveQueue _receiveQueue;
+        private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
+        private readonly WebSocket _wsClient2;
 
-        private LogLevel _wsLogLevel = LogLevel.Error;
+        private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
+        public string SystemUuid;
 
-        //bool LinkUp;
+        /// <summary>
+        /// Used for tracking HTTP debugging
+        /// </summary>
+        private bool _httpDebugEnabled;
+
+        private DateTime _lastAckMessage;
+
+        private CTimer _pingTimer;
 
         /// <summary>
         /// Prevents post operations from stomping on each other and getting lost
@@ -43,41 +57,8 @@ namespace PepperDash.Essentials
 
         private CEvent _registerLockEvent = new CEvent(true, true);
 
-        public MobileControlConfig Config { get; private set; }
-
-        public string Host { get; private set; }
-
-        private readonly Dictionary<string, Object> _actionDictionary =
-            new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
-
-        private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
-
-        public ConfigMessenger ConfigMessenger { get; private set; }
-
-        private CTimer _serverHeartbeatCheckTimer;
-
-        private const long ServerHeartbeatInterval = 20000;
-
         private CTimer _serverReconnectTimer;
-
-        private const long ServerReconnectInterval = 5000;
-
-        private DateTime _lastAckMessage;
-
-        private CTimer _pingTimer;
-
-        private const long PingInterval = 11000;
-
-        public string SystemUuid;
-
-        private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
-
-        private const long ButtonHeartbeatInterval = 1000;
-
-        /// <summary>
-        /// Used for tracking HTTP debugging
-        /// </summary>
-        private bool _httpDebugEnabled;
+        private LogLevel _wsLogLevel = LogLevel.Error;
 
         /// <summary>
         /// 
@@ -135,17 +116,62 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
                 "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
-            CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
-                ConsoleAccessLevelEnum.AccessProgrammer);
+            /*CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
+                ConsoleAccessLevelEnum.AccessProgrammer);*/
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-            //CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 
             // Config Messenger
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
+
+            var wsHost = Host.Replace("http", "ws");
+            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+
+            _wsClient2 = new WebSocket(url);
+
+            _wsClient2.OnMessage += HandleMessage;
+            _wsClient2.OnOpen += HandleOpen;
+            _wsClient2.OnError += HandleError;
+            _wsClient2.OnClose += HandleClose;
         }
+
+        public MobileControlConfig Config { get; private set; }
+
+        public string Host { get; private set; }
+        public ConfigMessenger ConfigMessenger { get; private set; }
+
+        #region IMobileControl Members
+
+        public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
+        {
+            var bridge = new MobileControlEssentialsRoomBridge(room);
+            AddBridgePostActivationAction(bridge);
+            DeviceManager.AddDevice(bridge);
+        }
+
+        public void LinkSystemMonitorToAppServer()
+        {
+            var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
+
+            var appServer = DeviceManager.GetDeviceForKey("appServer") as MobileControlSystemController;
+
+
+            if (sysMon == null || appServer == null)
+            {
+                return;
+            }
+
+            var key = sysMon.Key + "-" + appServer.Key;
+            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
+
+            messenger.RegisterWithAppServer(appServer);
+
+            DeviceManager.AddDevice(messenger);
+        }
+
+        #endregion
 
         private void SetWebsocketDebugLevel(string cmdparameters)
         {
@@ -178,76 +204,7 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",
                     LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
-            }            
-        }
-
-        /*/// <summary>
-        /// Runs in it's own thread to dequeue messages in the order they were received to be processed
-        /// </summary>
-        /// <returns></returns>
-        object ProcessRecieveQueue()
-        {
-            try
-            {
-                while (true)
-                {
-                    var message = _receiveQueue.Dequeue();
-
-                    ParseStreamRx(message);
-                }
             }
-            catch (Exception e)
-            {
-                Debug.Console(1, this, "Error Processing Queue: {0}", e);
-            }
-
-            return null;
-        }
-
-        /// Runs in it's own thread to dequeue messages in the order they were received to be processed
-        /// </summary>
-        /// <returns></returns>
-        object ProcessTransmitQueue()
-        {
-            try
-            {
-                while (true)
-                {
-                    var message = _transmitQueue.Dequeue();
-
-                    SendMessageToServer(JObject.FromObject(message));
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Console(1, this, "Error Processing Queue: {0}", e);
-            }
-
-            return null;
-        }*/
-
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
-        {
-            var bridge = new MobileControlEssentialsRoomBridge(room);
-            AddBridgePostActivationAction(bridge);
-            DeviceManager.AddDevice(bridge);
-        }
-
-        public void LinkSystemMonitorToAppServer()
-        {
-            var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
-
-            var appServer = DeviceManager.GetDeviceForKey("appServer") as MobileControlSystemController;
-
-
-            if (sysMon == null || appServer == null) return;
-
-            var key = sysMon.Key + "-" + appServer.Key;
-            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
-
-            messenger.RegisterWithAppServer(appServer);
-
-            DeviceManager.AddDevice(messenger);
         }
 
         private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
@@ -277,31 +234,16 @@ namespace PepperDash.Essentials
         /// <returns></returns>
         public override bool CustomActivate()
         {
-            if (ConfigReader.ConfigObject.Rooms == null || ConfigReader.ConfigObject.Rooms.Count == 0)
+            if (ConfigReader.ConfigObject.Rooms != null && ConfigReader.ConfigObject.Rooms.Count != 0)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Config contains no rooms.  Registering with Server.");
-                RegisterSystemToServer();
+                return base.CustomActivate();
             }
+
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Config contains no rooms.  Registering with Server.");
+            RegisterSystemToServer();
 
             return base.CustomActivate();
         }
-
-
-//        /// <summary>
-//        /// 
-//        /// </summary>
-//        /// <param name="ethernetEventArgs"></param>
-//        void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs args)
-//        {
-//            Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Ethernet status change, port {0}: {1}",
-//                args.EthernetAdapter, args.EthernetEventType);
-
-//#warning See if this is even necessary for this new client
-//            //if (args.EthernetEventType == eEthernetEventType.LinkDown && WSClient != null && args.EthernetAdapter == WSClient.EthernetAdapter)
-//            //{
-//            //    CleanUpWebsocketClient();
-//            //}
-//        }
 
         /// <summary>
         /// Sends message to server to indicate the system is shutting down
@@ -314,7 +256,6 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            _serverHeartbeatCheckTimer.Stop();
             StopServerReconnectTimer();
             CleanUpWebsocketClient();
         }
@@ -354,7 +295,9 @@ namespace PepperDash.Essentials
         public void RemoveAction(string key)
         {
             if (_actionDictionary.ContainsKey(key))
+            {
                 _actionDictionary.Remove(key);
+            }
         }
 
         /// <summary>
@@ -373,7 +316,7 @@ namespace PepperDash.Essentials
             else
             {
                 Debug.Console(0, this, "Adding room bridge and sending configuration");
-                //SystemUuid = ConfigReader.ConfigObject.SystemUuid;
+
                 RegisterSystemToServer();
             }
         }
@@ -386,7 +329,7 @@ namespace PepperDash.Essentials
         private void bridge_ConfigurationIsReady(object sender, EventArgs e)
         {
             Debug.Console(1, this, "Bridge ready.  Registering");
-            //SystemUuid = ConfigReader.ConfigObject.SystemUuid;
+
             // send the configuration object to the server
             RegisterSystemToServer();
         }
@@ -397,6 +340,7 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         private void ReconnectToServerTimerCallback(object o)
         {
+            Debug.Console(1, this, "Attempting to reconnect to server...");
             RegisterSystemToServer();
         }
 
@@ -431,40 +375,40 @@ namespace PepperDash.Essentials
                 Debug.Console(0, this, "Authorizing to: {0}", url);
 
                 if (Host.StartsWith("https:"))
+                {
                     DispatchHttpsAuthorizationRequest(url);
+                }
                 else
                 {
                     var req = new HttpClientRequest();
                     req.Url.Parse(url);
 
-                    var c = new HttpClient { AllowAutoRedirect = false };
+                    var c = new HttpClient {AllowAutoRedirect = false};
                     c.DispatchAsync(req, (r, e) =>
                     {
                         CheckHttpDebug(r, e);
                         if (e == HTTP_CALLBACK_ERROR.COMPLETED)
                         {
-                            if (r.Code == 200)
+                            switch (r.Code)
                             {
-                                Debug.Console(0, "System authorized, sending config.");
-                                RegisterSystemToServer();
-                            }
-                            else if (r.Code == 404)
-                            {
-                                if (r.ContentString.Contains("codeNotFound"))
-                                {
-                                    Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
-                                        SystemUuid);
-                                }
-                                else if (r.ContentString.Contains("uuidNotFound"))
-                                {
-                                    Debug.Console(0,
-                                        "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
-                                        SystemUuid);
-                                }
-                            }
-                            else
-                            {
-                                if (r.Code == 301)
+                                case 200:
+                                    Debug.Console(0, "System authorized, sending config.");
+                                    RegisterSystemToServer();
+                                    break;
+                                case 404:
+                                    if (r.ContentString.Contains("codeNotFound"))
+                                    {
+                                        Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
+                                            SystemUuid);
+                                    }
+                                    else if (r.ContentString.Contains("uuidNotFound"))
+                                    {
+                                        Debug.Console(0,
+                                            "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
+                                            SystemUuid);
+                                    }
+                                    break;
+                                case 301:
                                 {
                                     var newUrl = r.Header.GetHeaderValue("Location");
                                     var newHostValue = newUrl.Substring(0,
@@ -473,10 +417,10 @@ namespace PepperDash.Essentials
                                         "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
                                         newHostValue);
                                 }
-                                else
-                                {
+                                    break;
+                                default:
                                     Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
-                                }
+                                    break;
                             }
                         }
                         else
@@ -508,10 +452,7 @@ namespace PepperDash.Essentials
             var req = new HttpsClientRequest();
             req.Url.Parse(url);
 
-            var c = new HttpsClient();
-            c.HostVerification = false;
-            c.PeerVerification = false;
-            c.Verbose = true;
+            var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
 
             c.DispatchAsync(req, (r, e) =>
             {
@@ -548,7 +489,9 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
                 if (String.IsNullOrEmpty(r.ContentString))
+                {
                     Debug.Console(0, "content: {0}", r.ContentString);
+                }
 
                 if (r.ContentString.Contains("codeNotFound"))
                 {
@@ -566,7 +509,9 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
                 if (String.IsNullOrEmpty(r.ContentString))
+                {
                     Debug.Console(0, "content {0}", r.ContentString);
+                }
 
                 var newUrl = r.Header.GetHeaderValue("Location");
                 var newHostValue = newUrl.Substring(0,
@@ -579,7 +524,9 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
                 if (String.IsNullOrEmpty(r.ContentString))
+                {
                     Debug.Console(0, "Content {0}", r.ContentString);
+                }
             }
         }
 
@@ -601,7 +548,6 @@ namespace PepperDash.Essentials
                 name = "No config";
                 code = "Not available";
             }
-            //var conn = WSClient == null ? "No client" : (WSClient.Connected ? "Yes" : "No");
             var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
@@ -632,42 +578,38 @@ namespace PepperDash.Essentials
         /// </summary>
         private void ConnectWebsocketClient()
         {
-            CleanUpWebsocketClient();
-            var wsHost = Host.Replace("http", "ws");
-            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-
-            CleanUpWebsocketClient();
-            
-            _wsClient2 = new WebSocket(url)
-            {
-                Log = { Output = (ld, s) => Debug.Console(1, this, "Message from websocket: {0}", ld) }
-            };
-
-            _wsClient2.Log.Level = _wsLogLevel;
-
-            //This version of the websocket client is TLS1.2 ONLY
-            //_wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls11;
-            _transmitQueue.WsClient = _wsClient2;
-
-            //Fires OnMessage event when PING is received.
-            _wsClient2.EmitOnPing = true;
-
-            _wsClient2.OnMessage += HandleMessage;
-            _wsClient2.OnOpen += HandleOpen;
-            _wsClient2.OnError += HandleError;
-            _wsClient2.OnClose += HandleClose;
-            Debug.Console(1, this, "Initializing mobile control client to {0}", url);
-
             try
             {
-                _wsClient2.Connect();
-            }
-            catch (Exception ex)
-            {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
-                    ex.Message, ex.StackTrace);
-            }
+                _wsCriticalSection.Enter();
 
+
+                //set to 99999 to let things work on 4-Series
+                
+                _wsClient2.Log.Level = (LogLevel) 99999;
+
+                //This version of the websocket client is TLS1.2 ONLY
+
+                _transmitQueue.WsClient = _wsClient2;
+
+                //Fires OnMessage event when PING is received.
+                _wsClient2.EmitOnPing = true;
+
+                Debug.Console(1, this, "Initializing mobile control client to {0}", _wsClient2.Url);
+
+                try
+                {
+                    _wsClient2.Connect();
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                        ex.Message, ex.StackTrace);
+                }
+            }
+            finally
+            {
+                _wsCriticalSection.Leave();
+            }
         }
 
         /// <summary>
@@ -695,9 +637,11 @@ namespace PepperDash.Essentials
         {
             if (e.IsPing)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {1}", DateTime.Now);
+                _lastAckMessage = DateTime.Now;
                 ResetPingTimer();
+                return;
             }
+
             if (e.IsText && e.Data.Length > 0)
             {
                 _receiveQueue.EnqueueResponse(e.Data);
@@ -723,8 +667,9 @@ namespace PepperDash.Essentials
         private void HandleClose(object sender, CloseEventArgs e)
         {
             Debug.Console(1, this, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
-            if (_serverHeartbeatCheckTimer != null)
-                _serverHeartbeatCheckTimer.Stop();
+
+            StopPingTimer();
+
             // Start the reconnect timer
             StartServerReconnectTimer();
         }
@@ -786,7 +731,7 @@ namespace PepperDash.Essentials
 
                 if (!message.Contains("/system/heartbeat"))
                 {
-                    Debug.Console(1, this, "Message TX: {0}", message);
+                    Debug.Console(2, this, "Message TX: {0}", message);
                 }
                 _wsClient2.Send(message);
             }
@@ -801,27 +746,14 @@ namespace PepperDash.Essentials
         /// </summary>
         private void CleanUpWebsocketClient()
         {
-            if (_wsClient2 == null) return;
+            if (_wsClient2 == null)
+            {
+                return;
+            }
 
             Debug.Console(1, this, "Disconnecting websocket");
 
-            _wsClient2.OnMessage -= HandleMessage;
-            _wsClient2.OnOpen -= HandleOpen;
-            _wsClient2.OnError -= HandleError;
-            _wsClient2.OnClose -= HandleClose;
-
             _wsClient2.Close();
-            _wsClient2 = null;
-
-            //try
-            //{
-            //    ReceiveThread.Abort();
-            //    TransmitThread.Abort();
-            //}
-            //catch (Exception e)
-            //{
-            //    Debug.Console(2, this, "Error aborting threads: {0}", e);
-            //}
         }
 
         private void ResetPingTimer()
@@ -837,7 +769,10 @@ namespace PepperDash.Essentials
 
         private void StopPingTimer()
         {
-            if (_pingTimer == null) return;
+            if (_pingTimer == null)
+            {
+                return;
+            }
 
             _pingTimer.Stop();
             _pingTimer.Dispose();
@@ -847,9 +782,8 @@ namespace PepperDash.Essentials
         private void PingTimerCallback(object o)
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
-            _wsClient2.Close(CloseStatusCode.ServerError, "ping not recieved");
 
-            StartServerReconnectTimer();
+            _wsClient2.Close();
         }
 
         /// <summary>
@@ -867,54 +801,13 @@ namespace PepperDash.Essentials
         /// </summary>
         private void StopServerReconnectTimer()
         {
-            if (_serverReconnectTimer != null)
+            if (_serverReconnectTimer == null)
             {
-                _serverReconnectTimer.Stop();
-                _serverReconnectTimer = null;
+                return;
             }
+            _serverReconnectTimer.Stop();
+            _serverReconnectTimer = null;
         }
-
-        /// <summary>
-        /// Executes when we don't get a heartbeat message in time.  Triggers reconnect.
-        /// </summary>
-        /// <param name="o">For CTimer callback. Not used</param>
-        private void HeartbeatExpiredTimerCallback(object o)
-        {
-            Debug.Console(1, this, "Heartbeat Timer Expired.");
-            if (_serverHeartbeatCheckTimer != null)
-            {
-                _serverHeartbeatCheckTimer.Stop();
-                _serverHeartbeatCheckTimer = null;
-            }
-            CleanUpWebsocketClient();
-            StartServerReconnectTimer();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private void ResetOrStartHearbeatTimer()
-        {
-            if (_serverHeartbeatCheckTimer == null)
-            {
-                _serverHeartbeatCheckTimer = new CTimer(HeartbeatExpiredTimerCallback, null, ServerHeartbeatInterval,
-                    ServerHeartbeatInterval);
-                Debug.Console(1, this, "Heartbeat Timer Started.");
-            }
-            else
-            {
-                _serverHeartbeatCheckTimer.Reset(ServerHeartbeatInterval, ServerHeartbeatInterval);
-            }
-        }
-
-        /// <summary>
-        /// Waits two and goes again
-        /// </summary>
-        private void ReconnectStreamClient()
-        {
-            var timer = new CTimer(o => ConnectWebsocketClient(), 2000);
-        }
-
 
         /// <summary>
         /// Resets reconnect timer and updates usercode
@@ -928,21 +821,25 @@ namespace PepperDash.Essentials
             });
 
             var code = content["userCode"];
-            if (code != null)
+            if (code == null)
             {
-                foreach (var b in _roomBridges)
-                {
-                    b.SetUserCode(code.Value<string>());
-                }
+                return;
             }
-            //ResetOrStartHearbeatTimer();
+
+            foreach (var b in _roomBridges)
+            {
+                b.SetUserCode(code.Value<string>());
+            }
         }
 
         private void HandleUserCode(JToken content)
         {
             var code = content["userCode"];
 
-            if (code == null) return;
+            if (code == null)
+            {
+                return;
+            }
 
             foreach (var bridge in _roomBridges)
             {
@@ -957,7 +854,10 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void CheckHttpDebug(HttpClientResponse r, HTTP_CALLBACK_ERROR e)
         {
-            if (!_httpDebugEnabled) return;
+            if (!_httpDebugEnabled)
+            {
+                return;
+            }
 
             try
             {
@@ -987,15 +887,13 @@ namespace PepperDash.Essentials
         private void ParseStreamRx(string message)
         {
             if (string.IsNullOrEmpty(message))
+            {
                 return;
+            }
 
             if (!message.Contains("/system/heartbeat"))
             {
-                Debug.Console(1, this, "Message RX: {0}", message);
-            }
-            else
-            {
-                _lastAckMessage = DateTime.Now;
+                Debug.Console(2, this, "Message RX: {0}", message);
             }
 
             try
@@ -1008,7 +906,6 @@ namespace PepperDash.Essentials
                 {
                     case "hello":
                         SendInitialMessage();
-                        //ResetOrStartHearbeatTimer();
                         break;
                     case "/system/heartbeat":
                         HandleHeartBeat(messageObj["content"]);
@@ -1024,8 +921,6 @@ namespace PepperDash.Essentials
                         break;
                     case "close":
                         Debug.Console(1, this, "Received close message from server.");
-                        if (_serverHeartbeatCheckTimer != null)
-                            _serverHeartbeatCheckTimer.Stop();
                         break;
                     default:
                         if (_actionDictionary.ContainsKey(type))
@@ -1053,7 +948,9 @@ namespace PepperDash.Essentials
                                                 {
                                                     var pressAndHoldAction = action as PressAndHoldAction;
                                                     if (pressAndHoldAction != null)
+                                                    {
                                                         pressAndHoldAction(false);
+                                                    }
                                                     _pushedActions.Remove(type);
                                                 }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
                                             }
@@ -1109,11 +1006,16 @@ namespace PepperDash.Essentials
                             {
                                 var clientId = Int32.Parse(messageObj["clientId"].ToString());
 
-                                var respObj = (action as ClientSpecificUpdateRequest).ResponseMethod() as MobileControlResponseMessage;
+                                var respObj =
+                                    (action as ClientSpecificUpdateRequest).ResponseMethod() as
+                                        MobileControlResponseMessage;
 
-                                respObj.ClientId = clientId;
+                                if (respObj != null)
+                                {
+                                    respObj.ClientId = clientId;
 
-                                SendMessageObjectToServer(respObj);
+                                    SendMessageObjectToServer(respObj);
+                                }
                             }
                         }
                         else
@@ -1125,13 +1027,9 @@ namespace PepperDash.Essentials
             }
             catch (Exception err)
             {
-                //Debug.Console(1, "SseMessageLengthBeforeFailureCount: {0}", SseMessageLengthBeforeFailureCount);
-                //SseMessageLengthBeforeFailureCount = 0;
                 Debug.Console(1, this, "Unable to parse message: {0}", err);
             }
         }
-
-
 
 
         /// <summary>
@@ -1158,21 +1056,24 @@ namespace PepperDash.Essentials
                 try
                 {
                     var url = tokens[1];
-                    if (tokens[0].ToLower() == "get")
+                    switch (tokens[0].ToLower())
                     {
-                        var resp = new HttpClient().Get(url);
-                        CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                    }
-                    else if (tokens[0].ToLower() == "post")
-                    {
-                        var resp = new HttpClient().Post(url, new byte[] {});
-                        CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                    }
-
-                    else
-                    {
-                        CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
-                        PrintTestHttpRequestUsage();
+                        case "get":
+                        {
+                            var resp = new HttpClient().Get(url);
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
+                            break;
+                        case "post":
+                        {
+                            var resp = new HttpClient().Post(url, new byte[] {});
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
+                            break;
+                        default:
+                            CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
+                            PrintTestHttpRequestUsage();
+                            break;
                     }
                 }
                 catch (HttpException e)
@@ -1189,25 +1090,26 @@ namespace PepperDash.Essentials
         {
             CrestronConsole.ConsoleCommandResponse("Usage: mobilehttprequest:N get/post url\r");
         }
-       
     }
 
     public class ClientSpecificUpdateRequest
     {
-        public Func<object> ResponseMethod { get; private set; }
-
         public ClientSpecificUpdateRequest(Func<object> func)
         {
             ResponseMethod = func;
         }
+
+        public Func<object> ResponseMethod { get; private set; }
     }
 
     public class MobileControlResponseMessage
     {
         [JsonProperty("type")]
         public string Type { get; set; }
+
         [JsonProperty("clientId")]
         public int ClientId { get; set; }
+
         [JsonProperty("content")]
         public object Content { get; set; }
     }

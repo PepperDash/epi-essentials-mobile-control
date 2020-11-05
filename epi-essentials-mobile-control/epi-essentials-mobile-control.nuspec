@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>PepperDash.Essentials.Plugin.MobileControl</id>
+    <version>2.0.2</version>
+    <title>Mobile Control Essentials Plugin</title>
+    <authors>PepperDash Technologies</authors>
+    <owners>pepperdash</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/PepperDash/epi-dsp-tesira</projectUrl>
+    <copyright>Copyright 2020</copyright>
+    <description>This software is a plugin designed to work as a part of PepperDash Essentials for Crestron control processors. This plugin allows for connection to a PepperDash Mobile Control server.</description>
+    <tags>crestron 3series 4series biamp tesira</tags>
+    <repository type="git" url="https://github.com/PepperDash-Engineering/epi-essentials-mobile-control"/>
+  </metadata>
+    <files>
+      <file src="**" target="lib\net35"/>
+      <file src="**" target="lib\net47"/>
+    </files>
+</package>
