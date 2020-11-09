@@ -107,7 +107,7 @@ namespace PepperDash.Essentials
 
                 if (!message.Contains("/system/heartbeat"))
                 {
-                    Debug.Console(1, this, "Message TX: {0}", message);
+                    Debug.Console(2, this, "Message TX: {0}", message);
                 }
                 _wsClient.Send(message);
             }
