@@ -18,6 +18,7 @@ namespace PepperDash.Essentials
         public MobileControlRuntimeInfo RuntimeInfo { get; set; }
 
         public MobileControlEssentialsConfig(EssentialsConfig config)
+            :base()
         {
             // TODO: Consider using Reflection to iterate properties
             this.Devices = config.Devices;

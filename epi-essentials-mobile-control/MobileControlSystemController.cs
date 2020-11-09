@@ -695,7 +695,7 @@ namespace PepperDash.Essentials
         {
             if (e.IsPing)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {1}", DateTime.Now);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping Received @ {0}", DateTime.Now);
                 ResetPingTimer();
             }
             if (e.IsText && e.Data.Length > 0)
