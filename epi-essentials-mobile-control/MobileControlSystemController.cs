@@ -5,7 +5,6 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
-using Crestron.SimplSharpPro.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
@@ -66,7 +65,8 @@ namespace PepperDash.Essentials
         /// <param name="key"></param>
         /// <param name="name"></param>
         /// <param name="config"></param>
-        public MobileControlSystemController(string key, string name, MobileControlConfig config) : base(key, name)
+        public MobileControlSystemController(string key, string name, MobileControlConfig config)
+            : base(key, name)
         {
             Config = config;
 
@@ -584,7 +584,7 @@ namespace PepperDash.Essentials
 
 
                 //set to 99999 to let things work on 4-Series
-                
+
                 _wsClient2.Log.Level = (LogLevel) 99999;
 
                 //This version of the websocket client is TLS1.2 ONLY
@@ -680,20 +680,38 @@ namespace PepperDash.Essentials
         private void SendInitialMessage()
         {
             Debug.Console(1, this, "Sending initial join message");
-            var confObject = ConfigReader.ConfigObject;
+
+            // Populate the application name and version number
+            var confObject = new MobileControlEssentialsConfig(ConfigReader.ConfigObject);
+
             confObject.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            confObject.Info.RuntimeInfo.AssemblyVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor,
-                version.Build);
+
+            var essentialsVersion = Global.AssemblyVersion;
+            confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
+
+            // Populate the plugin version 
+            var pluginVersion =
+                Assembly.GetExecutingAssembly()
+                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+
+            var fullVersionAtt = pluginVersion[0] as AssemblyInformationalVersionAttribute;
+
+            if (fullVersionAtt != null)
+            {
+                var pluginInformationalVersion = fullVersionAtt.InformationalVersion;
+
+                confObject.RuntimeInfo.PluginVersion = pluginInformationalVersion;
+            }
 
             var msg = new
             {
                 type = "join",
                 content = new
                 {
-                    config = confObject
+                    config = confObject,
                 }
             };
+
             SendMessageObjectToServer(msg);
         }
 
