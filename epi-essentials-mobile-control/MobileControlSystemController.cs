@@ -189,7 +189,7 @@ namespace PepperDash.Essentials
 
             try
             {
-                var debugLevel = (LogLevel)Enum.Parse(typeof(LogLevel), cmdparameters, true);
+                var debugLevel = (LogLevel) Enum.Parse(typeof (LogLevel), cmdparameters, true);
 
                 _wsLogLevel = debugLevel;
 
@@ -383,7 +383,7 @@ namespace PepperDash.Essentials
                     var req = new HttpClientRequest();
                     req.Url.Parse(url);
 
-                    var c = new HttpClient { AllowAutoRedirect = false };
+                    var c = new HttpClient {AllowAutoRedirect = false};
                     c.DispatchAsync(req, (r, e) =>
                     {
                         CheckHttpDebug(r, e);
@@ -409,14 +409,14 @@ namespace PepperDash.Essentials
                                     }
                                     break;
                                 case 301:
-                                    {
-                                        var newUrl = r.Header.GetHeaderValue("Location");
-                                        var newHostValue = newUrl.Substring(0,
-                                            newUrl.IndexOf(path, StringComparison.Ordinal));
-                                        Debug.Console(0, this,
-                                            "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                                            newHostValue);
-                                    }
+                                {
+                                    var newUrl = r.Header.GetHeaderValue("Location");
+                                    var newHostValue = newUrl.Substring(0,
+                                        newUrl.IndexOf(path, StringComparison.Ordinal));
+                                    Debug.Console(0, this,
+                                        "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
+                                        newHostValue);
+                                }
                                     break;
                                 default:
                                     Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
@@ -452,7 +452,7 @@ namespace PepperDash.Essentials
             var req = new HttpsClientRequest();
             req.Url.Parse(url);
 
-            var c = new HttpsClient { HostVerification = false, PeerVerification = false, Verbose = true };
+            var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
 
             c.DispatchAsync(req, (r, e) =>
             {
@@ -585,7 +585,7 @@ namespace PepperDash.Essentials
 
                 //set to 99999 to let things work on 4-Series
 
-                _wsClient2.Log.Level = (LogLevel)99999;
+                _wsClient2.Log.Level = (LogLevel) 99999;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
@@ -690,7 +690,9 @@ namespace PepperDash.Essentials
             confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
 
             // Populate the plugin version 
-            var pluginVersion = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+            var pluginVersion =
+                Assembly.GetExecutingAssembly()
+                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
 
             var fullVersionAtt = pluginVersion[0] as AssemblyInformationalVersionAttribute;
 
@@ -731,7 +733,7 @@ namespace PepperDash.Essentials
             if (_wsClient2 != null && _wsClient2.IsAlive)
             {
                 string message = JsonConvert.SerializeObject(o, Formatting.None,
-                    new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                    new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
 
                 if (!message.Contains("/system/heartbeat"))
                 {
@@ -918,10 +920,10 @@ namespace PepperDash.Essentials
                         HandleUserCode(messageObj["content"]);
                         break;
                     case "raw":
-                        {
-                            var wrapper = messageObj["content"].ToObject<DeviceActionWrapper>();
-                            DeviceJsonApi.DoDeviceAction(wrapper);
-                        }
+                    {
+                        var wrapper = messageObj["content"].ToObject<DeviceActionWrapper>();
+                        DeviceJsonApi.DoDeviceAction(wrapper);
+                    }
                         break;
                     case "close":
                         Debug.Console(1, this, "Received close message from server.");
@@ -945,40 +947,40 @@ namespace PepperDash.Essentials
                                     switch (stateString)
                                     {
                                         case "true":
+                                        {
+                                            if (!_pushedActions.ContainsKey(type))
                                             {
-                                                if (!_pushedActions.ContainsKey(type))
+                                                _pushedActions.Add(type, new CTimer(o =>
                                                 {
-                                                    _pushedActions.Add(type, new CTimer(o =>
+                                                    var pressAndHoldAction = action as PressAndHoldAction;
+                                                    if (pressAndHoldAction != null)
                                                     {
-                                                        var pressAndHoldAction = action as PressAndHoldAction;
-                                                        if (pressAndHoldAction != null)
-                                                        {
-                                                            pressAndHoldAction(false);
-                                                        }
-                                                        _pushedActions.Remove(type);
-                                                    }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
-                                                }
-                                                // Maybe add an else to reset the timer
-                                                break;
-                                            }
-                                        case "held":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval,
-                                                        ButtonHeartbeatInterval);
-                                                }
-                                                return;
-                                            }
-                                        case "false":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Stop();
+                                                        pressAndHoldAction(false);
+                                                    }
                                                     _pushedActions.Remove(type);
-                                                }
-                                                break;
+                                                }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
                                             }
+                                            // Maybe add an else to reset the timer
+                                            break;
+                                        }
+                                        case "held":
+                                        {
+                                            if (_pushedActions.ContainsKey(type))
+                                            {
+                                                _pushedActions[type].Reset(ButtonHeartbeatInterval,
+                                                    ButtonHeartbeatInterval);
+                                            }
+                                            return;
+                                        }
+                                        case "false":
+                                        {
+                                            if (_pushedActions.ContainsKey(type))
+                                            {
+                                                _pushedActions[type].Stop();
+                                                _pushedActions.Remove(type);
+                                            }
+                                            break;
+                                        }
                                     }
 
                                     (action as PressAndHoldAction)(stateString == "true");
@@ -1063,16 +1065,16 @@ namespace PepperDash.Essentials
                     switch (tokens[0].ToLower())
                     {
                         case "get":
-                            {
-                                var resp = new HttpClient().Get(url);
-                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                            }
+                        {
+                            var resp = new HttpClient().Get(url);
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
                             break;
                         case "post":
-                            {
-                                var resp = new HttpClient().Post(url, new byte[] { });
-                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                            }
+                        {
+                            var resp = new HttpClient().Post(url, new byte[] {});
+                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                        }
                             break;
                         default:
                             CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
