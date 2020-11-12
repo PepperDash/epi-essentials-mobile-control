@@ -12,7 +12,7 @@ namespace PepperDash.Essentials
         public MobileControlFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.5.7";
-            TypeNames = new List<string> {"appserver", "mobilecontrol"};
+            TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
