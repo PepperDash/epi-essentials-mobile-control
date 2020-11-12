@@ -20,7 +20,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             RoutingDevice = routingDevice;
 
-            var routingSink = RoutingDevice as IRoutingSinkNoSwitching;
+            var routingSink = RoutingDevice as IRoutingSink;
 
             if (routingSink != null)
             {
@@ -53,7 +53,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
                 }));
 
-            var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
+            var sinkDevice = RoutingDevice as IRoutingSink;
             if (sinkDevice != null)
             {
                 sinkDevice.CurrentSourceChange += (o, a) => SendRoutingFullMessageObject();
@@ -65,7 +65,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendRoutingFullMessageObject()
         {
-            var sinkDevice = RoutingDevice as IRoutingSinkNoSwitching;
+            var sinkDevice = RoutingDevice as IRoutingSink;
 
             if (sinkDevice != null)
             {

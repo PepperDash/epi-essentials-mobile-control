@@ -37,7 +37,7 @@ namespace PepperDash.Essentials
             var bridge = new MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
             bridge.AddPreActivationAction(() =>
             {
-                var parent = MobileControlSystemController.GetAppServer();
+                var parent = MobileControlSystemController.GetAppServer() as MobileControlSystemController;
 
                 if (parent == null)
                 {
