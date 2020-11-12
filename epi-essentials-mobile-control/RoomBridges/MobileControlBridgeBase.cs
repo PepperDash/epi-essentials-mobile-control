@@ -21,6 +21,8 @@ namespace PepperDash.Essentials
 
         public string QrCodeUrl { get; private set; }
 
+        public string QrCodeChecksum { get; private set; }
+
         public string McServerUrl { get; private set; }
 
         public abstract string RoomName { get; }
@@ -40,6 +42,8 @@ namespace PepperDash.Essentials
             Parent = parent;
 
             McServerUrl = Parent.Config.ClientAppUrl;
+
+
         }
 
         /// <summary>
@@ -67,6 +71,7 @@ namespace PepperDash.Essentials
 
             var qrUrl = string.Format("{0}/api/system/{1}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
             QrCodeUrl = qrUrl;
+
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
 
             OnUserCodeChanged();

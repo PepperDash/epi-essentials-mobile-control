@@ -151,12 +151,25 @@ namespace PepperDash.Essentials
             DeviceManager.AddDevice(bridge);
         }
 
+        public static IMobileControl GetAppServer()
+        {
+            try
+            {
+                var appServer = DeviceManager.GetDevices().SingleOrDefault(s => s is IMobileControl) as MobileControlSystemController;
+                return appServer;
+            }
+            catch (Exception e)
+            {
+                Debug.Console(0, "Unable to find MobileControlSystemController in Devices: {0}", e);
+                return null;
+            }
+        }
+
         public void LinkSystemMonitorToAppServer()
         {
             var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
 
-            var appServer = DeviceManager.GetDeviceForKey("appServer") as MobileControlSystemController;
-
+            var appServer = GetAppServer() as MobileControlSystemController;
 
             if (sysMon == null || appServer == null)
             {
@@ -212,7 +225,7 @@ namespace PepperDash.Essentials
             bridge.AddPostActivationAction(() =>
             {
                 var parent =
-                    DeviceManager.AllDevices.SingleOrDefault(dev => dev.Key == "appServer") as
+                    DeviceManager.AllDevices.SingleOrDefault(dev => dev.Key.ToLower() == "appserver") as
                         MobileControlSystemController;
 
                 if (parent == null)
