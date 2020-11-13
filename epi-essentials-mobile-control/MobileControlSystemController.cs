@@ -167,6 +167,13 @@ namespace PepperDash.Essentials
 
         public void LinkSystemMonitorToAppServer()
         {
+            if (CrestronEnvironment.DevicePlatform != eDevicePlatform.Appliance)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice,
+                    "System Monitor does not exist for this platform. Skipping...");
+                return;
+            }
+
             var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
 
             var appServer = GetAppServer() as MobileControlSystemController;
@@ -855,6 +862,10 @@ namespace PepperDash.Essentials
         {
             var code = content["userCode"];
 
+            var qrChecksum = content["qrChecksum"];
+
+            Debug.Console(1, this, "QR checksum: {0}", qrChecksum.Value<string>());
+
             if (code == null)
             {
                 return;
@@ -862,7 +873,7 @@ namespace PepperDash.Essentials
 
             foreach (var bridge in _roomBridges)
             {
-                bridge.SetUserCode(code.Value<string>());
+                bridge.SetUserCode(code.Value<string>(), code.Value<string>());
             }
         }
 

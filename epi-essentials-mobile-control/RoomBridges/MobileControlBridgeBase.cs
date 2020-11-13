@@ -61,6 +61,20 @@ namespace PepperDash.Essentials
             }
         }
 
+
+        /// <summary>
+        /// Sets the UserCode on the bridge object. Called from controller. A changed code will
+        /// fire method UserCodeChange.  Override that to handle changes
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="qrChecksum">Checksum of the QR code. Used for Cisco codec branding command</param>
+        public void SetUserCode(string code, string qrChecksum)
+        {
+            QrCodeChecksum = qrChecksum;
+
+            SetUserCode(code);
+        }
+
         /// <summary>
         /// Empty method in base class.  Override this to add functionality
         /// when code changes
