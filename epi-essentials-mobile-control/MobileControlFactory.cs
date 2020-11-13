@@ -12,7 +12,7 @@ namespace PepperDash.Essentials
         public MobileControlFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.5.7";
-            TypeNames = new List<string> {"appserver", "mobilecontrol"};
+            TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
@@ -37,8 +37,8 @@ namespace PepperDash.Essentials
             var bridge = new MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
             bridge.AddPreActivationAction(() =>
             {
-                var parent =
-                    DeviceManager.AllDevices.FirstOrDefault(d => d.Key == "appServer") as MobileControlSystemController;
+                var parent = MobileControlSystemController.GetAppServer() as MobileControlSystemController;
+
                 if (parent == null)
                 {
                     Debug.Console(0, bridge, "ERROR: Cannot connect bridge. System controller not present");

@@ -138,6 +138,15 @@ namespace PepperDash.Essentials
                 AcMessenger.RegisterWithAppServer(Parent);
             }
 
+            var privacyRoom = Room as IPrivacy;
+            if (privacyRoom != null)
+            {
+                Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(() =>
+                    privacyRoom.PrivacyModeToggle()));
+
+                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(PrivacyModeIsOnFeedback_OutputChange);
+            }
+
             SetupDeviceMessengers();
 
             var defCallRm = Room as IRunDefaultCallRoute;
@@ -161,6 +170,20 @@ namespace PepperDash.Essentials
             Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
             Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
             Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
+        }
+
+        void PrivacyModeIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            PostStatusMessage(new
+            {
+                volumes = new
+                {
+                    master = new
+                    {
+                        privacyMuted = e.BoolValue
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -482,6 +505,13 @@ namespace PepperDash.Essentials
                 if (vc != null)
                 {
                     volumes.Master = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
+
+                    var privacyRoom = room as IPrivacy;
+                    if (privacyRoom != null)
+                    {
+                        volumes.Master.HasPrivacyMute = true;
+                        volumes.Master.PrivacyMuted = privacyRoom.PrivacyModeIsOnFeedback.BoolValue;
+                    }
                 }
             }
 
