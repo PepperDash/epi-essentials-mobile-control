@@ -3,6 +3,7 @@ using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 
 namespace PepperDash.Essentials
@@ -11,7 +12,7 @@ namespace PepperDash.Essentials
     {
         public MobileControlFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.5.7";
+            MinimumEssentialsFrameworkVersion = "1.6.7";
             TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
         }
 
@@ -26,7 +27,7 @@ namespace PepperDash.Essentials
     {
         public MobileControlDdvcFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.6.1";
+            MinimumEssentialsFrameworkVersion = "1.6.7";
             TypeNames = new List<string> {"mobilecontrolbridge-ddvc01", "mobilecontrolbridge-simpl"};
         }
 
@@ -35,9 +36,10 @@ namespace PepperDash.Essentials
             var comm = CommFactory.GetControlPropertiesConfig(dc);
 
             var bridge = new MobileControlSIMPLRoomBridge(dc.Key, dc.Name, comm.IpIdInt);
+
             bridge.AddPreActivationAction(() =>
             {
-                var parent = MobileControlSystemController.GetAppServer() as MobileControlSystemController;
+                var parent = GetMobileControlDevice();
 
                 if (parent == null)
                 {
@@ -50,6 +52,26 @@ namespace PepperDash.Essentials
             });
 
             return bridge;
+        }
+
+        private static MobileControlSystemController GetMobileControlDevice()
+        {
+            var mobileControlList = DeviceManager.AllDevices.OfType<MobileControlSystemController>().ToList();
+
+            if (mobileControlList.Count > 1)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Warning,
+                    "Multiple instances of Mobile Control Server found.");
+                return null;
+            }
+
+            if (mobileControlList.Count > 0)
+            {
+                return mobileControlList[0];
+            }
+
+            Debug.Console(0, Debug.ErrorLogLevel.Notice, "Mobile Control not enabled for this system");
+            return null;
         }
     }
 }

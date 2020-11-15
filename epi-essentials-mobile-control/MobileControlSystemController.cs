@@ -144,7 +144,7 @@ namespace PepperDash.Essentials
 
         #region IMobileControl Members
 
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
+        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
         {
             var bridge = new MobileControlEssentialsRoomBridge(room);
             AddBridgePostActivationAction(bridge);
@@ -231,20 +231,9 @@ namespace PepperDash.Essentials
         {
             bridge.AddPostActivationAction(() =>
             {
-                var parent =
-                    DeviceManager.AllDevices.SingleOrDefault(dev => dev.Key.ToLower() == "appserver") as
-                        MobileControlSystemController;
-
-                if (parent == null)
-                {
-                    Debug.Console(0, bridge,
-                        "ERROR: Cannot connect app server room bridge. System controller not present");
-                    return;
-                }
-
                 Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(parent);
-                parent.AddBridge(bridge);
+                bridge.AddParent(this);
+                AddBridge(bridge);
             });
         }
 
