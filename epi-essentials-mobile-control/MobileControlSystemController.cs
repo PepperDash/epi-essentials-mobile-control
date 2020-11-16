@@ -35,7 +35,7 @@ namespace PepperDash.Essentials
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
-        private readonly WebSocket _wsClient2;
+        private WebSocket _wsClient2;
 
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
         public string SystemUuid;
@@ -603,11 +603,27 @@ namespace PepperDash.Essentials
                 //Fires OnMessage event when PING is received.
                 _wsClient2.EmitOnPing = true;
 
-                Debug.Console(1, this, "Initializing mobile control client to {0}", _wsClient2.Url);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connecting mobile control client to {0}", _wsClient2.Url);
 
                 try
                 {
                     _wsClient2.Connect();
+                }
+                catch (InvalidOperationException)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
+                     _wsClient2 = null;
+
+                     var wsHost = Host.Replace("http", "ws");
+                     var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+                    _wsClient2 = new WebSocket(url);
+
+                    _wsClient2.OnMessage += HandleMessage;
+                    _wsClient2.OnOpen += HandleOpen;
+                    _wsClient2.OnError += HandleError;
+                    _wsClient2.OnClose += HandleClose;
+                                       
+                    StartServerReconnectTimer();
                 }
                 catch (Exception ex)
                 {
@@ -808,7 +824,7 @@ namespace PepperDash.Essentials
         {
             StopServerReconnectTimer();
             _serverReconnectTimer = new CTimer(ReconnectToServerTimerCallback, ServerReconnectInterval);
-            Debug.Console(1, this, "Reconnect Timer Started.");
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Reconnect Timer Started.");
         }
 
         /// <summary>
