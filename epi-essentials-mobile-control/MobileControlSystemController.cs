@@ -35,6 +35,8 @@ namespace PepperDash.Essentials
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
+
+        private bool _disableReconnect;
         private WebSocket _wsClient2;
 
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
@@ -108,9 +110,17 @@ namespace PepperDash.Essentials
 
             CrestronConsole.AddNewConsoleCommand(PrintActionDictionaryPaths, "mobileshowactionpaths",
                 "Prints the paths in the Action Dictionary", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => ConnectWebsocketClient(), "mobileconnect",
+            CrestronConsole.AddNewConsoleCommand(s =>
+            {
+                _disableReconnect = false;
+                ConnectWebsocketClient();
+            }, "mobileconnect",
                 "Forces connect of websocket", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => CleanUpWebsocketClient(), "mobiledisco",
+            CrestronConsole.AddNewConsoleCommand(s =>
+            {
+                _disableReconnect = true;
+                CleanUpWebsocketClient();
+            }, "mobiledisco",
                 "Disconnects websocket", ConsoleAccessLevelEnum.AccessOperator);
 
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
@@ -646,7 +656,7 @@ namespace PepperDash.Essentials
         {
             StopServerReconnectTimer();
             StartPingTimer();
-            Debug.Console(1, this, "Mobile Control API connected");
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
             SendMessageObjectToServer(new
             {
                 type = "hello"
@@ -691,11 +701,13 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void HandleClose(object sender, CloseEventArgs e)
         {
-            Debug.Console(1, this, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
 
             StopPingTimer();
 
             // Start the reconnect timer
+            if (_disableReconnect) return;
+
             StartServerReconnectTimer();
         }
 
@@ -824,7 +836,7 @@ namespace PepperDash.Essentials
         {
             StopServerReconnectTimer();
             _serverReconnectTimer = new CTimer(ReconnectToServerTimerCallback, ServerReconnectInterval);
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Reconnect Timer Started.");
+            Debug.Console(1, this, "Reconnect Timer Started.");
         }
 
         /// <summary>
