@@ -35,7 +35,9 @@ namespace PepperDash.Essentials
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
-        private readonly WebSocket _wsClient2;
+
+        private bool _disableReconnect;
+        private WebSocket _wsClient2;
 
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
         public string SystemUuid;
@@ -108,9 +110,17 @@ namespace PepperDash.Essentials
 
             CrestronConsole.AddNewConsoleCommand(PrintActionDictionaryPaths, "mobileshowactionpaths",
                 "Prints the paths in the Action Dictionary", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => ConnectWebsocketClient(), "mobileconnect",
+            CrestronConsole.AddNewConsoleCommand(s =>
+            {
+                _disableReconnect = false;
+                ConnectWebsocketClient();
+            }, "mobileconnect",
                 "Forces connect of websocket", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(s => CleanUpWebsocketClient(), "mobiledisco",
+            CrestronConsole.AddNewConsoleCommand(s =>
+            {
+                _disableReconnect = true;
+                CleanUpWebsocketClient();
+            }, "mobiledisco",
                 "Disconnects websocket", ConsoleAccessLevelEnum.AccessOperator);
 
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
@@ -144,7 +154,7 @@ namespace PepperDash.Essentials
 
         #region IMobileControl Members
 
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room)
+        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
         {
             var bridge = new MobileControlEssentialsRoomBridge(room);
             AddBridgePostActivationAction(bridge);
@@ -167,6 +177,13 @@ namespace PepperDash.Essentials
 
         public void LinkSystemMonitorToAppServer()
         {
+            if (CrestronEnvironment.DevicePlatform != eDevicePlatform.Appliance)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice,
+                    "System Monitor does not exist for this platform. Skipping...");
+                return;
+            }
+
             var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
 
             var appServer = GetAppServer() as MobileControlSystemController;
@@ -224,20 +241,9 @@ namespace PepperDash.Essentials
         {
             bridge.AddPostActivationAction(() =>
             {
-                var parent =
-                    DeviceManager.AllDevices.SingleOrDefault(dev => dev.Key.ToLower() == "appserver") as
-                        MobileControlSystemController;
-
-                if (parent == null)
-                {
-                    Debug.Console(0, bridge,
-                        "ERROR: Cannot connect app server room bridge. System controller not present");
-                    return;
-                }
-
                 Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(parent);
-                parent.AddBridge(bridge);
+                bridge.AddParent(this);
+                AddBridge(bridge);
             });
         }
 
@@ -607,11 +613,27 @@ namespace PepperDash.Essentials
                 //Fires OnMessage event when PING is received.
                 _wsClient2.EmitOnPing = true;
 
-                Debug.Console(1, this, "Initializing mobile control client to {0}", _wsClient2.Url);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connecting mobile control client to {0}", _wsClient2.Url);
 
                 try
                 {
                     _wsClient2.Connect();
+                }
+                catch (InvalidOperationException)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
+                     _wsClient2 = null;
+
+                     var wsHost = Host.Replace("http", "ws");
+                     var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+                    _wsClient2 = new WebSocket(url);
+
+                    _wsClient2.OnMessage += HandleMessage;
+                    _wsClient2.OnOpen += HandleOpen;
+                    _wsClient2.OnError += HandleError;
+                    _wsClient2.OnClose += HandleClose;
+                                       
+                    StartServerReconnectTimer();
                 }
                 catch (Exception ex)
                 {
@@ -634,7 +656,7 @@ namespace PepperDash.Essentials
         {
             StopServerReconnectTimer();
             StartPingTimer();
-            Debug.Console(1, this, "Mobile Control API connected");
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
             SendMessageObjectToServer(new
             {
                 type = "hello"
@@ -679,11 +701,13 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void HandleClose(object sender, CloseEventArgs e)
         {
-            Debug.Console(1, this, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
 
             StopPingTimer();
 
             // Start the reconnect timer
+            if (_disableReconnect) return;
+
             StartServerReconnectTimer();
         }
 
@@ -855,6 +879,10 @@ namespace PepperDash.Essentials
         {
             var code = content["userCode"];
 
+            var qrChecksum = content["qrChecksum"];
+
+            Debug.Console(1, this, "QR checksum: {0}", qrChecksum.Value<string>());
+
             if (code == null)
             {
                 return;
@@ -862,7 +890,7 @@ namespace PepperDash.Essentials
 
             foreach (var bridge in _roomBridges)
             {
-                bridge.SetUserCode(code.Value<string>());
+                bridge.SetUserCode(code.Value<string>(), code.Value<string>());
             }
         }
 
