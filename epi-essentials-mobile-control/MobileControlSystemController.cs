@@ -879,7 +879,16 @@ namespace PepperDash.Essentials
         {
             var code = content["userCode"];
 
-            var qrChecksum = content["qrChecksum"];
+            JToken qrChecksum;
+            
+            try
+            {
+                qrChecksum = content["qrChecksum"];
+            }
+            catch
+            {
+                qrChecksum = new JValue(String.Empty);
+            }
 
             Debug.Console(1, this, "QR checksum: {0}", qrChecksum.Value<string>());
 
@@ -890,7 +899,7 @@ namespace PepperDash.Essentials
 
             foreach (var bridge in _roomBridges)
             {
-                bridge.SetUserCode(code.Value<string>(), code.Value<string>());
+                bridge.SetUserCode(code.Value<string>(), qrChecksum.Value<string>());
             }
         }
 
