@@ -7,7 +7,7 @@
 $destination = "$($Env:GITHUB_HOME)\output"
 New-Item -ItemType Directory -Force -Path ($destination)
 Get-ChildItem ($destination)
-$exclusions = @(git submodule foreach --quiet 'echo $name')
+$exclusions = "packages"
 # Trying to get any .json schema files (not currently working)
 # Gets any files with the listed extensions.
 Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec" | ForEach-Object {
