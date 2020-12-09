@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
@@ -170,6 +172,65 @@ namespace PepperDash.Essentials
             Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
             Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
             Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
+
+            AddTechRoomActions();
+        }
+
+        private void AddTechRoomActions()
+        {
+            var techRoom = Room as EssentialsTechRoom;
+
+            if (techRoom == null)
+            {
+                return;
+            }
+
+            SetTunerActions(techRoom);
+        }
+
+        private void SetTunerActions(EssentialsTechRoom techRoom)
+        {
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<ISetTopBoxControls>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IChannel>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IColor>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IDPad>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<INumericKeypad>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IHasPowerControl>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<ITransport>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
         }
 
         void PrivacyModeIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
@@ -216,6 +277,16 @@ namespace PepperDash.Essentials
                         "/device/" + device.Key);
                     DeviceMessengers.Add(device.Key, routeMessenger);
                     routeMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is ITvPresetsProvider)
+                {
+                    var presetsDevice = device as ITvPresetsProvider;
+                    Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
+                    var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, "/device/{0}/presets",
+                        presetsDevice);
+                    DeviceMessengers.Add(device.Key, presetsMessenger);
+                    presetsMessenger.RegisterWithAppServer(Parent);
                 }
             }
         }
