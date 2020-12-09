@@ -283,7 +283,7 @@ namespace PepperDash.Essentials
                 {
                     var presetsDevice = device as ITvPresetsProvider;
                     Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
-                    var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, "/device/{0}/presets",
+                    var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
                         presetsDevice);
                     DeviceMessengers.Add(device.Key, presetsMessenger);
                     presetsMessenger.RegisterWithAppServer(Parent);
