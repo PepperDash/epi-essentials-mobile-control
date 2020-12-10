@@ -310,8 +310,8 @@ namespace PepperDash.Essentials
                     var monitor = device as ICommunicationMonitor;
                     Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
                     var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key + "-monitor",
-                        String.Format("/device/{0}/status", device.Key, monitor));
-                    DeviceMessengers.Add(device.Key, communicationMonitorMessenger);
+                        String.Format("/device/{0}/commMonitor", device.Key), monitor);
+                    DeviceMessengers.Add(device.Key + "-monitor", communicationMonitorMessenger);
                     communicationMonitorMessenger.RegisterWithAppServer(Parent);
                 }
             }
