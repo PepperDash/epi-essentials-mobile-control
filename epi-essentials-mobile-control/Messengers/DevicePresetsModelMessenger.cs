@@ -10,7 +10,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class DevicePresetsModelMessenger:MessengerBase
     {
-        private ITvPresetsProvider _presetsDevice;
+        private readonly ITvPresetsProvider _presetsDevice;
 
         public DevicePresetsModelMessenger(string key, string messagePath) : base(key, messagePath)
         {

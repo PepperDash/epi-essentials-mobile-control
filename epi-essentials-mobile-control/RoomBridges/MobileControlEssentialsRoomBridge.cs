@@ -266,7 +266,6 @@ namespace PepperDash.Essentials
                         "/device/" + device.Key);
                     DeviceMessengers.Add(device.Key, cameraMessenger);
                     cameraMessenger.RegisterWithAppServer(Parent);
-                    continue;
                 }
 
                 if (device is BlueJeansPc)
@@ -287,6 +286,24 @@ namespace PepperDash.Essentials
                         presetsDevice);
                     DeviceMessengers.Add(device.Key, presetsMessenger);
                     presetsMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is DisplayBase)
+                {
+                    var display = device as DisplayBase;
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    display.LinkActions(Parent);
+                }
+
+                if (device is TwoWayDisplayBase)
+                {
+                    var display = device as TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Parent.Key,
+                        String.Format("/device/{0}", device.Key), display);
+                    DeviceMessengers.Add(device.Key, twoWayDisplayMessenger);
+                    twoWayDisplayMessenger.RegisterWithAppServer(Parent);
                 }
             }
         }
