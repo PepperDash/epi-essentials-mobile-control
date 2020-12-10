@@ -168,6 +168,7 @@
   <ItemGroup>
     <Compile Include="DeviceTypeInterfaces\DisplayBaseExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\IHasPowerExtensions.cs" />
+    <Compile Include="Messengers\CommMonitorMessenger.cs" />
     <Compile Include="Messengers\DevicePresetsModelMessenger.cs" />
     <Compile Include="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="MobileControlEssentialsConfig.cs" />
