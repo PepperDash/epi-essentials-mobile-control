@@ -21,8 +21,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
             : this(key, messagePath)
         {
             _presetsDevice = presetsDevice;
-
-            _presetsDevice.TvPresets.PresetChanged += TvPresetsOnPresetChanged;
         }
 
         private void TvPresetsOnPresetChanged(ISetTopBoxNumericKeypad device, string channel)
