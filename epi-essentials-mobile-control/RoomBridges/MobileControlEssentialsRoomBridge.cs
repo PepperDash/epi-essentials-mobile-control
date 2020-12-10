@@ -143,10 +143,9 @@ namespace PepperDash.Essentials
             var privacyRoom = Room as IPrivacy;
             if (privacyRoom != null)
             {
-                Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(() =>
-                    privacyRoom.PrivacyModeToggle()));
+                Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(privacyRoom.PrivacyModeToggle));
 
-                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(PrivacyModeIsOnFeedback_OutputChange);
+                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
 
             SetupDeviceMessengers();
@@ -305,6 +304,16 @@ namespace PepperDash.Essentials
                     DeviceMessengers.Add(device.Key, twoWayDisplayMessenger);
                     twoWayDisplayMessenger.RegisterWithAppServer(Parent);
                 }
+
+                if (device is ICommunicationMonitor)
+                {
+                    var monitor = device as ICommunicationMonitor;
+                    Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
+                    var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key,
+                        String.Format("/device/{0}/status", device.Key, monitor));
+                    DeviceMessengers.Add(device.Key, communicationMonitorMessenger);
+                    communicationMonitorMessenger.RegisterWithAppServer(Parent);
+                }
             }
         }
 
@@ -318,11 +327,11 @@ namespace PepperDash.Essentials
             // sharing source 
             string shareText;
             bool isSharing;
-#warning This share update needs to happen on source change as well!
+
             var vcRoom = Room as IHasVideoCodec;
             var srcInfoRoom = Room as IHasCurrentSourceInfoChange;
 
-            if (vcRoom.VideoCodec.SharingContentIsOnFeedback.BoolValue && srcInfoRoom.CurrentSourceInfo != null)
+            if (srcInfoRoom != null && (vcRoom != null && (vcRoom.VideoCodec.SharingContentIsOnFeedback.BoolValue && srcInfoRoom.CurrentSourceInfo != null)))
             {
                 shareText = srcInfoRoom.CurrentSourceInfo.PreferredName;
                 isSharing = true;
@@ -607,11 +616,11 @@ namespace PepperDash.Essentials
             {
                 activityMode = 1,
                 isOn = room.OnFeedback.BoolValue,
-                selectedSourceKey = sourceKey,
-                volumes = volumes,
+                selectedSourceKey = sourceKey, 
+                volumes,
             };
 
-            var messageObject = new MobileControlResponseMessage()
+            var messageObject = new MobileControlResponseMessage
             {
                 Type = "/room/status/",
                 Content = contentObject
