@@ -185,6 +185,16 @@ namespace PepperDash.Essentials
             }
 
             SetTunerActions(techRoom);
+
+            CreateScheduleMessenger(techRoom);
+        }
+
+        private void CreateScheduleMessenger(EssentialsTechRoom techRoom)
+        {
+            var scheduleMessenger = new RoomEventScheduleMessenger(techRoom.Key + "-schedule",
+                String.Format("/room/{0}/schedule", techRoom.Key), techRoom);
+            DeviceMessengers.Add(scheduleMessenger.Key, scheduleMessenger);
+            scheduleMessenger.RegisterWithAppServer(Parent);
         }
 
         private void SetTunerActions(EssentialsTechRoom techRoom)
@@ -301,7 +311,7 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
                     var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Parent.Key,
                         String.Format("/device/{0}", device.Key), display);
-                    DeviceMessengers.Add(device.Key, twoWayDisplayMessenger);
+                    DeviceMessengers.Add(twoWayDisplayMessenger.Key, twoWayDisplayMessenger);
                     twoWayDisplayMessenger.RegisterWithAppServer(Parent);
                 }
 
@@ -311,7 +321,7 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
                     var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key + "-monitor",
                         String.Format("/device/{0}/commMonitor", device.Key), monitor);
-                    DeviceMessengers.Add(device.Key + "-monitor", communicationMonitorMessenger);
+                    DeviceMessengers.Add(communicationMonitorMessenger.Key, communicationMonitorMessenger);
                     communicationMonitorMessenger.RegisterWithAppServer(Parent);
                 }
             }

@@ -14,6 +14,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Presets;
+using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using WebSocketSharp;
 
@@ -1083,6 +1084,11 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<List<PresetChannel>>)(
                                     messageObj["content"].ToObject<List<PresetChannel>>());
+                            }
+                            else if (action is Action<ScheduledEventConfig>)
+                            {
+                                (action as Action<ScheduledEventConfig>)(
+                                    messageObj["content"].ToObject<ScheduledEventConfig>());
                             }
                         }
                         else

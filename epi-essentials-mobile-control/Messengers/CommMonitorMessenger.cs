@@ -24,8 +24,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new
             {
-                online = _monitor.CommunicationMonitor.IsOnline,
-                status = _monitor.CommunicationMonitor.Status
+                commMonitor = new {
+                    online = _monitor.CommunicationMonitor.IsOnline,
+                    status = _monitor.CommunicationMonitor.Status.ToString()
+                }
             };
 
             PostStatusMessage(messageObj);
@@ -48,7 +50,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 type = MessagePath + PollStatusPath,
                 content = new
                 {
-                    status = monitorStatusChangeEventArgs.Status
+                    commMonitor = new {
+                        status = monitorStatusChangeEventArgs.Status.ToString()
+                    }
                 }
             };
 
@@ -62,7 +66,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 type = MessagePath + OnlineStatusPath,
                 content = new
                 {
-                    online = feedbackEventArgs.BoolValue
+                    commMonitor = new {
+                        online = feedbackEventArgs.BoolValue
+                    }
                 }
             };
 
