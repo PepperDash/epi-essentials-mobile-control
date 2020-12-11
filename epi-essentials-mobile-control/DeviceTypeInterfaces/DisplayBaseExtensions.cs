@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
@@ -21,6 +22,19 @@ namespace PepperDash.Essentials.Room.MobileControl
                 
                 controller.AddAction(path, new Action(()=> display.ExecuteSwitch(input.Selector)));
             }
+
+            controller.AddAction(prefix + "inputs", new Action(() =>
+            {
+                var inputsList = display.InputPorts.Select(p => p.Key).ToList();
+
+                var messageObject = new
+                {
+                    type = prefix + "inputs",
+                    content = inputsList,
+                };
+
+                controller.SendMessageObjectToServer(messageObject);
+            }));
         }
 
         public static void UnlinkActions(this DisplayBase display, MobileControlSystemController controller)
