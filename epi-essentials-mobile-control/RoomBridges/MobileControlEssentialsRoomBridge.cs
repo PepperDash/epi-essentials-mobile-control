@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
@@ -323,6 +324,17 @@ namespace PepperDash.Essentials
                         String.Format("/device/{0}/commMonitor", device.Key), monitor);
                     DeviceMessengers.Add(communicationMonitorMessenger.Key, communicationMonitorMessenger);
                     communicationMonitorMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is IBasicVolumeWithFeedback)
+                {
+                    var deviceKey = device.Key;
+                    var volControlDevice = device as IBasicVolumeWithFeedback;
+                    Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
+                    var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Parent.Key + "-volume",
+                        String.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
+                    DeviceMessengers.Add(messenger.Key, messenger);
+                    messenger.RegisterWithAppServer(Parent);
                 }
             }
         }

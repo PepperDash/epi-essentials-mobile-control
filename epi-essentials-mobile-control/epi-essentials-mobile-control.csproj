@@ -170,6 +170,7 @@
     <Compile Include="DeviceTypeInterfaces\IHasPowerExtensions.cs" />
     <Compile Include="Messengers\CommMonitorMessenger.cs" />
     <Compile Include="Messengers\DevicePresetsModelMessenger.cs" />
+    <Compile Include="Messengers\DeviceVolumeMessenger.cs" />
     <Compile Include="Messengers\RoomEventScheduleMessenger.cs" />
     <Compile Include="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="MobileControlEssentialsConfig.cs" />
