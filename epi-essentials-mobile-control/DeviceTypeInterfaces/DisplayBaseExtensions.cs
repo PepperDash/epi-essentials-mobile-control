@@ -30,7 +30,10 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var messageObject = new
                 {
                     type = prefix + "inputs",
-                    content = inputsList,
+                    content = new
+                    {
+                        inputKeys = inputsList,
+                    }
                 };
 
                 controller.SendMessageObjectToServer(messageObject);

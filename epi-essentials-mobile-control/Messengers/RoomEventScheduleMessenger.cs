@@ -27,7 +27,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var events = _room.GetScheduledEvents();
 
-                PostStatusMessage(events);
+                var message = new
+                {
+                    scheduleEvents = events,
+                };
+
+                PostStatusMessage(message);
             }));
 
             _room.ScheduledEventsChanged += (sender, args) => PostStatusMessage(args.ScheduledEvents);
