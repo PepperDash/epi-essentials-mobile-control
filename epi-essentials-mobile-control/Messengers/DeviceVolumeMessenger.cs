@@ -23,8 +23,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new
             {
-                level = _device.VolumeLevelFeedback.IntValue,
-                mute = _device.MuteFeedback.BoolValue,
+                volume = new
+                {
+                    level = _device.VolumeLevelFeedback.IntValue,
+                    muted = _device.MuteFeedback.BoolValue,
+                }
             };
 
             PostStatusMessage(messageObj);
@@ -43,7 +46,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var messageObj = new
                 {
-                    muted = args.BoolValue
+                    volume = new
+                    {
+                        muted = args.BoolValue
+                    }
                 };
 
                 PostStatusMessage(messageObj);
@@ -53,7 +59,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var messageObj = new
                 {
-                    level = args.IntValue
+                    volume = new
+                    {
+                        level = args.IntValue
+                    }
                 };
 
                 PostStatusMessage(messageObj);
