@@ -27,15 +27,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var events = _room.GetScheduledEvents();
 
-                var message = new
-                {
-                    scheduleEvents = events,
-                };
-
-                PostStatusMessage(message);
+                SendFullStatus(events);
             }));
 
-            _room.ScheduledEventsChanged += (sender, args) => PostStatusMessage(args.ScheduledEvents);
+            _room.ScheduledEventsChanged += (sender, args) =>  SendFullStatus(args.ScheduledEvents);
         }
 
         #endregion
@@ -58,6 +53,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 Debug.Console(0, this, "Exception saving event: {0}\r\n{1}", ex.Message, ex.StackTrace);
             }
+        }
+
+        private void SendFullStatus(List<ScheduledEventConfig> events) 
+        {
+
+                var message = new
+                {
+                    scheduleEvents = events,
+                };
+
+                PostStatusMessage(message);
         }
     }
 }
