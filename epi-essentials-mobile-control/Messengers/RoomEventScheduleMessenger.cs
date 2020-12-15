@@ -22,7 +22,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(MessagePath + "/save", new Action<ScheduledEventConfig>(SaveScheduledEvent));
+            appServerController.AddAction(MessagePath + "/save", new Action<List<ScheduledEventConfig>>(SaveScheduledEvents));
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(() =>
             {
                 var events = _room.GetScheduledEvents();
@@ -39,6 +39,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         #endregion
+
+        private void SaveScheduledEvents(List<ScheduledEventConfig> events)
+        {
+            foreach (var evt in events)
+            {
+                SaveScheduledEvent(evt);
+            }
+        }
 
         private void SaveScheduledEvent(ScheduledEventConfig eventConfig)
         {

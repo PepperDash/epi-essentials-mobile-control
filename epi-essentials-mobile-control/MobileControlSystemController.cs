@@ -1085,10 +1085,10 @@ namespace PepperDash.Essentials
                                 (action as Action<List<PresetChannel>>)(
                                     messageObj["content"].ToObject<List<PresetChannel>>());
                             }
-                            else if (action is Action<ScheduledEventConfig>)
+                            else if (action is Action<List<ScheduledEventConfig>>)
                             {
-                                (action as Action<ScheduledEventConfig>)(
-                                    messageObj["content"].ToObject<ScheduledEventConfig>());
+                                (action as Action<List<ScheduledEventConfig>>)(
+                                    messageObj["content"].ToObject<List<ScheduledEventConfig>>());
                             }
                         }
                         else
