@@ -43,7 +43,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void SavePresets(List<PresetChannel> presets )
         {
-
             _presetsDevice.TvPresets.UpdatePresets(presets);
         }
        
@@ -66,6 +65,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 RecallPreset(dev, p.Preset.Channel);
             }));
             appServerController.AddAction(MessagePath + "/save", new Action<List<PresetChannel>>(SavePresets));
+
+            _presetsDevice.TvPresets.PresetsSaved += (p) => SendPresets();
         }
 
         #endregion
