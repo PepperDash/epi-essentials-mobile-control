@@ -1090,6 +1090,10 @@ namespace PepperDash.Essentials
                                 (action as Action<List<ScheduledEventConfig>>)(
                                     messageObj["content"].ToObject<List<ScheduledEventConfig>>());
                             }
+                            else if (action is Action<DirectRoute>)
+                            {
+                                (action as Action<DirectRoute>)(messageObj["content"].ToObject<DirectRoute>());
+                            }
                         }
                         else
                         {

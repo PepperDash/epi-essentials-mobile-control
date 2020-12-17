@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.Room.MobileControl
@@ -14,14 +15,18 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.AddAction(prefix + "powerOff", new Action(display.PowerOff));
             controller.AddAction(prefix + "powerToggle", new Action(display.PowerToggle));
 
-            foreach (var inputPort in display.InputPorts)
+            controller.AddAction(prefix + "inputSelect", new Action<string>((s) =>
             {
-                var input = inputPort;
-                //path should be /device/deviceKey/inputName
-                var path = String.Format("{0}{1}", prefix, input.Key);
-                
-                controller.AddAction(path, new Action(()=> display.ExecuteSwitch(input.Selector)));
-            }
+                var inputPort = display.InputPorts.FirstOrDefault(i => i.Key == s);
+
+                if (inputPort == null)
+                {
+                    Debug.Console(1, "No input named {0} found for device {1}", s, display.Key);
+                    return;
+                }
+
+                display.ExecuteSwitch(inputPort.Selector);
+            }));
 
             controller.AddAction(prefix + "inputs", new Action(() =>
             {
@@ -47,15 +52,8 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.RemoveAction(prefix + "powerOn");
             controller.RemoveAction(prefix + "powerOff");
             controller.RemoveAction(prefix + "powerToggle");
-
-            foreach (var inputPort in display.InputPorts)
-            {
-                var input = inputPort;
-                //path should be /device/deviceKey/inputName
-                var path = String.Format("{0}{1}", prefix, input.Key);
-
-                controller.RemoveAction(path);
-            }
+            controller.RemoveAction(prefix + "inputs");
+            controller.RemoveAction(prefix + "inputSelect");
         }
     }
 }

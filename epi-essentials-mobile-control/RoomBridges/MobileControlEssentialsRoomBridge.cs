@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
@@ -64,32 +63,18 @@ namespace PepperDash.Essentials
             if (routeRoom != null)
                 Parent.AddAction(string.Format(@"/room/{0}/source", Room.Key),
                     new Action<SourceSelectMessageContent>(c =>
-                        {
-                            // assume the default source list
-                            var sourceListKey = string.Empty;
+                    {
+                        var sourceListKey = string.Empty;
 
-                            
-                            //if (!string.IsNullOrEmpty(c.SourceListKey))
-                            //{
-                            //    // Check for source list in content of message
-                            //    Debug.Console(1, this, "sourceListKey found in message");
-                            //    sourceListKey = c.SourceListKey;
-                            //}
-                            //else if (!string.IsNullOrEmpty(Room.SourceListKey))
-                            //{
-                            //    // Check if source list is set on room
-                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  Attempting to use Room.SourceListKey");
-                            //    sourceListKey = Room.SourceListKey;
-                            //}
-                            //else
-                            //{
-                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  uuing default");
-                            //    sourceListKey = string.Empty;
-                            //}
+                        routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
 
-                            routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
+                    }));
 
-                        }));
+            var directRouteRoom = Room as IRunDirectRouteAction;
+            if (directRouteRoom != null)
+            {
+                Parent.AddAction(String.Format("/room/{0}/directRoute", Room.Key), new Action<DirectRoute>((d) => directRouteRoom.RunDirectRoute(d.SourceKey, d.DestinationKey)));
+            }
 
 
             var defaultRoom = Room as IRunDefaultPresentRoute;
@@ -188,6 +173,9 @@ namespace PepperDash.Essentials
             SetTunerActions(techRoom);
 
             CreateScheduleMessenger(techRoom);
+
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOn",techRoom.Key), new Action(techRoom.RoomPowerOn));
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOff", techRoom.Key), new Action(techRoom.RoomPowerOff));
         }
 
         private void CreateScheduleMessenger(EssentialsTechRoom techRoom)
@@ -663,6 +651,12 @@ namespace PepperDash.Essentials
         public string SourceListKey { get; set; }
 
   }
+
+    public class DirectRoute
+    {
+        public string SourceKey { get; set; }
+        public string DestinationKey { get; set; }
+    }
 
     /// <summary>
     /// 
