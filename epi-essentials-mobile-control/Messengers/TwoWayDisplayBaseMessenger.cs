@@ -39,8 +39,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
             _display.CurrentInputFeedback.OutputChange += CurrentInputFeedbackOnOutputChange;
-            _display.IsCoolingDownFeedback.OutputChange += IsWarmingFeedbackOnOutputChange;
-            _display.IsWarmingUpFeedback.OutputChange += IsCoolingFeedbackOnOutputChange;
+            _display.IsCoolingDownFeedback.OutputChange += IsCoolingFeedbackOnOutputChange;
+            _display.IsWarmingUpFeedback.OutputChange += IsWarmingFeedbackOnOutputChange;
         }
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
