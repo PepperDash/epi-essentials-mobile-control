@@ -7,6 +7,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         private const string PowerStatusPath = "/powerStatus";
         private const string InputStatusPath = "/inputStatus";
+
         private readonly TwoWayDisplayBase _display;
 
         public TwoWayDisplayBaseMessenger(string key, string messagePath) : base(key, messagePath)
@@ -38,13 +39,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
             _display.CurrentInputFeedback.OutputChange += CurrentInputFeedbackOnOutputChange;
+            _display.IsCoolingDownFeedback.OutputChange += IsWarmingFeedbackOnOutputChange;
+            _display.IsWarmingUpFeedback.OutputChange += IsCoolingFeedbackOnOutputChange;
         }
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
             var messageObj = new
             {
-                type = String.Format("{0}{1}", MessagePath, InputStatusPath),
+                type = MessagePath,
                 content = new
                 {
                     currentInput = feedbackEventArgs.StringValue
@@ -59,10 +62,38 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new
             {
-                type = String.Format("{0}{1}", MessagePath, PowerStatusPath),
+                type = MessagePath,
                 content = new
                 {
                     powerState = feedbackEventArgs.BoolValue
+                }
+            };
+
+            AppServerController.SendMessageObjectToServer(messageObj);
+        }
+
+        private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
+        {
+            var messageObj = new
+            {
+                type = MessagePath,
+                content = new
+                {
+                    isWarming = feedbackEventArgs.BoolValue
+                }
+            };
+
+            AppServerController.SendMessageObjectToServer(messageObj);
+        }
+
+        private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
+        {
+            var messageObj = new
+            {
+                type = MessagePath,
+                content = new
+                {
+                    isCooling = feedbackEventArgs.BoolValue
                 }
             };
 
