@@ -40,7 +40,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendStatus));
             appServerController.AddAction(MessagePath + "/level", new Action<ushort>(_device.SetVolume));
 
-            appServerController.AddAction(MessagePath + "/muteToggle", new Action(_device.MuteToggle));
+            appServerController.AddAction(MessagePath + "/muteToggle", new Action<bool>(
+                (b) => {
+                    if(b){
+                        _device.MuteToggle();
+                    }}));
 
             _device.MuteFeedback.OutputChange += (sender, args) =>
             {

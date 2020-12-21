@@ -368,6 +368,7 @@ namespace PepperDash.Essentials
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
             Parent.SendMessageObjectToServer(JObject.FromObject(new
             {
                 type = "/room/status/",
