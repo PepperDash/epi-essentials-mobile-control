@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
@@ -61,32 +63,18 @@ namespace PepperDash.Essentials
             if (routeRoom != null)
                 Parent.AddAction(string.Format(@"/room/{0}/source", Room.Key),
                     new Action<SourceSelectMessageContent>(c =>
-                        {
-                            // assume the default source list
-                            var sourceListKey = string.Empty;
+                    {
+                        var sourceListKey = string.Empty;
 
-                            
-                            //if (!string.IsNullOrEmpty(c.SourceListKey))
-                            //{
-                            //    // Check for source list in content of message
-                            //    Debug.Console(1, this, "sourceListKey found in message");
-                            //    sourceListKey = c.SourceListKey;
-                            //}
-                            //else if (!string.IsNullOrEmpty(Room.SourceListKey))
-                            //{
-                            //    // Check if source list is set on room
-                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  Attempting to use Room.SourceListKey");
-                            //    sourceListKey = Room.SourceListKey;
-                            //}
-                            //else
-                            //{
-                            //    Debug.Console(1, this, "sourceListKey NOT found in message.  uuing default");
-                            //    sourceListKey = string.Empty;
-                            //}
+                        routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
 
-                            routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
+                    }));
 
-                        }));
+            var directRouteRoom = Room as IRunDirectRouteAction;
+            if (directRouteRoom != null)
+            {
+                Parent.AddAction(String.Format("/room/{0}/directRoute", Room.Key), new Action<DirectRoute>((d) => directRouteRoom.RunDirectRoute(d.SourceKey, d.DestinationKey)));
+            }
 
 
             var defaultRoom = Room as IRunDefaultPresentRoute;
@@ -141,10 +129,9 @@ namespace PepperDash.Essentials
             var privacyRoom = Room as IPrivacy;
             if (privacyRoom != null)
             {
-                Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(() =>
-                    privacyRoom.PrivacyModeToggle()));
+                Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(privacyRoom.PrivacyModeToggle));
 
-                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(PrivacyModeIsOnFeedback_OutputChange);
+                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
 
             SetupDeviceMessengers();
@@ -170,6 +157,78 @@ namespace PepperDash.Essentials
             Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
             Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
             Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
+
+            AddTechRoomActions();
+        }
+
+        private void AddTechRoomActions()
+        {
+            var techRoom = Room as EssentialsTechRoom;
+
+            if (techRoom == null)
+            {
+                return;
+            }
+
+            SetTunerActions(techRoom);
+
+            CreateScheduleMessenger(techRoom);
+
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOn",techRoom.Key), new Action(techRoom.RoomPowerOn));
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOff", techRoom.Key), new Action(techRoom.RoomPowerOff));
+        }
+
+        private void CreateScheduleMessenger(EssentialsTechRoom techRoom)
+        {
+            var scheduleMessenger = new RoomEventScheduleMessenger(techRoom.Key + "-schedule",
+                String.Format("/room/{0}/schedule", techRoom.Key), techRoom);
+            DeviceMessengers.Add(scheduleMessenger.Key, scheduleMessenger);
+            scheduleMessenger.RegisterWithAppServer(Parent);
+        }
+
+        private void SetTunerActions(EssentialsTechRoom techRoom)
+        {
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<ISetTopBoxControls>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IChannel>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IColor>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IDPad>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<INumericKeypad>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<IHasPowerControl>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
+
+            foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<ITransport>())
+            {
+                var stb = tuner;
+                stb.LinkActions(Parent);
+            }
         }
 
         void PrivacyModeIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
@@ -205,7 +264,6 @@ namespace PepperDash.Essentials
                         "/device/" + device.Key);
                     DeviceMessengers.Add(device.Key, cameraMessenger);
                     cameraMessenger.RegisterWithAppServer(Parent);
-                    continue;
                 }
 
                 if (device is BlueJeansPc)
@@ -216,6 +274,55 @@ namespace PepperDash.Essentials
                         "/device/" + device.Key);
                     DeviceMessengers.Add(device.Key, routeMessenger);
                     routeMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is ITvPresetsProvider)
+                {
+                    var presetsDevice = device as ITvPresetsProvider;
+                    Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
+                    var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
+                        presetsDevice);
+                    DeviceMessengers.Add(device.Key, presetsMessenger);
+                    presetsMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is DisplayBase)
+                {
+                    var display = device as DisplayBase;
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    display.LinkActions(Parent);
+                }
+
+                if (device is TwoWayDisplayBase)
+                {
+                    var display = device as TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Parent.Key,
+                        String.Format("/device/{0}", device.Key), display);
+                    DeviceMessengers.Add(twoWayDisplayMessenger.Key, twoWayDisplayMessenger);
+                    twoWayDisplayMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is ICommunicationMonitor)
+                {
+                    var monitor = device as ICommunicationMonitor;
+                    Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
+                    var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key + "-monitor",
+                        String.Format("/device/{0}/commMonitor", device.Key), monitor);
+                    DeviceMessengers.Add(communicationMonitorMessenger.Key, communicationMonitorMessenger);
+                    communicationMonitorMessenger.RegisterWithAppServer(Parent);
+                }
+
+                if (device is IBasicVolumeWithFeedback)
+                {
+                    var deviceKey = device.Key;
+                    var volControlDevice = device as IBasicVolumeWithFeedback;
+                    Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
+                    var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Parent.Key + "-volume",
+                        String.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
+                    DeviceMessengers.Add(messenger.Key, messenger);
+                    messenger.RegisterWithAppServer(Parent);
                 }
             }
         }
@@ -230,11 +337,11 @@ namespace PepperDash.Essentials
             // sharing source 
             string shareText;
             bool isSharing;
-#warning This share update needs to happen on source change as well!
+
             var vcRoom = Room as IHasVideoCodec;
             var srcInfoRoom = Room as IHasCurrentSourceInfoChange;
 
-            if (vcRoom.VideoCodec.SharingContentIsOnFeedback.BoolValue && srcInfoRoom.CurrentSourceInfo != null)
+            if (srcInfoRoom != null && (vcRoom != null && (vcRoom.VideoCodec.SharingContentIsOnFeedback.BoolValue && srcInfoRoom.CurrentSourceInfo != null)))
             {
                 shareText = srcInfoRoom.CurrentSourceInfo.PreferredName;
                 isSharing = true;
@@ -261,6 +368,7 @@ namespace PepperDash.Essentials
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
             Parent.SendMessageObjectToServer(JObject.FromObject(new
             {
                 type = "/room/status/",
@@ -519,11 +627,11 @@ namespace PepperDash.Essentials
             {
                 activityMode = 1,
                 isOn = room.OnFeedback.BoolValue,
-                selectedSourceKey = sourceKey,
-                volumes = volumes,
+                selectedSourceKey = sourceKey, 
+                volumes,
             };
 
-            var messageObject = new MobileControlResponseMessage()
+            var messageObject = new MobileControlResponseMessage
             {
                 Type = "/room/status/",
                 Content = contentObject
@@ -544,6 +652,12 @@ namespace PepperDash.Essentials
         public string SourceListKey { get; set; }
 
   }
+
+    public class DirectRoute
+    {
+        public string SourceKey { get; set; }
+        public string DestinationKey { get; set; }
+    }
 
     /// <summary>
     /// 

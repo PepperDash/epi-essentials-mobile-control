@@ -13,6 +13,8 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
+using PepperDash.Essentials.Core.Presets;
+using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using WebSocketSharp;
 
@@ -1072,6 +1074,25 @@ namespace PepperDash.Essentials
 
                                     SendMessageObjectToServer(respObj);
                                 }
+                            }
+                            else if (action is Action<PresetChannelMessage>)
+                            {
+                                (action as Action<PresetChannelMessage>)(
+                                    messageObj["content"].ToObject<PresetChannelMessage>());
+                            }
+                            else if (action is Action<List<PresetChannel>> )
+                            {
+                                (action as Action<List<PresetChannel>>)(
+                                    messageObj["content"].ToObject<List<PresetChannel>>());
+                            }
+                            else if (action is Action<List<ScheduledEventConfig>>)
+                            {
+                                (action as Action<List<ScheduledEventConfig>>)(
+                                    messageObj["content"].ToObject<List<ScheduledEventConfig>>());
+                            }
+                            else if (action is Action<DirectRoute>)
+                            {
+                                (action as Action<DirectRoute>)(messageObj["content"].ToObject<DirectRoute>());
                             }
                         }
                         else
