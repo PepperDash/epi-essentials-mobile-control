@@ -26,7 +26,7 @@ namespace PepperDash.Essentials
 
         private const long ServerHeartbeatInterval = 20000;
         private const long ServerReconnectInterval = 5000;
-        private const long PingInterval = 11000;
+        private const long PingInterval = 25000;
         private const long ButtonHeartbeatInterval = 1000;
 
         private readonly Dictionary<string, Object> _actionDictionary =
