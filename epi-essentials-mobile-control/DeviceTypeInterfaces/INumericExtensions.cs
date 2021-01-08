@@ -16,9 +16,9 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.AddAction(prefix + "num4", new PressAndHoldAction(dev.Digit4));
             controller.AddAction(prefix + "num5", new PressAndHoldAction(dev.Digit5));
             controller.AddAction(prefix + "num6", new PressAndHoldAction(dev.Digit6));
-            controller.AddAction(prefix + "num7", new PressAndHoldAction(dev.Digit0));
-            controller.AddAction(prefix + "num8", new PressAndHoldAction(dev.Digit0));
-            controller.AddAction(prefix + "num9", new PressAndHoldAction(dev.Digit0));
+            controller.AddAction(prefix + "num7", new PressAndHoldAction(dev.Digit7));
+            controller.AddAction(prefix + "num8", new PressAndHoldAction(dev.Digit8));
+            controller.AddAction(prefix + "num9", new PressAndHoldAction(dev.Digit9));
             controller.AddAction(prefix + "numDash", new PressAndHoldAction(dev.KeypadAccessoryButton1));
             controller.AddAction(prefix + "numEnter", new PressAndHoldAction(dev.KeypadAccessoryButton2));
             // Deal with the Accessory functions on the numpad later
