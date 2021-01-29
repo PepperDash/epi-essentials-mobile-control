@@ -128,8 +128,8 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
                 "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
-            /*CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
-                ConsoleAccessLevelEnum.AccessProgrammer);*/
+            CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
+                ConsoleAccessLevelEnum.AccessProgrammer);
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
@@ -141,7 +141,14 @@ namespace PepperDash.Essentials
             var wsHost = Host.Replace("http", "ws");
             var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
-            _wsClient2 = new WebSocket(url);
+            _wsClient2 = new WebSocket(url)
+            {
+                Log =
+                {
+                    Output =
+                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
+                }
+            };
 
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
@@ -229,6 +236,7 @@ namespace PepperDash.Essentials
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
+ 
 
                 Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
             }
@@ -605,8 +613,17 @@ namespace PepperDash.Essentials
 
 
                 //set to 99999 to let things work on 4-Series
+                /*if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+                {
+                    _wsClient2.Log.Level = (LogLevel) 99999;
+                }
 
-                _wsClient2.Log.Level = (LogLevel) 99999;
+                if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series3)
+                {
+                    _wsClient2.Log.Level = _wsLogLevel;
+                }*/
+
+                _wsClient2.Log.Level = _wsLogLevel;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
