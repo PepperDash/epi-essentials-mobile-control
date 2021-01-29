@@ -115,12 +115,14 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(s =>
             {
                 _disableReconnect = false;
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "User command: {0}", "mobileConnect");
                 ConnectWebsocketClient();
             }, "mobileconnect",
                 "Forces connect of websocket", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s =>
             {
                 _disableReconnect = true;
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "User command: {0}", "mobileDisco");
                 CleanUpWebsocketClient();
             }, "mobiledisco",
                 "Disconnects websocket", ConsoleAccessLevelEnum.AccessOperator);
