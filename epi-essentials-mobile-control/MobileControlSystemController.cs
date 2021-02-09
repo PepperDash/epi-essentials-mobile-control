@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
@@ -847,7 +848,26 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
 
-            _wsClient2.Close();
+            try
+            {
+                _wsClient2.Close();
+            }
+            catch (IOException)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "IO Exception\r\n{0}\r\n{1}");
+                _wsClient2 = null;
+
+                var wsHost = Host.Replace("http", "ws");
+                var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+                _wsClient2 = new WebSocket(url);
+
+                _wsClient2.OnMessage += HandleMessage;
+                _wsClient2.OnOpen += HandleOpen;
+                _wsClient2.OnError += HandleError;
+                _wsClient2.OnClose += HandleClose;
+
+                StartServerReconnectTimer();
+            }
         }
 
         /// <summary>
