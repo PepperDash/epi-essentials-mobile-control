@@ -217,6 +217,12 @@ namespace PepperDash.Essentials
 
         private void SetWebsocketDebugLevel(string cmdparameters)
         {
+            if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+            {
+                Debug.Console(0, this, "Setting websocket lot level not currently allowed on 4 series.");
+                return;  // Web socket log level not currently allowed in series4
+            }
+
             if (String.IsNullOrEmpty(cmdparameters))
             {
                 Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
@@ -637,36 +643,71 @@ namespace PepperDash.Essentials
 
                 Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connecting mobile control client to {0}", _wsClient2.Url);
 
-                try
-                {
-                    _wsClient2.Connect();
-                }
-                catch (InvalidOperationException)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
-                     _wsClient2 = null;
-
-                     var wsHost = Host.Replace("http", "ws");
-                     var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-                    _wsClient2 = new WebSocket(url);
-
-                    _wsClient2.OnMessage += HandleMessage;
-                    _wsClient2.OnOpen += HandleOpen;
-                    _wsClient2.OnError += HandleError;
-                    _wsClient2.OnClose += HandleClose;
-                                       
-                    StartServerReconnectTimer();
-                }
-                catch (Exception ex)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
-                        ex.Message, ex.StackTrace);
-                }
+                TryConnect();
             }
             finally
             {
                 _wsCriticalSection.Leave();
             }
+        }
+
+        /// <summary>
+        /// Attempts to connect the websocket
+        /// </summary>
+        private void TryConnect()
+        {
+            try
+            {
+                _wsClient2.Connect();
+            }
+            catch (InvalidOperationException)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
+                HandleConnectFailure();
+            }
+            catch (IOException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "IO Exception\r\n{0}", ex);
+                HandleConnectFailure();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                    ex.Message, ex.StackTrace);
+                HandleConnectFailure();
+            }
+        }
+
+        /// <summary>
+        /// Gracefully handles conect failures by reconstructing the ws client and starting the reconnect timer
+        /// </summary>
+        private void HandleConnectFailure()
+        {
+            _wsClient2 = null;
+
+            var wsHost = Host.Replace("http", "ws");
+            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+            _wsClient2 = new WebSocket(url)
+            {
+                Log =
+                {
+                    Output =
+                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
+                }
+            };
+
+
+            _wsClient2.OnMessage -= HandleMessage;
+            _wsClient2.OnOpen -= HandleOpen;
+            _wsClient2.OnError -= HandleError;
+            _wsClient2.OnClose -= HandleClose;
+
+            _wsClient2.OnMessage += HandleMessage;
+            _wsClient2.OnOpen += HandleOpen;
+            _wsClient2.OnError += HandleError;
+            _wsClient2.OnClose += HandleClose;
+
+            StartServerReconnectTimer();
         }
 
         /// <summary>
@@ -848,26 +889,7 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
 
-            try
-            {
-                _wsClient2.Close();
-            }
-            catch (IOException)
-            {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "IO Exception\r\n{0}\r\n{1}");
-                _wsClient2 = null;
-
-                var wsHost = Host.Replace("http", "ws");
-                var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-                _wsClient2 = new WebSocket(url);
-
-                _wsClient2.OnMessage += HandleMessage;
-                _wsClient2.OnOpen += HandleOpen;
-                _wsClient2.OnError += HandleError;
-                _wsClient2.OnClose += HandleClose;
-
-                StartServerReconnectTimer();
-            }
+            TryConnect();
         }
 
         /// <summary>
