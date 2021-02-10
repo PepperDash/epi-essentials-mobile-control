@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
@@ -115,12 +116,14 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(s =>
             {
                 _disableReconnect = false;
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "User command: {0}", "mobileConnect");
                 ConnectWebsocketClient();
             }, "mobileconnect",
                 "Forces connect of websocket", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(s =>
             {
                 _disableReconnect = true;
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "User command: {0}", "mobileDisco");
                 CleanUpWebsocketClient();
             }, "mobiledisco",
                 "Disconnects websocket", ConsoleAccessLevelEnum.AccessOperator);
@@ -128,8 +131,8 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(ParseStreamRx, "mobilesimulateaction",
                 "Simulates a message from the server", ConsoleAccessLevelEnum.AccessOperator);
 
-            /*CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
-                ConsoleAccessLevelEnum.AccessProgrammer);*/
+            CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
+                ConsoleAccessLevelEnum.AccessProgrammer);
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
@@ -141,7 +144,14 @@ namespace PepperDash.Essentials
             var wsHost = Host.Replace("http", "ws");
             var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
 
-            _wsClient2 = new WebSocket(url);
+            _wsClient2 = new WebSocket(url)
+            {
+                Log =
+                {
+                    Output =
+                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
+                }
+            };
 
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
@@ -207,6 +217,12 @@ namespace PepperDash.Essentials
 
         private void SetWebsocketDebugLevel(string cmdparameters)
         {
+            if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+            {
+                Debug.Console(0, this, "Setting websocket log level not currently allowed on 4 series.");
+                return;  // Web socket log level not currently allowed in series4
+            }
+
             if (String.IsNullOrEmpty(cmdparameters))
             {
                 Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
@@ -229,12 +245,13 @@ namespace PepperDash.Essentials
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
+ 
 
                 Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
             }
             catch
             {
-                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",
+                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",cmdparameters,
                     LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
             }
         }
@@ -604,9 +621,17 @@ namespace PepperDash.Essentials
                 _wsCriticalSection.Enter();
 
 
-                //set to 99999 to let things work on 4-Series
+                // set to 99999 to let things work on 4-Series
+                if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+                {
+                    _wsClient2.Log.Level = (LogLevel) 99999;
+                }
+                else if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series3)
+                {
+                    _wsClient2.Log.Level = _wsLogLevel;
+                }
 
-                _wsClient2.Log.Level = (LogLevel) 99999;
+                //_wsClient2.Log.Level = _wsLogLevel;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
@@ -617,36 +642,71 @@ namespace PepperDash.Essentials
 
                 Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connecting mobile control client to {0}", _wsClient2.Url);
 
-                try
-                {
-                    _wsClient2.Connect();
-                }
-                catch (InvalidOperationException)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
-                     _wsClient2 = null;
-
-                     var wsHost = Host.Replace("http", "ws");
-                     var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-                    _wsClient2 = new WebSocket(url);
-
-                    _wsClient2.OnMessage += HandleMessage;
-                    _wsClient2.OnOpen += HandleOpen;
-                    _wsClient2.OnError += HandleError;
-                    _wsClient2.OnClose += HandleClose;
-                                       
-                    StartServerReconnectTimer();
-                }
-                catch (Exception ex)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
-                        ex.Message, ex.StackTrace);
-                }
+                TryConnect();
             }
             finally
             {
                 _wsCriticalSection.Leave();
             }
+        }
+
+        /// <summary>
+        /// Attempts to connect the websocket
+        /// </summary>
+        private void TryConnect()
+        {
+            try
+            {
+                _wsClient2.Connect();
+            }
+            catch (InvalidOperationException)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Maximum retries exceeded. Restarting websocket");
+                HandleConnectFailure();
+            }
+            catch (IOException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "IO Exception\r\n{0}", ex);
+                HandleConnectFailure();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Error on Websocket Connect: {0}\r\nStack Trace: {1}",
+                    ex.Message, ex.StackTrace);
+                HandleConnectFailure();
+            }
+        }
+
+        /// <summary>
+        /// Gracefully handles conect failures by reconstructing the ws client and starting the reconnect timer
+        /// </summary>
+        private void HandleConnectFailure()
+        {
+            _wsClient2 = null;
+
+            var wsHost = Host.Replace("http", "ws");
+            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+            _wsClient2 = new WebSocket(url)
+            {
+                Log =
+                {
+                    Output =
+                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
+                }
+            };
+
+
+            _wsClient2.OnMessage -= HandleMessage;
+            _wsClient2.OnOpen -= HandleOpen;
+            _wsClient2.OnError -= HandleError;
+            _wsClient2.OnClose -= HandleClose;
+
+            _wsClient2.OnMessage += HandleMessage;
+            _wsClient2.OnOpen += HandleOpen;
+            _wsClient2.OnError += HandleError;
+            _wsClient2.OnClose += HandleClose;
+
+            StartServerReconnectTimer();
         }
 
         /// <summary>
@@ -828,7 +888,18 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
 
-            _wsClient2.Close();
+            try
+            {
+                _wsClient2.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Exception closing websocket: {0}\r\nStack Trace: {1}", ex.Message, ex.StackTrace);
+
+                HandleConnectFailure();
+            }
+
+            
         }
 
         /// <summary>

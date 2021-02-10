@@ -279,6 +279,12 @@ namespace PepperDash.Essentials
                 if (device is ITvPresetsProvider)
                 {
                     var presetsDevice = device as ITvPresetsProvider;
+                    if (presetsDevice.TvPresets == null)
+                    {
+                        Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
+                        return;
+                    }
+
                     Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
                     var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
                         presetsDevice);
