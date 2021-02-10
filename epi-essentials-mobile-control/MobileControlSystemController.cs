@@ -219,7 +219,7 @@ namespace PepperDash.Essentials
         {
             if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
             {
-                Debug.Console(0, this, "Setting websocket lot level not currently allowed on 4 series.");
+                Debug.Console(0, this, "Setting websocket log level not currently allowed on 4 series.");
                 return;  // Web socket log level not currently allowed in series4
             }
 
