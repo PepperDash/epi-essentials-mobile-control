@@ -888,7 +888,18 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Ping timer expired. Closing websocket");
 
-            TryConnect();
+            try
+            {
+                _wsClient2.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Exception closing websocket: {0}\r\nStack Trace: {1}", ex.Message, ex.StackTrace);
+
+                HandleConnectFailure();
+            }
+
+            
         }
 
         /// <summary>
