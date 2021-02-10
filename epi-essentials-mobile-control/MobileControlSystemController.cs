@@ -621,18 +621,17 @@ namespace PepperDash.Essentials
                 _wsCriticalSection.Enter();
 
 
-                //set to 99999 to let things work on 4-Series
-                /*if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+                // set to 99999 to let things work on 4-Series
+                if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
                 {
                     _wsClient2.Log.Level = (LogLevel) 99999;
                 }
-
-                if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series3)
+                else if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series3)
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
-                }*/
+                }
 
-                _wsClient2.Log.Level = _wsLogLevel;
+                //_wsClient2.Log.Level = _wsLogLevel;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
