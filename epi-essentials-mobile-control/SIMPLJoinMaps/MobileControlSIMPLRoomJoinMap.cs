@@ -401,12 +401,52 @@ namespace PepperDash.Essentials.AppServer
         #region Advanced Sharing
         [JoinName("SupportsAdvancedSharing")]
         public JoinDataComplete SupportsAdvancedSharing =
-            new JoinDataComplete(new JoinData { JoinNumber = 1200, JoinSpan = 1 },
+            new JoinDataComplete(new JoinData { JoinNumber = 505, JoinSpan = 1 },
             new JoinMetadata
             {
                 Description = "Supports Advanced Sharing",
-                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("DestinationName")]
+        public JoinDataComplete DestinationName =
+            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinMetadata
+            {
+                Description = "Destination Name",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Serial
+            });
+
+        [JoinName("DestinationDeviceKey")]
+        public JoinDataComplete DestinationDeviceKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 10 },
+            new JoinMetadata
+            {
+                Description = "Destination Device Key",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("DestinationOrder")]
+        public JoinDataComplete DestinationOrder =
+            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinMetadata
+            {
+                Description = "Destination Display Order",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Analog
+            });
+
+        [JoinName("ShowDestination")]
+        public JoinDataComplete ShowDestination =
+            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinMetadata
+            {
+                Description = "Show Destination on UI",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
             });
         #endregion
 

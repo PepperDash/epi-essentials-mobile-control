@@ -172,6 +172,7 @@
     <Compile Include="Messengers\DevicePresetsModelMessenger.cs" />
     <Compile Include="Messengers\DeviceVolumeMessenger.cs" />
     <Compile Include="Messengers\RoomEventScheduleMessenger.cs" />
+    <Compile Include="Messengers\SIMPLDirectRouteMessenger.cs" />
     <Compile Include="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="MobileControlEssentialsConfig.cs" />
     <Compile Include="ReceiveQueue.cs" />
@@ -187,7 +188,6 @@
     <Compile Include="Messengers\AudioCodecBaseMessenger.cs" />
     <Compile Include="Messengers\CameraBaseMessenger.cs" />
     <Compile Include="Messengers\ConfigMessenger.cs" />
-    <Compile Include="Messengers\Ddvc01VtcMessenger.cs" />
     <Compile Include="Messengers\IRunRouteActionMessenger.cs" />
     <Compile Include="Messengers\MessengerBase.cs" />
     <Compile Include="Messengers\SIMPLAtcMessenger.cs" />
@@ -208,7 +208,7 @@
     <Compile Include="RoomBridges\SourceDeviceMapDictionary.cs" />
     <Compile Include="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
     <Compile Include="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
-    <Compile Include="SIMPLJoinMaps\SIMPLIRunDirectRouteActionJoinMap.cs" />
+    <Compile Include="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
     <Compile Include="SIMPLJoinMaps\SIMPLVtcJoinMap.cs" />
     <Compile Include="TransmitQueue.cs" />
     <Compile Include="Volumes.cs" />

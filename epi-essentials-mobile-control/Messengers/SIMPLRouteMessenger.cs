@@ -5,7 +5,7 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-// ReSharper disable once InconsistentNaming
+
     public class SIMPLRouteMessenger : MessengerBase
     {
         private readonly BasicTriList _eisc;
