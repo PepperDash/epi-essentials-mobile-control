@@ -10,7 +10,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 403, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "QR Code URL",
+                    Description = "QR Code URL",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -19,7 +19,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Master Volume Mute Toggle/FB/Level/Label",
+                    Description = "Master Volume Mute Toggle/FB/Level/Label",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.DigitalAnalogSerial
                 });
@@ -28,7 +28,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 8},
                 new JoinMetadata
                 {
-                    Label = "Volume Mute Toggle/FB/Level/Label",
+                    Description = "Volume Mute Toggle/FB/Level/Label",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.DigitalAnalogSerial
                 });
@@ -37,7 +37,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 12, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Privacy Mute Toggle/FB",
+                    Description = "Privacy Mute Toggle/FB",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -46,7 +46,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 41, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Prompt User for Code",
+                    Description = "Prompt User for Code",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -55,7 +55,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 42, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Client Joined",
+                    Description = "Client Joined",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -65,7 +65,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 48, JoinSpan = 1 },
             new JoinMetadata
             {
-                Label = "Enable Activity Phone Call",
+                Description = "Enable Activity Phone Call",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -75,7 +75,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 49, JoinSpan = 1 },
             new JoinMetadata
             {
-                Label = "Enable Activity Video Call",
+                Description = "Enable Activity Video Call",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -84,7 +84,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 51, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Activity Share",
+                    Description = "Activity Share",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -93,7 +93,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 52, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Activity Phone Call",
+                    Description = "Activity Phone Call",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -102,7 +102,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 53, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Activity Video Call",
+                    Description = "Activity Video Call",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -111,7 +111,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Shutdown Cancel",
+                    Description = "Shutdown Cancel",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Analog
                 });
@@ -120,7 +120,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Shutdown Cancel",
+                    Description = "Shutdown Cancel",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -129,7 +129,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 62, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Shutdown End",
+                    Description = "Shutdown End",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -138,7 +138,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 63, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Shutdown Start",
+                    Description = "Shutdown Start",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -147,7 +147,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 71, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Source Changed",
+                    Description = "Source Changed",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -156,7 +156,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 71, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Key of selected source",
+                    Description = "Key of selected source",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -166,7 +166,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Config is local to Essentials",
+                    Description = "Config is local to Essentials",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -175,7 +175,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 101, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Number of Auxilliary Faders",
+                    Description = "Number of Auxilliary Faders",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Analog
                 });
@@ -184,7 +184,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 241, JoinSpan = 10},
                 new JoinMetadata
                 {
-                    Label = "Speed Dial names",
+                    Description = "Speed Dial names",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -193,7 +193,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 251, JoinSpan = 10},
                 new JoinMetadata
                 {
-                    Label = "Speed Dial numbers",
+                    Description = "Speed Dial numbers",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -202,7 +202,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 261, JoinSpan = 10},
                 new JoinMetadata
                 {
-                    Label = "Speed Dial Visible",
+                    Description = "Speed Dial Visible",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -211,7 +211,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 301, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room Is On",
+                    Description = "Room Is On",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -220,7 +220,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 401, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "User Code",
+                    Description = "User Code",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -229,7 +229,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 402, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Server URL",
+                    Description = "Server URL",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -238,7 +238,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room Nnme",
+                    Description = "Room Nnme",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -247,7 +247,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 502, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room help message",
+                    Description = "Room help message",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -256,7 +256,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 503, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room help number",
+                    Description = "Room help number",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -265,7 +265,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 504, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room phone number",
+                    Description = "Room phone number",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -274,7 +274,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 505, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Room URI",
+                    Description = "Room URI",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -283,7 +283,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Config info from SIMPL is ready",
+                    Description = "Config info from SIMPL is ready",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -292,7 +292,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 502, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Hide Video Conference Recents",
+                    Description = "Hide Video Conference Recents",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -301,7 +301,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 503, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Show camera when not in call",
+                    Description = "Show camera when not in call",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -310,7 +310,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 504, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Use Source Enabled Joins",
+                    Description = "Use Source Enabled Joins",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -320,7 +320,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 601, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source is not sharable",
+                    Description = "Source is not sharable",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -329,7 +329,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 621, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source is enabled",
+                    Description = "Source is enabled",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -338,7 +338,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 601, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source Names",
+                    Description = "Source Names",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -347,7 +347,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 621, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source Icons",
+                    Description = "Source Icons",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -356,7 +356,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 641, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source Keys",
+                    Description = "Source Keys",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -366,7 +366,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 701, JoinSpan = 20 },
             new JoinMetadata
             {
-                Label = "Source Control Device Keys",
+                Description = "Source Control Device Keys",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Serial
             });
@@ -375,7 +375,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 661, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Label = "Source Types",
+                    Description = "Source Types",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -384,7 +384,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 761, JoinSpan = 10},
                 new JoinMetadata
                 {
-                    Label = "Near End Camera Names",
+                    Description = "Near End Camera Names",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
@@ -393,10 +393,22 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 770, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Label = "Far End Camera Name",
+                    Description = "Far End Camera Name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });
+
+        #region Advanced Sharing
+        [JoinName("SupportsAdvancedSharing")]
+        public JoinDataComplete SupportsAdvancedSharing =
+            new JoinDataComplete(new JoinData { JoinNumber = 1200, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Supports Advanced Sharing",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Serial
+            });
+        #endregion
 
         public MobileControlSIMPLRoomJoinMap(uint joinStart)
             : base(joinStart, typeof(MobileControlSIMPLRoomJoinMap))
