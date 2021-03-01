@@ -48,7 +48,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
         }
 
-        private readonly MobileControlDdvc01DeviceBridge _sourceBridge;
+        private readonly MobileControlSimplDeviceBridge _sourceBridge;
 
         private SIMPLAtcMessenger _atcMessenger;
         private SIMPLVtcMessenger _vtcMessenger;
@@ -70,7 +70,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             JoinMap = new MobileControlSIMPLRoomJoinMap(1);
 
-            _sourceBridge = new MobileControlDdvc01DeviceBridge(key + "-sourceBridge", "DDVC01 source bridge", Eisc);
+            _sourceBridge = new MobileControlSimplDeviceBridge(key + "-sourceBridge", "SIMPL source bridge", Eisc);
             DeviceManager.AddDevice(_sourceBridge);
         }
 
@@ -96,7 +96,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             Eisc.SigChange += EISC_SigChange;
             Eisc.OnlineStatusChange += (o, a) =>
             {
-                Debug.Console(1, this, "DDVC EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
+                Debug.Console(1, this, "SIMPL EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
                     a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
                     Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
 
@@ -394,7 +394,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
             rm.Name = Eisc.StringOutput[JoinMap.ConfigRoomName.JoinNumber].StringValue;
             rm.Key = "room1";
-            rm.Type = "ddvc01";
+            rm.Type = "SIMPL01";
 
             var rmProps = rm.Properties == null
                 ? new DDVC01RoomPropertiesConfig()
@@ -436,7 +436,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             if (co.Devices == null)
                 co.Devices = new List<DeviceConfig>();
 
-            // clear out previous DDVC devices
+            // clear out previous SIMPL devices
             co.Devices.RemoveAll(d =>
                 d.Key.StartsWith("source-", StringComparison.OrdinalIgnoreCase)
                 || d.Key.Equals("audioCodec", StringComparison.OrdinalIgnoreCase)
@@ -842,7 +842,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         private void EISC_SigChange(object currentDevice, SigEventArgs args)
         {
             if (Debug.Level >= 1)
-                Debug.Console(1, this, "DDVC EISC change: {0} {1}={2}", args.Sig.Type, args.Sig.Number,
+                Debug.Console(1, this, "SIMPL EISC change: {0} {1}={2}", args.Sig.Type, args.Sig.Number,
                     args.Sig.StringValue);
             var uo = args.Sig.UserObject;
             if (uo != null)

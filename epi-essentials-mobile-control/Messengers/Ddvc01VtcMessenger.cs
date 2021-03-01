@@ -7,7 +7,7 @@ using PepperDash.Essentials.Devices.Common.Codec;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class Ddvc01VtcMessenger : MessengerBase
+    public class SIMPL01VtcMessenger : MessengerBase
     {
         private readonly BasicTriList _eisc;
 
@@ -275,7 +275,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="key"></param>
         /// <param name="eisc"></param>
         /// <param name="messagePath"></param>
-        public Ddvc01VtcMessenger(string key, BasicTriList eisc, string messagePath)
+        public SIMPL01VtcMessenger(string key, BasicTriList eisc, string messagePath)
             : base(key, messagePath)
         {
             _eisc = eisc;
@@ -457,7 +457,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 catch (Exception)
                 {
                     Debug.Console(1, this, Debug.ErrorLogLevel.Warning,
-                        "/directoryById request contains non-numeric ID incompatible with DDVC bridge");
+                        "/directoryById request contains non-numeric ID incompatible with SIMPL bridge");
                 }
             }));
             asc.AddAction(MessagePath + "/directorySelectContact", new Action<string>(s =>

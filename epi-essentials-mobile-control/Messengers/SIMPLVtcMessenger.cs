@@ -448,7 +448,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 catch (Exception)
                 {
                     Debug.Console(1, this, Debug.ErrorLogLevel.Warning,
-                        "/directoryById request contains non-numeric ID incompatible with DDVC bridge");
+                        "/directoryById request contains non-numeric ID incompatible with SIMPL bridge");
                 }
             }));
             asc.AddAction(MessagePath + "/directorySelectContact", new Action<string>(s =>

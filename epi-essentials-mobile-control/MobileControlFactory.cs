@@ -23,9 +23,9 @@ namespace PepperDash.Essentials
         }
     }
 
-    public class MobileControlDdvcFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
+    public class MobileControlSimplFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
     {
-        public MobileControlDdvcFactory()
+        public MobileControlSimplFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.7.6";
             TypeNames = new List<string> {"mobilecontrolbridge-ddvc01", "mobilecontrolbridge-simpl"};
