@@ -282,14 +282,15 @@ namespace PepperDash.Essentials
                     if (presetsDevice.TvPresets == null)
                     {
                         Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
-                        return;
                     }
-
-                    Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
-                    var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
-                        presetsDevice);
-                    DeviceMessengers.Add(device.Key, presetsMessenger);
-                    presetsMessenger.RegisterWithAppServer(Parent);
+                    else
+                    {
+                        Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
+                        var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
+                            presetsDevice);
+                        DeviceMessengers.Add(device.Key, presetsMessenger);
+                        presetsMessenger.RegisterWithAppServer(Parent);
+                    }
                 }
 
                 if (device is DisplayBase)
