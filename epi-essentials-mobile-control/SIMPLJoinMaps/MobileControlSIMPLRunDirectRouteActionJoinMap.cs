@@ -37,6 +37,16 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Serial
             });
 
+        [JoinName("SourceForDestinationAudio")]
+        public JoinDataComplete SourceForDestinationAudio =
+            new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
+                new JoinMetadata
+                {
+                    Description = "Source to Route to Destination & FB",
+                    JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                    JoinType = eJoinType.Serial
+                });
+
         public MobileControlSIMPLRunDirectRouteActionJoinMap(uint joinStart)
             : base(joinStart, typeof(MobileControlSIMPLRunDirectRouteActionJoinMap))
         {

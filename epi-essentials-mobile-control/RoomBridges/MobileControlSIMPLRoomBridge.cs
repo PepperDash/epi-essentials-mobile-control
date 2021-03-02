@@ -52,7 +52,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         private SIMPLAtcMessenger _atcMessenger;
         private SIMPLVtcMessenger _vtcMessenger;
-        private SIMPLDirectRouteMessenger _directRouteMessenger;
+        private SimplDirectRouteMessenger _directRouteMessenger;
 
         /// <summary>
         /// 
@@ -94,7 +94,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             _vtcMessenger.RegisterWithAppServer(Parent);
 
             var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
-            _directRouteMessenger = new SIMPLDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
+            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
             _directRouteMessenger.RegisterWithAppServer(Parent);
 
             Eisc.SigChange += EISC_SigChange;
@@ -665,7 +665,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var name = Eisc.StringOutput[JoinMap.DestinationNameJoinStart.JoinNumber + i].StringValue;
                 var routeType = Eisc.StringOutput[JoinMap.DestinationTypeJoinStart.JoinNumber + i].StringValue;
                 var key = Eisc.StringOutput[JoinMap.DestinationDeviceKeyJoinStart.JoinNumber + i].StringValue;
-                var order = Eisc.UShortOutput[JoinMap.DestinationOrderJoinStart.JoinNumber + i].UShortValue;
+                //var order = Eisc.UShortOutput[JoinMap.DestinationOrderJoinStart.JoinNumber + i].UShortValue;
                 var enabled = Eisc.UShortOutput[JoinMap.DestinationIsEnabledJoinStart.JoinNumber + i].BoolValue;
 
                 if (useDestEnable && !enabled)
@@ -689,7 +689,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var newDli = new DestinationListItem
                 {
                     Name = name,
-                    Order = order,
+                    Order = (int) i,
                     SinkKey = key,
                     SinkType = parsedType,
                 };
@@ -697,7 +697,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 newDl.Add(key, newDli);
 
                 //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
-                _directRouteMessenger.DestinationList.Add(i, newDli);
+                _directRouteMessenger.DestinationList.Add(key, newDli);
 
                 var existingDev = DeviceManager.GetDeviceForKey(newDli.SinkKey);
 

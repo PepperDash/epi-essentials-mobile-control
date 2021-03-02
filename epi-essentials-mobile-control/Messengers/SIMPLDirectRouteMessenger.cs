@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
-using Org.BouncyCastle.Asn1.X509.Qualified;
-using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Devices.Common.VideoCodec;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class SIMPLDirectRouteMessenger:MessengerBase
+    public class SimplDirectRouteMessenger:MessengerBase
     {
         private readonly BasicTriList _eisc;
 
@@ -17,7 +13,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         public Dictionary<string, DestinationListItem> DestinationList { get; set; }
 
-        public SIMPLDirectRouteMessenger(string key, BasicTriList eisc, string messagePath) : base(key, messagePath)
+        public SimplDirectRouteMessenger(string key, BasicTriList eisc, string messagePath) : base(key, messagePath)
         {
             _eisc = eisc;
 
@@ -37,30 +33,43 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var dest = destination.Value;
 
                 _eisc.SetStringSigAction((uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order),
-                    (s) => UpdateSourceForDestination(s, key));
+                    s => UpdateSourceForDestination(s, key));
 
                 controller.AddAction(String.Format("{0}/{1}/selectSource", MessagePath, dest.SinkKey),
                     new Action<string>(
-                        (s) =>
+                        s =>
                             _eisc.StringInput[JoinMap.SourceForDestinationJoinStart.JoinNumber + key].StringValue = s));
             }
 
+            //Audio source
+            _eisc.SetStringSigAction(JoinMap.SourceForDestinationAudio.JoinNumber,
+                (s) => controller.SendMessageObjectToServer(new
+                {
+                    path = MessagePath + "/audio/currentSource",
+                    content = new
+                    {
+                        selectedSourceKey = s,
+                    }
+                }));
+
+            controller.AddAction(MessagePath + "/audio/selectSource",
+                new Action<string>(
+                    (s) => _eisc.StringInput[JoinMap.SourceForDestinationAudio.JoinNumber].StringValue = s));
+
+
+
             controller.AddAction(MessagePath + "/fullStatus", new Action(() =>
             {
-
-                var status = DestinationList.Select((d) =>
+                foreach (var dest in DestinationList)
                 {
-                    var responseObject = new
-                    {
-                        destinationKey = d.Key,
-                        selectedSourceKey =
-                            _eisc.StringOutput[JoinMap.SourceForDestinationJoinStart.JoinNumber + d.Key].StringValue
-                    };
+                    var key = dest.Key;
+                    var item = dest.Value;
 
-                    return responseObject;
-                }).ToDictionary((d) => d.destinationKey, (d) => new {d.selectedSourceKey});
+                    var source =
+                        _eisc.StringOutput[(uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + item.Order)].StringValue;
 
-                PostStatusMessage(status);
+                    UpdateSourceForDestination(source, key);
+                }
             }));
         }
 
