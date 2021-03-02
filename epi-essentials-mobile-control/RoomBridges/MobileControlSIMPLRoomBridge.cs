@@ -52,7 +52,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         private SIMPLAtcMessenger _atcMessenger;
         private SIMPLVtcMessenger _vtcMessenger;
-
+        private SIMPLDirectRouteMessenger _directRouteMessenger;
 
         /// <summary>
         /// 
@@ -92,6 +92,10 @@ namespace PepperDash.Essentials.Room.MobileControl
             var vtcKey = string.Format("atc-{0}-{1}", Key, Parent.Key);
             _vtcMessenger = new SIMPLVtcMessenger(vtcKey, Eisc, "/device/videoCodec");
             _vtcMessenger.RegisterWithAppServer(Parent);
+
+            var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
+            _directRouteMessenger = new SIMPLDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
+            _directRouteMessenger.RegisterWithAppServer(Parent);
 
             Eisc.SigChange += EISC_SigChange;
             Eisc.OnlineStatusChange += (o, a) =>
@@ -440,7 +444,8 @@ namespace PepperDash.Essentials.Room.MobileControl
             co.Devices.RemoveAll(d =>
                 d.Key.StartsWith("source-", StringComparison.OrdinalIgnoreCase)
                 || d.Key.Equals("audioCodec", StringComparison.OrdinalIgnoreCase)
-                || d.Key.Equals("videoCodec", StringComparison.OrdinalIgnoreCase));
+                || d.Key.Equals("videoCodec", StringComparison.OrdinalIgnoreCase)
+            || d.Key.StartsWith("destination-", StringComparison.OrdinalIgnoreCase));
 
             rmProps.SourceListKey = "default";
             rm.Properties = JToken.FromObject(rmProps);
@@ -466,10 +471,11 @@ namespace PepperDash.Essentials.Room.MobileControl
                 newSl.Add("Source-None", codecOsd);
             }
             // add sources...
+            var useSourceEnabled = Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue;
             for (uint i = 0; i <= 19; i++)
             {
                 var name = Eisc.StringOutput[JoinMap.SourceNameJoinStart.JoinNumber + i].StringValue;
-                if (Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue
+                if (useSourceEnabled
                     && !Eisc.BooleanOutput[JoinMap.SourceIsEnabledJoinStart.JoinNumber + i].BoolValue)
                 {
                     continue;
@@ -503,8 +509,6 @@ namespace PepperDash.Essentials.Room.MobileControl
                 // Look to see if this is a device that already exists in Essentials and get it
                 if (existingSourceDevice != null)
                 {
-                    var devConf = ConfigReader.ConfigObject.GetDeviceForKey(newSli.SourceKey);
-
                     Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
                 }
                 else
@@ -548,6 +552,11 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
 
             co.SourceLists.Add("default", newSl);
+
+            if (Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue)
+            {
+                CreateDestinationList(co);
+            }
 
             // Build "audioCodec" config if we need
             if (!string.IsNullOrEmpty(rmProps.AudioCodecKey))
@@ -643,6 +652,77 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
 
             ConfigIsLoaded = true;
+        }
+
+        private void CreateDestinationList(BasicConfig co)
+        {
+            var useDestEnable = Eisc.BooleanOutput[JoinMap.UseDestinationEnable.JoinNumber].BoolValue;
+
+            var newDl = new Dictionary<string, DestinationListItem>();
+
+            for (uint i = 0; i < 9; i++)
+            {
+                var name = Eisc.StringOutput[JoinMap.DestinationNameJoinStart.JoinNumber + i].StringValue;
+                var routeType = Eisc.StringOutput[JoinMap.DestinationTypeJoinStart.JoinNumber + i].StringValue;
+                var key = Eisc.StringOutput[JoinMap.DestinationDeviceKeyJoinStart.JoinNumber + i].StringValue;
+                var order = Eisc.UShortOutput[JoinMap.DestinationOrderJoinStart.JoinNumber + i].UShortValue;
+                var enabled = Eisc.UShortOutput[JoinMap.DestinationIsEnabledJoinStart.JoinNumber + i].BoolValue;
+
+                if (useDestEnable && !enabled)
+                {
+                    continue;
+                }
+
+                Debug.Console(0, this, "Adding destination {0} - {1}", key, name);
+
+                eRoutingSignalType parsedType;
+                try
+                {
+                    parsedType = (eRoutingSignalType) Enum.Parse(typeof (eRoutingSignalType), routeType, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.Console(0, this, "Error parsing destination type: {0}", routeType);
+                    parsedType = eRoutingSignalType.AudioVideo;
+                }
+
+                var newDli = new DestinationListItem
+                {
+                    Name = name,
+                    Order = order,
+                    SinkKey = key,
+                    SinkType = parsedType,
+                };
+
+                newDl.Add(key, newDli);
+
+                //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
+                _directRouteMessenger.DestinationList.Add(i, newDli);
+
+                var existingDev = DeviceManager.GetDeviceForKey(newDli.SinkKey);
+
+                if (existingDev != null)
+                {
+                    Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
+                }
+                else
+                {
+                    // If not, synthesize the device config
+                    var devConf = new DeviceConfig
+                    {
+                        Group = "genericdestination",
+                        Key = key,
+                        Name = name,
+                        Type = "genericdestination"
+                    };
+
+                    co.Devices.Add(devConf);
+                }
+            }
+
+            co.DestinationLists.Add("default", newDl);
+
+
         }
 
         /// <summary>
@@ -874,7 +954,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             };
             return d;
-        }
+        } 
 
         /// <summary>
         /// updates the usercode from server

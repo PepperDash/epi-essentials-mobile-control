@@ -409,8 +409,18 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Digital
             });
 
-        [JoinName("DestinationName")]
-        public JoinDataComplete DestinationName =
+        [JoinName("UseDestinationEnable")]
+        public JoinDataComplete UseDestinationEnable =
+            new JoinDataComplete(new JoinData { JoinNumber = 505, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Supports Advanced Sharing",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("DestinationNameJoinStart")]
+        public JoinDataComplete DestinationNameJoinStart =
             new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
             new JoinMetadata
             {
@@ -419,8 +429,8 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Serial
             });
 
-        [JoinName("DestinationDeviceKey")]
-        public JoinDataComplete DestinationDeviceKey =
+        [JoinName("DestinationDeviceKeyJoinStart")]
+        public JoinDataComplete DestinationDeviceKeyJoinStart =
             new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 10 },
             new JoinMetadata
             {
@@ -429,8 +439,8 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Serial
             });
 
-        [JoinName("DestinationOrder")]
-        public JoinDataComplete DestinationOrder =
+        [JoinName("DestinationOrderJoinStart")]
+        public JoinDataComplete DestinationOrderJoinStart =
             new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
             new JoinMetadata
             {
@@ -439,8 +449,18 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Analog
             });
 
-        [JoinName("ShowDestination")]
-        public JoinDataComplete ShowDestination =
+        [JoinName("DestinationTypeJoinStart")]
+        public JoinDataComplete DestinationTypeJoinStart =
+            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinMetadata
+            {
+                Description = "Show Destination on UI",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
+        [JoinName("DestinationIsEnabledJoinStart")]
+        public JoinDataComplete DestinationIsEnabledJoinStart =
             new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
             new JoinMetadata
             {
