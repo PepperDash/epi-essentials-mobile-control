@@ -68,14 +68,14 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Digital
                 });
 
-        /*[JoinName("DirectoryEntryIsContact")] public JoinDataComplete DirectoryEntryIsContact =
+        [JoinName("DirectoryEntryIsContact")] public JoinDataComplete DirectoryEntryIsContact =
             new JoinDataComplete(new JoinData() {JoinNumber = 101, JoinSpan = 1},
                 new JoinMetadata()
                 {
                     Label = "Directory Selected Entry Is Contact FB",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
-                });*/
+                });
 
         [JoinName("DirectoryIsRoot")] public JoinDataComplete DirectoryIsRoot =
             new JoinDataComplete(new JoinData() {JoinNumber = 102, JoinSpan = 1},
