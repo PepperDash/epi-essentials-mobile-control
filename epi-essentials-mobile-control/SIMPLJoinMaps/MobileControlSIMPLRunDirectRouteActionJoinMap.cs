@@ -27,13 +27,13 @@ namespace PepperDash.Essentials.AppServer
 
         
 
-        [JoinName("ShowDestination")]
-        public JoinDataComplete SourceForDestination =
+        [JoinName("SourceForDestinationJoinStart")]
+        public JoinDataComplete SourceForDestinationJoinStart =
             new JoinDataComplete(new JoinData { JoinNumber = 51, JoinSpan = 10 },
             new JoinMetadata
             {
-                Description = "Source to Route to Destination",
-                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                Description = "Source to Route to Destination & FB",
+                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                 JoinType = eJoinType.Serial
             });
 
