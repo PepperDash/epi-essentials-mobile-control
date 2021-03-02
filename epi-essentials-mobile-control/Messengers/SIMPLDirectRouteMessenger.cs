@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Crestron.SimplSharpPro.DeviceSupport;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
@@ -14,7 +15,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         public MobileControlSIMPLRunDirectRouteActionJoinMap JoinMap { get; private set; }
 
-        public Dictionary<uint, DestinationListItem> DestinationList { get; set; }
+        public Dictionary<string, DestinationListItem> DestinationList { get; set; }
 
         public SIMPLDirectRouteMessenger(string key, BasicTriList eisc, string messagePath) : base(key, messagePath)
         {
@@ -22,7 +23,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             JoinMap = new MobileControlSIMPLRunDirectRouteActionJoinMap(1101);
 
-            DestinationList = new Dictionary<uint, DestinationListItem>();
+            DestinationList = new Dictionary<string, DestinationListItem>();
         }
 
         #region Overrides of MessengerBase
@@ -32,16 +33,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
             //handle routing feedback from SIMPL
             foreach(var destination in DestinationList)
             {
-                var index = destination.Key;
+                var key = destination.Key;
                 var dest = destination.Value;
 
-                _eisc.SetStringSigAction(JoinMap.SourceForDestinationJoinStart.JoinNumber + index,
-                    (s) => UpdateSourceForDestination(s, dest));
+                _eisc.SetStringSigAction((uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order),
+                    (s) => UpdateSourceForDestination(s, key));
 
                 controller.AddAction(String.Format("{0}/{1}/selectSource", MessagePath, dest.SinkKey),
                     new Action<string>(
                         (s) =>
-                            _eisc.StringInput[JoinMap.SourceForDestinationJoinStart.JoinNumber + index].StringValue = s));
+                            _eisc.StringInput[JoinMap.SourceForDestinationJoinStart.JoinNumber + key].StringValue = s));
             }
 
             controller.AddAction(MessagePath + "/fullStatus", new Action(() =>
@@ -51,13 +52,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     var responseObject = new
                     {
-                        destinationSinkKey = d.Value.SinkKey,
+                        destinationKey = d.Key,
                         selectedSourceKey =
                             _eisc.StringOutput[JoinMap.SourceForDestinationJoinStart.JoinNumber + d.Key].StringValue
                     };
 
                     return responseObject;
-                }).ToList();
+                }).ToDictionary((d) => d.destinationKey, (d) => new {d.selectedSourceKey});
 
                 PostStatusMessage(status);
             }));
@@ -65,11 +66,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         #endregion
 
-        private void UpdateSourceForDestination(string sourceKey, DestinationListItem dest)
+        private void UpdateSourceForDestination(string sourceKey, string destKey)
         {
             AppServerController.SendMessageObjectToServer(new
             {
-                path = String.Format("{0}/{1}/currentSource", MessagePath, dest.SinkKey),
+                path = String.Format("{0}/{1}/currentSource", MessagePath, destKey),
                 content = new
                 {
                     selectedSourceKey = sourceKey
