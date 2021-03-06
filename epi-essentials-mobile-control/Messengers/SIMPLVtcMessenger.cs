@@ -32,7 +32,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             _eisc = eisc;
 
-            JoinMap = new SIMPLVtcJoinMap(801);
+            JoinMap = new SIMPLVtcJoinMap(1001);
 
             _currentCallItem = new CodecActiveCallItem {Type = eCodecCallType.Video, Id = "-video-"};
         }

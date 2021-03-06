@@ -1,5 +1,4 @@
-﻿using PepperDash.Essentials.Bridges;
-using PepperDash.Essentials.Core.Bridges;
+﻿using PepperDash.Essentials.Core.Bridges;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {

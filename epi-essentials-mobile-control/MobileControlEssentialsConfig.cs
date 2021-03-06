@@ -26,6 +26,7 @@ namespace PepperDash.Essentials
             this.JoinMaps = config.JoinMaps;
             this.Rooms = config.Rooms;
             this.SourceLists = config.SourceLists;
+            this.DestinationLists = config.DestinationLists;
             this.SystemUrl = config.SystemUrl;
             this.TemplateUrl = config.TemplateUrl;
             this.TieLines = config.TieLines;

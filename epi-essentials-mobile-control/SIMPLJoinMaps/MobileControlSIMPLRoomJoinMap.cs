@@ -334,6 +334,27 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Digital
                 });
 
+        [JoinName("SourceIsControllableJoinStart")]
+        public JoinDataComplete SourceIsControllableJoinStart =
+            new JoinDataComplete(new JoinData { JoinNumber = 641, JoinSpan = 20 },
+            new JoinMetadata
+            {
+                Description = "Source is enabled",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("SourceIsAudioSourceJoinStart")]
+        public JoinDataComplete SourceIsAudioSourceJoinStart =
+            new JoinDataComplete(new JoinData { JoinNumber = 661, JoinSpan = 20 },
+            new JoinMetadata
+            {
+                Description = "Source is enabled",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+
         [JoinName("SourceNameJoinStart")] public JoinDataComplete SourceNameJoinStart =
             new JoinDataComplete(new JoinData {JoinNumber = 601, JoinSpan = 20},
                 new JoinMetadata
@@ -390,7 +411,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("CameraFarName")] public JoinDataComplete CameraFarName =
-            new JoinDataComplete(new JoinData {JoinNumber = 770, JoinSpan = 1},
+            new JoinDataComplete(new JoinData {JoinNumber = 771, JoinSpan = 1},
                 new JoinMetadata
                 {
                     Description = "Far End Camera Name",
@@ -411,17 +432,17 @@ namespace PepperDash.Essentials.AppServer
 
         [JoinName("UseDestinationEnable")]
         public JoinDataComplete UseDestinationEnable =
-            new JoinDataComplete(new JoinData { JoinNumber = 505, JoinSpan = 1 },
+            new JoinDataComplete(new JoinData { JoinNumber = 506, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "Supports Advanced Sharing",
+                Description = "Use Destination Enable",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Digital
             });
 
         [JoinName("DestinationNameJoinStart")]
         public JoinDataComplete DestinationNameJoinStart =
-            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinDataComplete(new JoinData { JoinNumber = 801, JoinSpan = 10 },
             new JoinMetadata
             {
                 Description = "Destination Name",
@@ -431,7 +452,7 @@ namespace PepperDash.Essentials.AppServer
 
         [JoinName("DestinationDeviceKeyJoinStart")]
         public JoinDataComplete DestinationDeviceKeyJoinStart =
-            new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 10 },
+            new JoinDataComplete(new JoinData { JoinNumber = 811, JoinSpan = 10 },
             new JoinMetadata
             {
                 Description = "Destination Device Key",
@@ -439,29 +460,19 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Serial
             });
 
-        [JoinName("DestinationOrderJoinStart")]
-        public JoinDataComplete DestinationOrderJoinStart =
-            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
-            new JoinMetadata
-            {
-                Description = "Destination Display Order",
-                JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                JoinType = eJoinType.Analog
-            });
-
         [JoinName("DestinationTypeJoinStart")]
         public JoinDataComplete DestinationTypeJoinStart =
-            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinDataComplete(new JoinData { JoinNumber = 821, JoinSpan = 10 },
             new JoinMetadata
             {
-                Description = "Show Destination on UI",
+                Description = "Destination type. Should be Audio, Video, AudioVideo",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Serial
             });
 
         [JoinName("DestinationIsEnabledJoinStart")]
         public JoinDataComplete DestinationIsEnabledJoinStart =
-            new JoinDataComplete(new JoinData { JoinNumber = 11, JoinSpan = 10 },
+            new JoinDataComplete(new JoinData { JoinNumber = 801, JoinSpan = 10 },
             new JoinMetadata
             {
                 Description = "Show Destination on UI",

@@ -128,6 +128,8 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 _vtcMessenger.JoinMap.PrintJoinMapInfo();
 
+                _directRouteMessenger.JoinMap.PrintJoinMapInfo();
+
                 // TODO: Update Source Bridge to use new JoinMap scheme
                 //_sourceBridge.JoinMap.PrintJoinMapInfo();
             }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
@@ -475,19 +477,21 @@ namespace PepperDash.Essentials.Room.MobileControl
             for (uint i = 0; i <= 19; i++)
             {
                 var name = Eisc.StringOutput[JoinMap.SourceNameJoinStart.JoinNumber + i].StringValue;
-                if (useSourceEnabled
-                    && !Eisc.BooleanOutput[JoinMap.SourceIsEnabledJoinStart.JoinNumber + i].BoolValue)
-                {
-                    continue;
-                }
 
                 if (!Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue && string.IsNullOrEmpty(name))
+                {
+                    Debug.Console(1, "Source at join {0} does not have a name", JoinMap.SourceNameJoinStart.JoinNumber + i);
                     break;
+                }
+                    
 
                 var icon = Eisc.StringOutput[JoinMap.SourceIconJoinStart.JoinNumber + i].StringValue;
                 var key = Eisc.StringOutput[JoinMap.SourceKeyJoinStart.JoinNumber + i].StringValue;
                 var type = Eisc.StringOutput[JoinMap.SourceTypeJoinStart.JoinNumber + i].StringValue;
                 var disableShare = Eisc.BooleanOutput[JoinMap.SourceShareDisableJoinStart.JoinNumber + i].BoolValue;
+                var sourceEnabled = Eisc.BooleanOutput[JoinMap.SourceIsEnabledJoinStart.JoinNumber + i].BoolValue;
+                var controllable = Eisc.BooleanOutput[JoinMap.SourceIsControllableJoinStart.JoinNumber + i].BoolValue;
+                var audioSource = Eisc.BooleanOutput[JoinMap.SourceIsAudioSourceJoinStart.JoinNumber + i].BoolValue;
 
                 Debug.Console(0, this, "Adding source {0} '{1}'", key, name);
 
@@ -501,6 +505,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                     SourceKey = string.IsNullOrEmpty(sourceKey) ? key : sourceKey, // Use the value from the join if defined
                     Type = eSourceListItemType.Route,
                     DisableCodecSharing = disableShare,
+                    IncludeInSourceList = !useSourceEnabled || sourceEnabled,
+                    IsControllable = controllable,
+                    IsAudioSource = audioSource
                 };
                 newSl.Add(key, newSli);
 
@@ -555,6 +562,11 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             if (Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue)
             {
+                if (co.DestinationLists == null)
+                {
+                    co.DestinationLists = new Dictionary<string, Dictionary<string, DestinationListItem>>();
+                }
+
                 CreateDestinationList(co);
             }
 
@@ -673,6 +685,11 @@ namespace PepperDash.Essentials.Room.MobileControl
                     continue;
                 }
 
+                if (String.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
                 Debug.Console(0, this, "Adding destination {0} - {1}", key, name);
 
                 eRoutingSignalType parsedType;
@@ -722,7 +739,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             co.DestinationLists.Add("default", newDl);
 
-
+            _directRouteMessenger.RegisterForDestinationPaths();
         }
 
         /// <summary>
