@@ -22,6 +22,8 @@ namespace PepperDash.Essentials.Room.MobileControl
 // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomBridge : MobileControlBridgeBase, IDelayedConfiguration
     {
+        private const int SupportedDisplayCount = 10;
+
         /// <summary>
         /// Fires when config is ready to go
         /// </summary>
@@ -672,7 +674,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             var newDl = new Dictionary<string, DestinationListItem>();
 
-            for (uint i = 0; i < 9; i++)
+            for (uint i = 0; i < SupportedDisplayCount; i++)
             {
                 var name = Eisc.StringOutput[JoinMap.DestinationNameJoinStart.JoinNumber + i].StringValue;
                 var routeType = Eisc.StringOutput[JoinMap.DestinationTypeJoinStart.JoinNumber + i].StringValue;
@@ -711,10 +713,17 @@ namespace PepperDash.Essentials.Room.MobileControl
                     SinkType = parsedType,
                 };
 
-                newDl.Add(key, newDli);
+                if (!newDl.ContainsKey(key))
+                {
+                    newDl.Add(key, newDli);
+                }
 
-                //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
-                _directRouteMessenger.DestinationList.Add(key, newDli);
+                if (!_directRouteMessenger.DestinationList.ContainsKey(key))
+                {
+
+                    //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
+                    _directRouteMessenger.DestinationList.Add(key, newDli);
+                }
 
                 var existingDev = DeviceManager.GetDeviceForKey(newDli.SinkKey);
 
