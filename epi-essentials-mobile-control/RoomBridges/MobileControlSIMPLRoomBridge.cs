@@ -405,8 +405,8 @@ namespace PepperDash.Essentials.Room.MobileControl
             rm.Type = "SIMPL01";
 
             var rmProps = rm.Properties == null
-                ? new DDVC01RoomPropertiesConfig()
-                : JsonConvert.DeserializeObject<DDVC01RoomPropertiesConfig>(rm.Properties.ToString());
+                ? new SimplRoomPropertiesConfig()
+                : JsonConvert.DeserializeObject<SimplRoomPropertiesConfig>(rm.Properties.ToString());
 
             rmProps.Help = new EssentialsHelpPropertiesConfig
             {
@@ -418,7 +418,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             rmProps.RoomPhoneNumber = Eisc.StringOutput[JoinMap.ConfigRoomPhoneNumber.JoinNumber].StringValue;
             rmProps.RoomURI = Eisc.StringOutput[JoinMap.ConfigRoomUri.JoinNumber].StringValue;
-            rmProps.SpeedDials = new List<DDVC01SpeedDial>();
+            rmProps.SpeedDials = new List<SimplSpeedDial>();
 
             // This MAY need a check 
             if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
