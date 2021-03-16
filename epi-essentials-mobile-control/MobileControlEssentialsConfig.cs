@@ -31,6 +31,9 @@ namespace PepperDash.Essentials
             this.TemplateUrl = config.TemplateUrl;
             this.TieLines = config.TieLines;
 
+            if (this.Info == null)
+                this.Info = new InfoConfig();
+
             RuntimeInfo = new MobileControlRuntimeInfo();
         }
     }
