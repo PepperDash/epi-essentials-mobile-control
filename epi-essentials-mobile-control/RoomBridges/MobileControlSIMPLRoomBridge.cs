@@ -74,6 +74,8 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             _sourceBridge = new MobileControlSimplDeviceBridge(key + "-sourceBridge", "SIMPL source bridge", Eisc);
             DeviceManager.AddDevice(_sourceBridge);
+
+            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
         }
 
         /// <summary>
@@ -717,12 +719,19 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     newDl.Add(key, newDli);
                 }
+                else
+                {
+                    newDl[key] = newDli;
+                }
 
                 if (!_directRouteMessenger.DestinationList.ContainsKey(key))
                 {
-
                     //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
                     _directRouteMessenger.DestinationList.Add(key, newDli);
+                }
+                else
+                {
+                    _directRouteMessenger.DestinationList[key] = newDli;
                 }
 
                 var existingDev = DeviceManager.GetDeviceForKey(newDli.SinkKey);
@@ -746,9 +755,16 @@ namespace PepperDash.Essentials.Room.MobileControl
                 }
             }
 
-            co.DestinationLists.Add("default", newDl);
+            if (!co.DestinationLists.ContainsKey("default"))
+            {
+                co.DestinationLists.Add("default", newDl);
+            }
+            else
+            {
+                co.DestinationLists["default"] = newDl;
+            }
 
-            _directRouteMessenger.RegisterForDestinationPaths();
+                _directRouteMessenger.RegisterForDestinationPaths();
         }
 
         /// <summary>
@@ -882,6 +898,8 @@ namespace PepperDash.Essentials.Room.MobileControl
                     AuxFaders = auxFaderDict,
                     NumberOfAuxFaders = Eisc.UShortInput[JoinMap.NumberOfAuxFaders.JoinNumber].UShortValue
                 };
+
+                // TODO: Add property to status message to indicate if advanced sharing is supported and if users can change share mode
 
                 PostStatusMessage(new
                 {
