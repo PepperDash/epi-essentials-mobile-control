@@ -76,6 +76,34 @@ namespace PepperDash.Essentials.Room.MobileControl
             DeviceManager.AddDevice(_sourceBridge);
 
             CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
+
+
+            AddPostActivationAction(() =>
+                {
+                    Eisc.SigChange += EISC_SigChange;
+                    Eisc.OnlineStatusChange += (o, a) =>
+                    {
+                        Debug.Console(1, this, "SIMPL EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
+                            a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
+                            Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
+
+                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                            LoadConfigValues();
+
+                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                            UseEssentialsConfig();
+                    };
+                    // load config if it's already there
+                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                    {
+                        LoadConfigValues();
+                    }
+
+                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                    {
+                        UseEssentialsConfig();
+                    }
+                });
         }
 
         /// <summary>
@@ -100,29 +128,6 @@ namespace PepperDash.Essentials.Room.MobileControl
             var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
             _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
             _directRouteMessenger.RegisterWithAppServer(Parent);
-
-            Eisc.SigChange += EISC_SigChange;
-            Eisc.OnlineStatusChange += (o, a) =>
-            {
-                Debug.Console(1, this, "SIMPL EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
-                    a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
-                    Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
-
-                if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
-                    LoadConfigValues();
-
-                if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
-                    UseEssentialsConfig();
-            };
-            // load config if it's already there
-            if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
-                // || EISC.BooleanInput[JoinMap.ConfigIsReady].BoolValue)
-                LoadConfigValues();
-
-            if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
-            {
-                UseEssentialsConfig();
-            }
 
             CrestronConsole.AddNewConsoleCommand(s =>
             {
