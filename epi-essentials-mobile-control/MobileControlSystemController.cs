@@ -277,6 +277,11 @@ namespace PepperDash.Essentials
                 return base.CustomActivate();
             }
 
+            if (_roomBridges.OfType<IDelayedConfiguration>().ToList().Count > 0)
+            {
+                return base.CustomActivate();
+            }
+
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Config contains no rooms.  Registering with Server.");
             RegisterSystemToServer();
 
@@ -369,7 +374,15 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Bridge ready.  Registering");
 
             // send the configuration object to the server
-            RegisterSystemToServer();
+            if (!_wsClient2.IsAlive)
+            {
+                RegisterSystemToServer();
+            }
+            else
+            {
+                SendInitialMessage();
+            }
+               
         }
 
         /// <summary>

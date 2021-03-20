@@ -329,7 +329,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 621, JoinSpan = 20},
                 new JoinMetadata
                 {
-                    Description = "Source is enabled",
+                    Description = "Source is enabled/visible",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -339,7 +339,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 641, JoinSpan = 20 },
             new JoinMetadata
             {
-                Description = "Source is enabled",
+                Description = "Source is controllable",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -349,7 +349,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 661, JoinSpan = 20 },
             new JoinMetadata
             {
-                Description = "Source is enabled",
+                Description = "Source is Audio Source",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
                 JoinType = eJoinType.Digital
             });
