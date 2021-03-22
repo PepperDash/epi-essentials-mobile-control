@@ -687,7 +687,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var routeType = Eisc.StringOutput[JoinMap.DestinationTypeJoinStart.JoinNumber + i].StringValue;
                 var key = Eisc.StringOutput[JoinMap.DestinationDeviceKeyJoinStart.JoinNumber + i].StringValue;
                 //var order = Eisc.UShortOutput[JoinMap.DestinationOrderJoinStart.JoinNumber + i].UShortValue;
-                var enabled = Eisc.UShortOutput[JoinMap.DestinationIsEnabledJoinStart.JoinNumber + i].BoolValue;
+                var enabled = Eisc.BooleanOutput[JoinMap.DestinationIsEnabledJoinStart.JoinNumber + i].BoolValue;
 
                 if (useDestEnable && !enabled)
                 {
