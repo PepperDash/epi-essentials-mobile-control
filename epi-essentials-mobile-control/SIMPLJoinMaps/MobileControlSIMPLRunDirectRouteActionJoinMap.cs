@@ -14,7 +14,6 @@ namespace PepperDash.Essentials.AppServer
                 JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                 JoinType = eJoinType.Digital
             });
-        
 
         [JoinName("SourceForDestinationJoinStart")]
         public JoinDataComplete SourceForDestinationJoinStart =

@@ -15,6 +15,16 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Serial
                 });
 
+        [JoinName("PortalSystemUrl")]
+        public JoinDataComplete PortalSystemUrl =
+            new JoinDataComplete(new JoinData { JoinNumber = 404, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Portal System URL",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Serial
+            });
+
         [JoinName("MasterVolume")] public JoinDataComplete MasterVolume =
             new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
                 new JoinMetadata
@@ -437,6 +447,17 @@ namespace PepperDash.Essentials.AppServer
             {
                 Description = "Use Destination Enable",
                 JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+
+        [JoinName("UserCanChangeShareMode")]
+        public JoinDataComplete UserCanChangeShareMode =
+            new JoinDataComplete(new JoinData { JoinNumber = 507, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Share Mode Toggle Visible to User",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
 

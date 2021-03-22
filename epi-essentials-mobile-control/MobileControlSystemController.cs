@@ -43,7 +43,18 @@ namespace PepperDash.Essentials
         private WebSocket _wsClient2;
 
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
-        public string SystemUuid;
+        public string SystemUuid
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid))
+                {
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Cannot get SystemUuid to connect to server");
+                    return String.Empty;
+                }
+                return ConfigReader.ConfigObject.SystemUuid;
+            }
+        }
 
         /// <summary>
         /// Used for tracking HTTP debugging
@@ -86,8 +97,6 @@ namespace PepperDash.Essentials
             {
                 Host = "https://" + Host;
             }
-
-            SystemUuid = ConfigReader.ConfigObject.SystemUuid;
 
             Debug.Console(0, this, "Mobile UI controller initializing for server:{0}", config.ServerUrl);
 
@@ -140,23 +149,6 @@ namespace PepperDash.Essentials
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
-
-            var wsHost = Host.Replace("http", "ws");
-            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
-
-            _wsClient2 = new WebSocket(url)
-            {
-                Log =
-                {
-                    Output =
-                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
-                }
-            };
-
-            _wsClient2.OnMessage += HandleMessage;
-            _wsClient2.OnOpen += HandleOpen;
-            _wsClient2.OnError += HandleError;
-            _wsClient2.OnClose += HandleClose;
         }
 
         public MobileControlConfig Config { get; private set; }
@@ -185,6 +177,35 @@ namespace PepperDash.Essentials
                 Debug.Console(0, "Unable to find MobileControlSystemController in Devices: {0}", e);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Generates the url and creates the websocket client
+        /// </summary>
+        void CreateWebsocket()
+        {
+            if (_wsClient2 != null)
+            {
+                _wsClient2.Close();
+                _wsClient2 = null;
+            }
+
+            var wsHost = Host.Replace("http", "ws");
+            var url = string.Format("{0}/system/join/{1}", wsHost, SystemUuid);
+
+            _wsClient2 = new WebSocket(url)
+            {
+                Log =
+                {
+                    Output =
+                        (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
+                }
+            };
+
+            _wsClient2.OnMessage += HandleMessage;
+            _wsClient2.OnOpen += HandleOpen;
+            _wsClient2.OnError += HandleError;
+            _wsClient2.OnClose += HandleClose;
         }
 
         public void LinkSystemMonitorToAppServer()
@@ -392,7 +413,9 @@ namespace PepperDash.Essentials
         private void ReconnectToServerTimerCallback(object o)
         {
             Debug.Console(1, this, "Attempting to reconnect to server...");
-            RegisterSystemToServer();
+            //RegisterSystemToServer();
+
+            ConnectWebsocketClient();
         }
 
         /// <summary>
@@ -400,7 +423,7 @@ namespace PepperDash.Essentials
         /// </summary>
         private void AuthorizeSystem(string code)
         {
-            if (string.IsNullOrEmpty(SystemUuid))
+            if (string.IsNullOrEmpty(SystemUuid) || SystemUuid.Equals("missing url", StringComparison.OrdinalIgnoreCase))
             {
                 CrestronConsole.ConsoleCommandResponse(
                     "System does not have a UUID. Please ensure proper configuration is loaded and restart.");
@@ -621,6 +644,8 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RegisterSystemToServer()
         {
+            CreateWebsocket();
+
             ConnectWebsocketClient();
         }
 

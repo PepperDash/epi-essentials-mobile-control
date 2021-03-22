@@ -387,6 +387,15 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             var co = ConfigReader.ConfigObject;
 
+            // Check for existing SystemUrl
+            if (string.IsNullOrEmpty(co.SystemUrl))
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Attempting to use value from SIMPL.");
+                // Use the url value from SIMPL
+
+                co.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+            }
+
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             co.Info.RuntimeInfo.AssemblyVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor,
@@ -911,7 +920,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                     activityMode = GetActivityMode(),
                     isOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
                     selectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue,
-                    volumes
+                    volumes,
+                    supportsAdvancedSharing = Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue,
+                    userCanChangeShareMode = Eisc.BooleanOutput[JoinMap.UserCanChangeShareMode.JoinNumber].BoolValue,
                 });
             }
             else
