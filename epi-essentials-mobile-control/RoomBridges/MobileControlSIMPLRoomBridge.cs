@@ -56,6 +56,8 @@ namespace PepperDash.Essentials.Room.MobileControl
         private SIMPLVtcMessenger _vtcMessenger;
         private SimplDirectRouteMessenger _directRouteMessenger;
 
+        private const string _syntheticDeviceKey = "syntheticDevice";
+
         /// <summary>
         /// 
         /// </summary>
@@ -378,6 +380,57 @@ namespace PepperDash.Essentials.Room.MobileControl
         }
 
         /// <summary>
+        /// Synthesizes a source device config from the SIMPL config join data
+        /// </summary>
+        /// <param name="sli"></param>
+        /// <param name="type"></param>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        private DeviceConfig GetSyntheticDevice(SourceListItem sli, string type, uint i)
+        {
+            var groupMap = GetSourceGroupDictionary();
+            var key = sli.SourceKey;
+            var name = sli.Name;
+
+            // If not, synthesize the device config
+            var group = "genericsource";
+            if (groupMap.ContainsKey(type))
+            {
+                group = groupMap[type];
+            }
+
+            // add dev to devices list
+            var devConf = new DeviceConfig
+            {
+                Group = group,
+                Key = key,
+                Name = name,
+                Type = type,
+                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+            };
+
+            if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
+            {
+                SetupSourceFunctions(key);
+            }
+
+            if (group.ToLower().Equals("simplmessenger"))
+            {
+                if (type.ToLower().Equals("simplcameramessenger"))
+                {
+                    var props = new SimplMessengerPropertiesConfig();
+                    props.DeviceKey = key;
+                    props.JoinMapKey = "";
+                    var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
+                    props.JoinStart = joinStart;
+                    devConf.Properties = JToken.FromObject(props);
+                }
+            }
+
+            return devConf;
+        }
+
+        /// <summary>
         /// Reads in config values when the Simpl program is ready
         /// </summary>
         private void LoadConfigValues()
@@ -472,8 +525,6 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             // Source list! This might be brutal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-            var groupMap = GetSourceGroupDictionary();
-
             co.SourceLists = new Dictionary<string, Dictionary<string, SourceListItem>>();
             var newSl = new Dictionary<string, SourceListItem>();
             // add "none" source if VTC present
@@ -531,48 +582,26 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 var existingSourceDevice = co.GetDeviceForKey(newSli.SourceKey);
 
+                var syntheticDevice = GetSyntheticDevice(newSli, type, i);
+
                 // Look to see if this is a device that already exists in Essentials and get it
                 if (existingSourceDevice != null)
                 {
                     Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
+
+                    if (existingSourceDevice.Properties.Value<bool>(_syntheticDeviceKey))
+                    {
+                        Debug.Console(0, this, "Updating previous device config with new values");
+                        existingSourceDevice = syntheticDevice;
+                    }
+                    else
+                    {
+                        Debug.Console(0, this, "Using existing Essentials device (non synthetic)");
+                    }
                 }
                 else
-                {
-                    // If not, synthesize the device config
-                    var group = "genericsource";
-                    if (groupMap.ContainsKey(type))
-                    {
-                        group = groupMap[type];
-                    }
-
-                    // add dev to devices list
-                    var devConf = new DeviceConfig
-                    {
-                        Group = group,
-                        Key = key,
-                        Name = name,
-                        Type = type
-                    };
-
-                    if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
-                    {
-                        SetupSourceFunctions(key);
-                    }
-
-                    if (group.ToLower().Equals("simplmessenger"))
-                    {
-                        if (type.ToLower().Equals("simplcameramessenger"))
-                        {
-                            var props = new SimplMessengerPropertiesConfig();
-                            props.DeviceKey = key;
-                            props.JoinMapKey = "";
-                            var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
-                            props.JoinStart = joinStart;
-                            devConf.Properties = JToken.FromObject(props);
-                        }
-                    }
-
-                    co.Devices.Add(devConf);
+                {                 
+                    co.Devices.Add(syntheticDevice);
                 }
             }
 
