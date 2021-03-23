@@ -529,7 +529,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 };
                 newSl.Add(key, newSli);
 
-                var existingSourceDevice = DeviceManager.GetDeviceForKey(newSli.SourceKey);
+                var existingSourceDevice = co.GetDeviceForKey(newSli.SourceKey);
 
                 // Look to see if this is a device that already exists in Essentials and get it
                 if (existingSourceDevice != null)
@@ -738,7 +738,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     newDl[key] = newDli;
                 }
 
-                if (!_directRouteMessenger.DestinationList.ContainsKey(key))
+                if (!_directRouteMessenger.DestinationList.ContainsKey(newDli.SinkKey))
                 {
                     //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
                     _directRouteMessenger.DestinationList.Add(key, newDli);
@@ -748,7 +748,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     _directRouteMessenger.DestinationList[key] = newDli;
                 }
 
-                var existingDev = DeviceManager.GetDeviceForKey(newDli.SinkKey);
+                var existingDev = co.GetDeviceForKey(key);
 
                 if (existingDev != null)
                 {
