@@ -395,9 +395,14 @@ namespace PepperDash.Essentials
             Debug.Console(1, this, "Bridge ready.  Registering");
 
             // send the configuration object to the server
-            if (!_wsClient2.IsAlive)
+
+            if (_wsClient2 == null)
             {
                 RegisterSystemToServer();
+            }
+            else if (!_wsClient2.IsAlive)
+            {
+                ConnectWebsocketClient();
             }
             else
             {
