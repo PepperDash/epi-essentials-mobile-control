@@ -386,7 +386,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="type"></param>
         /// <param name="i"></param>
         /// <returns></returns>
-        private DeviceConfig GetSyntheticDevice(SourceListItem sli, string type, uint i)
+        private DeviceConfig GetSyntheticSourceDevice(SourceListItem sli, string type, uint i)
         {
             var groupMap = GetSourceGroupDictionary();
             var key = sli.SourceKey;
@@ -582,7 +582,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 var existingSourceDevice = co.GetDeviceForKey(newSli.SourceKey);
 
-                var syntheticDevice = GetSyntheticDevice(newSli, type, i);
+                var syntheticDevice = GetSyntheticSourceDevice(newSli, type, i);
 
                 // Look to see if this is a device that already exists in Essentials and get it
                 if (existingSourceDevice != null)
@@ -713,6 +713,21 @@ namespace PepperDash.Essentials.Room.MobileControl
             ConfigIsLoaded = true;
         }
 
+        private DeviceConfig GetSyntheticDestinationDevice(DestinationListItem newDli, string key, string name)
+        {
+            // If not, synthesize the device config
+            var devConf = new DeviceConfig
+            {
+                Group = "genericdestination",
+                Key = key,
+                Name = name,
+                Type = "genericdestination",
+                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+            };
+
+            return devConf;
+        }
+
         private void CreateDestinationList(BasicConfig co)
         {
             var useDestEnable = Eisc.BooleanOutput[JoinMap.UseDestinationEnable.JoinNumber].BoolValue;
@@ -779,22 +794,25 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 var existingDev = co.GetDeviceForKey(key);
 
+                var syntheticDisplay = GetSyntheticDestinationDevice(newDli, key, name);
+
                 if (existingDev != null)
                 {
                     Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
+
+                    if (existingDev.Properties.Value<bool>(_syntheticDeviceKey))
+                    {
+                        Debug.Console(0, this, "Updating previous device config with new values");
+                        existingDev = syntheticDisplay;
+                    }
+                    else
+                    {
+                        Debug.Console(0, this, "Using existing Essentials device (non synthetic)");
+                    }
                 }
                 else
-                {
-                    // If not, synthesize the device config
-                    var devConf = new DeviceConfig
-                    {
-                        Group = "genericdestination",
-                        Key = key,
-                        Name = name,
-                        Type = "genericdestination"
-                    };
-
-                    co.Devices.Add(devConf);
+                {                  
+                    co.Devices.Add(syntheticDisplay);
                 }
             }
 
