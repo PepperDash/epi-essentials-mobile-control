@@ -22,6 +22,8 @@ namespace PepperDash.Essentials.Room.MobileControl
 // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomBridge : MobileControlBridgeBase, IDelayedConfiguration
     {
+        private const int SupportedDisplayCount = 10;
+
         /// <summary>
         /// Fires when config is ready to go
         /// </summary>
@@ -48,11 +50,13 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
         }
 
-        private readonly MobileControlDdvc01DeviceBridge _sourceBridge;
+        private readonly MobileControlSimplDeviceBridge _sourceBridge;
 
         private SIMPLAtcMessenger _atcMessenger;
         private SIMPLVtcMessenger _vtcMessenger;
+        private SimplDirectRouteMessenger _directRouteMessenger;
 
+        private const string _syntheticDeviceKey = "syntheticDevice";
 
         /// <summary>
         /// 
@@ -70,8 +74,38 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             JoinMap = new MobileControlSIMPLRoomJoinMap(1);
 
-            _sourceBridge = new MobileControlDdvc01DeviceBridge(key + "-sourceBridge", "DDVC01 source bridge", Eisc);
+            _sourceBridge = new MobileControlSimplDeviceBridge(key + "-sourceBridge", "SIMPL source bridge", Eisc);
             DeviceManager.AddDevice(_sourceBridge);
+
+            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
+
+
+            AddPostActivationAction(() =>
+                {
+                    Eisc.SigChange += EISC_SigChange;
+                    Eisc.OnlineStatusChange += (o, a) =>
+                    {
+                        Debug.Console(1, this, "SIMPL EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
+                            a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
+                            Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
+
+                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                            LoadConfigValues();
+
+                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                            UseEssentialsConfig();
+                    };
+                    // load config if it's already there
+                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                    {
+                        LoadConfigValues();
+                    }
+
+                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                    {
+                        UseEssentialsConfig();
+                    }
+                });
         }
 
         /// <summary>
@@ -93,28 +127,9 @@ namespace PepperDash.Essentials.Room.MobileControl
             _vtcMessenger = new SIMPLVtcMessenger(vtcKey, Eisc, "/device/videoCodec");
             _vtcMessenger.RegisterWithAppServer(Parent);
 
-            Eisc.SigChange += EISC_SigChange;
-            Eisc.OnlineStatusChange += (o, a) =>
-            {
-                Debug.Console(1, this, "DDVC EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
-                    a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
-                    Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
-
-                if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
-                    LoadConfigValues();
-
-                if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
-                    UseEssentialsConfig();
-            };
-            // load config if it's already there
-            if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
-                // || EISC.BooleanInput[JoinMap.ConfigIsReady].BoolValue)
-                LoadConfigValues();
-
-            if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
-            {
-                UseEssentialsConfig();
-            }
+            var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
+            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
+            _directRouteMessenger.RegisterWithAppServer(Parent);
 
             CrestronConsole.AddNewConsoleCommand(s =>
             {
@@ -123,6 +138,8 @@ namespace PepperDash.Essentials.Room.MobileControl
                 _atcMessenger.JoinMap.PrintJoinMapInfo();
 
                 _vtcMessenger.JoinMap.PrintJoinMapInfo();
+
+                _directRouteMessenger.JoinMap.PrintJoinMapInfo();
 
                 // TODO: Update Source Bridge to use new JoinMap scheme
                 //_sourceBridge.JoinMap.PrintJoinMapInfo();
@@ -363,6 +380,57 @@ namespace PepperDash.Essentials.Room.MobileControl
         }
 
         /// <summary>
+        /// Synthesizes a source device config from the SIMPL config join data
+        /// </summary>
+        /// <param name="sli"></param>
+        /// <param name="type"></param>
+        /// <param name="i"></param>
+        /// <returns></returns>
+        private DeviceConfig GetSyntheticSourceDevice(SourceListItem sli, string type, uint i)
+        {
+            var groupMap = GetSourceGroupDictionary();
+            var key = sli.SourceKey;
+            var name = sli.Name;
+
+            // If not, synthesize the device config
+            var group = "genericsource";
+            if (groupMap.ContainsKey(type))
+            {
+                group = groupMap[type];
+            }
+
+            // add dev to devices list
+            var devConf = new DeviceConfig
+            {
+                Group = group,
+                Key = key,
+                Name = name,
+                Type = type,
+                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+            };
+
+            if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
+            {
+                SetupSourceFunctions(key);
+            }
+
+            if (group.ToLower().Equals("simplmessenger"))
+            {
+                if (type.ToLower().Equals("simplcameramessenger"))
+                {
+                    var props = new SimplMessengerPropertiesConfig();
+                    props.DeviceKey = key;
+                    props.JoinMapKey = "";
+                    var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
+                    props.JoinStart = joinStart;
+                    devConf.Properties = JToken.FromObject(props);
+                }
+            }
+
+            return devConf;
+        }
+
+        /// <summary>
         /// Reads in config values when the Simpl program is ready
         /// </summary>
         private void LoadConfigValues()
@@ -371,6 +439,15 @@ namespace PepperDash.Essentials.Room.MobileControl
             ConfigIsLoaded = false;
 
             var co = ConfigReader.ConfigObject;
+
+            // Check for existing SystemUrl
+            if (string.IsNullOrEmpty(co.SystemUrl))
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Attempting to use value from SIMPL.");
+                // Use the url value from SIMPL
+
+                co.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+            }
 
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -394,11 +471,11 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
             rm.Name = Eisc.StringOutput[JoinMap.ConfigRoomName.JoinNumber].StringValue;
             rm.Key = "room1";
-            rm.Type = "ddvc01";
+            rm.Type = "SIMPL01";
 
             var rmProps = rm.Properties == null
-                ? new DDVC01RoomPropertiesConfig()
-                : JsonConvert.DeserializeObject<DDVC01RoomPropertiesConfig>(rm.Properties.ToString());
+                ? new SimplRoomPropertiesConfig()
+                : JsonConvert.DeserializeObject<SimplRoomPropertiesConfig>(rm.Properties.ToString());
 
             rmProps.Help = new EssentialsHelpPropertiesConfig
             {
@@ -410,7 +487,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             rmProps.RoomPhoneNumber = Eisc.StringOutput[JoinMap.ConfigRoomPhoneNumber.JoinNumber].StringValue;
             rmProps.RoomURI = Eisc.StringOutput[JoinMap.ConfigRoomUri.JoinNumber].StringValue;
-            rmProps.SpeedDials = new List<DDVC01SpeedDial>();
+            rmProps.SpeedDials = new List<SimplSpeedDial>();
 
             // This MAY need a check 
             if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
@@ -436,18 +513,17 @@ namespace PepperDash.Essentials.Room.MobileControl
             if (co.Devices == null)
                 co.Devices = new List<DeviceConfig>();
 
-            // clear out previous DDVC devices
+            // clear out previous SIMPL devices
             co.Devices.RemoveAll(d =>
                 d.Key.StartsWith("source-", StringComparison.OrdinalIgnoreCase)
                 || d.Key.Equals("audioCodec", StringComparison.OrdinalIgnoreCase)
-                || d.Key.Equals("videoCodec", StringComparison.OrdinalIgnoreCase));
+                || d.Key.Equals("videoCodec", StringComparison.OrdinalIgnoreCase)
+            || d.Key.StartsWith("destination-", StringComparison.OrdinalIgnoreCase));
 
             rmProps.SourceListKey = "default";
             rm.Properties = JToken.FromObject(rmProps);
 
             // Source list! This might be brutal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            var groupMap = GetSourceGroupDictionary();
 
             co.SourceLists = new Dictionary<string, Dictionary<string, SourceListItem>>();
             var newSl = new Dictionary<string, SourceListItem>();
@@ -466,22 +542,25 @@ namespace PepperDash.Essentials.Room.MobileControl
                 newSl.Add("Source-None", codecOsd);
             }
             // add sources...
+            var useSourceEnabled = Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue;
             for (uint i = 0; i <= 19; i++)
             {
                 var name = Eisc.StringOutput[JoinMap.SourceNameJoinStart.JoinNumber + i].StringValue;
-                if (Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue
-                    && !Eisc.BooleanOutput[JoinMap.SourceIsEnabledJoinStart.JoinNumber + i].BoolValue)
-                {
-                    continue;
-                }
 
                 if (!Eisc.BooleanOutput[JoinMap.UseSourceEnabled.JoinNumber].BoolValue && string.IsNullOrEmpty(name))
+                {
+                    Debug.Console(1, "Source at join {0} does not have a name", JoinMap.SourceNameJoinStart.JoinNumber + i);
                     break;
+                }
+                    
 
                 var icon = Eisc.StringOutput[JoinMap.SourceIconJoinStart.JoinNumber + i].StringValue;
                 var key = Eisc.StringOutput[JoinMap.SourceKeyJoinStart.JoinNumber + i].StringValue;
                 var type = Eisc.StringOutput[JoinMap.SourceTypeJoinStart.JoinNumber + i].StringValue;
                 var disableShare = Eisc.BooleanOutput[JoinMap.SourceShareDisableJoinStart.JoinNumber + i].BoolValue;
+                var sourceEnabled = Eisc.BooleanOutput[JoinMap.SourceIsEnabledJoinStart.JoinNumber + i].BoolValue;
+                var controllable = Eisc.BooleanOutput[JoinMap.SourceIsControllableJoinStart.JoinNumber + i].BoolValue;
+                var audioSource = Eisc.BooleanOutput[JoinMap.SourceIsAudioSourceJoinStart.JoinNumber + i].BoolValue;
 
                 Debug.Console(0, this, "Adding source {0} '{1}'", key, name);
 
@@ -495,59 +574,48 @@ namespace PepperDash.Essentials.Room.MobileControl
                     SourceKey = string.IsNullOrEmpty(sourceKey) ? key : sourceKey, // Use the value from the join if defined
                     Type = eSourceListItemType.Route,
                     DisableCodecSharing = disableShare,
+                    IncludeInSourceList = !useSourceEnabled || sourceEnabled,
+                    IsControllable = controllable,
+                    IsAudioSource = audioSource
                 };
                 newSl.Add(key, newSli);
 
-                var existingSourceDevice = DeviceManager.GetDeviceForKey(newSli.SourceKey);
+                var existingSourceDevice = co.GetDeviceForKey(newSli.SourceKey);
+
+                var syntheticDevice = GetSyntheticSourceDevice(newSli, type, i);
 
                 // Look to see if this is a device that already exists in Essentials and get it
                 if (existingSourceDevice != null)
                 {
-                    var devConf = ConfigReader.ConfigObject.GetDeviceForKey(newSli.SourceKey);
-
                     Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
+
+                    if (existingSourceDevice.Properties.Value<bool>(_syntheticDeviceKey))
+                    {
+                        Debug.Console(0, this, "Updating previous device config with new values");
+                        existingSourceDevice = syntheticDevice;
+                    }
+                    else
+                    {
+                        Debug.Console(0, this, "Using existing Essentials device (non synthetic)");
+                    }
                 }
                 else
-                {
-                    // If not, synthesize the device config
-                    var group = "genericsource";
-                    if (groupMap.ContainsKey(type))
-                    {
-                        group = groupMap[type];
-                    }
-
-                    // add dev to devices list
-                    var devConf = new DeviceConfig
-                    {
-                        Group = group,
-                        Key = key,
-                        Name = name,
-                        Type = type
-                    };
-
-                    if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
-                    {
-                        SetupSourceFunctions(key);
-                    }
-
-                    if (group.ToLower().Equals("simplmessenger"))
-                    {
-                        if (type.ToLower().Equals("simplcameramessenger"))
-                        {
-                            var props = new SimplMessengerPropertiesConfig();
-                            props.DeviceKey = key;
-                            props.JoinMapKey = "";
-                            var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
-                            props.JoinStart = joinStart;
-                            devConf.Properties = JToken.FromObject(props);
-                        }
-                    }
-
-                    co.Devices.Add(devConf);
+                {                 
+                    co.Devices.Add(syntheticDevice);
                 }
             }
 
             co.SourceLists.Add("default", newSl);
+
+            if (Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue)
+            {
+                if (co.DestinationLists == null)
+                {
+                    co.DestinationLists = new Dictionary<string, Dictionary<string, DestinationListItem>>();
+                }
+
+                CreateDestinationList(co);
+            }
 
             // Build "audioCodec" config if we need
             if (!string.IsNullOrEmpty(rmProps.AudioCodecKey))
@@ -643,6 +711,121 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
 
             ConfigIsLoaded = true;
+        }
+
+        private DeviceConfig GetSyntheticDestinationDevice(DestinationListItem newDli, string key, string name)
+        {
+            // If not, synthesize the device config
+            var devConf = new DeviceConfig
+            {
+                Group = "genericdestination",
+                Key = key,
+                Name = name,
+                Type = "genericdestination",
+                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+            };
+
+            return devConf;
+        }
+
+        private void CreateDestinationList(BasicConfig co)
+        {
+            var useDestEnable = Eisc.BooleanOutput[JoinMap.UseDestinationEnable.JoinNumber].BoolValue;
+
+            var newDl = new Dictionary<string, DestinationListItem>();
+
+            for (uint i = 0; i < SupportedDisplayCount; i++)
+            {
+                var name = Eisc.StringOutput[JoinMap.DestinationNameJoinStart.JoinNumber + i].StringValue;
+                var routeType = Eisc.StringOutput[JoinMap.DestinationTypeJoinStart.JoinNumber + i].StringValue;
+                var key = Eisc.StringOutput[JoinMap.DestinationDeviceKeyJoinStart.JoinNumber + i].StringValue;
+                //var order = Eisc.UShortOutput[JoinMap.DestinationOrderJoinStart.JoinNumber + i].UShortValue;
+                var enabled = Eisc.BooleanOutput[JoinMap.DestinationIsEnabledJoinStart.JoinNumber + i].BoolValue;
+
+                if (useDestEnable && !enabled)
+                {
+                    continue;
+                }
+
+                if (String.IsNullOrEmpty(key))
+                {
+                    continue;
+                }
+
+                Debug.Console(0, this, "Adding destination {0} - {1}", key, name);
+
+                eRoutingSignalType parsedType;
+                try
+                {
+                    parsedType = (eRoutingSignalType) Enum.Parse(typeof (eRoutingSignalType), routeType, true);
+                }
+                catch (Exception e)
+                {
+                    Debug.Console(0, this, "Error parsing destination type: {0}", routeType);
+                    parsedType = eRoutingSignalType.AudioVideo;
+                }
+
+                var newDli = new DestinationListItem
+                {
+                    Name = name,
+                    Order = (int) i,
+                    SinkKey = key,
+                    SinkType = parsedType,
+                };
+
+                if (!newDl.ContainsKey(key))
+                {
+                    newDl.Add(key, newDli);
+                }
+                else
+                {
+                    newDl[key] = newDli;
+                }
+
+                if (!_directRouteMessenger.DestinationList.ContainsKey(newDli.SinkKey))
+                {
+                    //add same DestinationListItem to dictionary for messenger in order to allow for correlation by index
+                    _directRouteMessenger.DestinationList.Add(key, newDli);
+                }
+                else
+                {
+                    _directRouteMessenger.DestinationList[key] = newDli;
+                }
+
+                var existingDev = co.GetDeviceForKey(key);
+
+                var syntheticDisplay = GetSyntheticDestinationDevice(newDli, key, name);
+
+                if (existingDev != null)
+                {
+                    Debug.Console(0, this, "Found device with key: {0} in Essentials.", key);
+
+                    if (existingDev.Properties.Value<bool>(_syntheticDeviceKey))
+                    {
+                        Debug.Console(0, this, "Updating previous device config with new values");
+                        existingDev = syntheticDisplay;
+                    }
+                    else
+                    {
+                        Debug.Console(0, this, "Using existing Essentials device (non synthetic)");
+                    }
+                }
+                else
+                {                  
+                    co.Devices.Add(syntheticDisplay);
+                }
+            }
+
+            if (!co.DestinationLists.ContainsKey("default"))
+            {
+                co.DestinationLists.Add("default", newDl);
+            }
+            else
+            {
+                co.DestinationLists["default"] = newDl;
+            }
+
+                _directRouteMessenger.RegisterForDestinationPaths();
         }
 
         /// <summary>
@@ -777,12 +960,16 @@ namespace PepperDash.Essentials.Room.MobileControl
                     NumberOfAuxFaders = Eisc.UShortInput[JoinMap.NumberOfAuxFaders.JoinNumber].UShortValue
                 };
 
+                // TODO: Add property to status message to indicate if advanced sharing is supported and if users can change share mode
+
                 PostStatusMessage(new
                 {
                     activityMode = GetActivityMode(),
                     isOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
                     selectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue,
-                    volumes
+                    volumes,
+                    supportsAdvancedSharing = Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue,
+                    userCanChangeShareMode = Eisc.BooleanOutput[JoinMap.UserCanChangeShareMode.JoinNumber].BoolValue,
                 });
             }
             else
@@ -842,7 +1029,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         private void EISC_SigChange(object currentDevice, SigEventArgs args)
         {
             if (Debug.Level >= 1)
-                Debug.Console(1, this, "DDVC EISC change: {0} {1}={2}", args.Sig.Type, args.Sig.Number,
+                Debug.Console(1, this, "SIMPL EISC change: {0} {1}={2}", args.Sig.Type, args.Sig.Number,
                     args.Sig.StringValue);
             var uo = args.Sig.UserObject;
             if (uo != null)
@@ -874,7 +1061,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             };
             return d;
-        }
+        } 
 
         /// <summary>
         /// updates the usercode from server

@@ -6,16 +6,16 @@ using PepperDash.Essentials.Core;
 namespace PepperDash.Essentials.Room.MobileControl
 {
     /// <summary>
-    /// Represents a generic device connection through to and EISC for DDVC01
+    /// Represents a generic device connection through to and EISC for SIMPL01
     /// </summary>
-    public class MobileControlDdvc01DeviceBridge : Device, IChannel, INumericKeypad
+    public class MobileControlSimplDeviceBridge : Device, IChannel, INumericKeypad
     {
         /// <summary>
         /// EISC used to talk to Simpl
         /// </summary>
         private readonly ThreeSeriesTcpIpEthernetIntersystemCommunications _eisc;
 
-        public MobileControlDdvc01DeviceBridge(string key, string name,
+        public MobileControlSimplDeviceBridge(string key, string name,
             ThreeSeriesTcpIpEthernetIntersystemCommunications eisc)
             : base(key, name)
         {

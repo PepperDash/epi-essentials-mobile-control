@@ -17,7 +17,7 @@ namespace PepperDash.Essentials
     /// <summary>
     /// 
     /// </summary>
-    public class MobileControlDdvc01RoomBridgePropertiesConfig
+    public class MobileControlSimplRoomBridgePropertiesConfig
     {
         [JsonProperty("eiscId")]
         public string EiscId { get; set; }

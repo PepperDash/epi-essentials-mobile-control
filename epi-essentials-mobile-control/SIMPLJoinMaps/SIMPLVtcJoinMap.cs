@@ -263,7 +263,7 @@ namespace PepperDash.Essentials.AppServer
                 {
                     Label = "Directory Select Row",
                     JoinCapabilities = eJoinCapabilities.ToSIMPL,
-                    JoinType = eJoinType.Digital
+                    JoinType = eJoinType.Analog
                 });
 
         [JoinName("DirectoryRowCount")] public JoinDataComplete DirectoryRowCount =
@@ -272,7 +272,7 @@ namespace PepperDash.Essentials.AppServer
                 {
                     Label = "Directory Row Count FB",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
-                    JoinType = eJoinType.Digital
+                    JoinType = eJoinType.Analog
                 });
 
         [JoinName("CurrentDialString")] public JoinDataComplete CurrentDialString =
