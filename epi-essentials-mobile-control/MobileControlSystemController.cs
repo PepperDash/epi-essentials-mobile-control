@@ -320,6 +320,8 @@ namespace PepperDash.Essentials
                 return;
             }
 
+            _disableReconnect = true;
+
             StopServerReconnectTimer();
             CleanUpWebsocketClient();
         }
