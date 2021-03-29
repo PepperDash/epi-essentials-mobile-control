@@ -82,6 +82,9 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             AddPostActivationAction(() =>
                 {
+                    // Inform the SIMPL program that config can be sent
+                    Eisc.BooleanInput[JoinMap.ReadyForConfig.JoinNumber].BoolValue = true;
+
                     Eisc.SigChange += EISC_SigChange;
                     Eisc.OnlineStatusChange += (o, a) =>
                     {
@@ -365,6 +368,8 @@ namespace PepperDash.Essentials.Room.MobileControl
             Eisc.SetSigTrueAction(JoinMap.ActivityShare.JoinNumber, () => UpdateActivity(1));
             Eisc.SetSigTrueAction(JoinMap.ActivityPhoneCall.JoinNumber, () => UpdateActivity(2));
             Eisc.SetSigTrueAction(JoinMap.ActivityVideoCall.JoinNumber, () => UpdateActivity(3));
+
+            Parent.ApiOnlineAndAuthorized.LinkInputSig(Eisc.BooleanInput[JoinMap.ApiOnlineAndAuthorized.JoinNumber]);
         }
 
 

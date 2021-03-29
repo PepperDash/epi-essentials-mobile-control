@@ -57,10 +57,33 @@ namespace PepperDash.Essentials
             }
         }
 
+        public BoolFeedback ApiOnlineAndAuthorized { get; private set; }
+
         /// <summary>
         /// Used for tracking HTTP debugging
         /// </summary>
         private bool _httpDebugEnabled;
+
+
+        private bool _isAuthorized;
+        /// <summary>
+        /// Tracks if the system is authorized to the API server
+        /// </summary>
+        public bool IsAuthorized
+        {
+            get
+            {
+                return _isAuthorized;
+            }
+            private set
+            {
+                if (value == _isAuthorized)
+                    return;
+
+                _isAuthorized = value;
+                ApiOnlineAndAuthorized.FireUpdate();
+            }
+        }
 
         private DateTime _lastAckMessage;
 
@@ -150,6 +173,13 @@ namespace PepperDash.Essentials
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
+
+            ApiOnlineAndAuthorized = new BoolFeedback(() => {
+                if(_wsClient2 == null)
+                    return false;
+
+                return _wsClient2.IsAlive && IsAuthorized;
+            });
         }
 
         public MobileControlConfig Config { get; private set; }
@@ -703,6 +733,7 @@ namespace PepperDash.Essentials
         {
             try
             {
+                IsAuthorized = false;
                 _wsClient2.Connect();
             }
             catch (InvalidOperationException)
@@ -781,6 +812,7 @@ namespace PepperDash.Essentials
             if (e.IsPing)
             {
                 _lastAckMessage = DateTime.Now;
+                IsAuthorized = true;
                 ResetPingTimer();
                 return;
             }
@@ -799,6 +831,7 @@ namespace PepperDash.Essentials
         private void HandleError(object sender, ErrorEventArgs e)
         {
             Debug.Console(1, this, "Websocket error {0}", e.Message);
+            IsAuthorized = false;
             StartServerReconnectTimer();
         }
 
@@ -810,7 +843,7 @@ namespace PepperDash.Essentials
         private void HandleClose(object sender, CloseEventArgs e)
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
-
+            IsAuthorized = false;
             StopPingTimer();
 
             // Start the reconnect timer
@@ -909,6 +942,7 @@ namespace PepperDash.Essentials
 
         private void ResetPingTimer()
         {
+            // This tells us we're online with the API and getting pings
             _pingTimer.Reset(PingInterval);
         }
 
