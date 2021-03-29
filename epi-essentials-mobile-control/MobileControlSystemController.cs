@@ -47,7 +47,8 @@ namespace PepperDash.Essentials
         {
             get
             {
-                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid))
+                // Check to see if the SystemUuid value is populated
+                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid) || ConfigReader.ConfigObject.SystemUuid  == "missing url")
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Cannot get SystemUuid to connect to server");
                     return String.Empty;
