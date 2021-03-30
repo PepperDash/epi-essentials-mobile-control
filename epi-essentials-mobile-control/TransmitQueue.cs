@@ -87,6 +87,12 @@ namespace PepperDash.Essentials
         /// <param name="message">object to be serialized and sent in post body</param>
         public void EnqueueMessage(object message)
         {
+            if (Disposed)
+            {
+                Debug.Console(1, this, "This class has been disposed and cannot enqueue any messages.  Are you trying to dispatch a message while the program is stopping?");
+                return;
+            }
+
             _queue.Enqueue(message);
             if (_wsClient == null)
                 return;

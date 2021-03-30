@@ -77,6 +77,12 @@ namespace PepperDash.Essentials
         /// <param name="response">response to be processed</param>
         public void EnqueueResponse(string response)
         {
+            if (Disposed)
+            {
+                Debug.Console(1, this, "This class has been disposed and cannot enqueue any messages.  Are you trying to receive a response while the program is stopping?");
+                return;
+            }
+
             _queue.Enqueue(response);
             _wh.Set();
         }
