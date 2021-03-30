@@ -33,13 +33,13 @@ namespace PepperDash.Essentials
                 Priority = Thread.eThreadPriority.HighPriority
             };
 
-            CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
-            {
-                if (programEvent != eProgramStatusEventType.Stopping)
-                    return;
+            //CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
+            //{
+            //    if (programEvent != eProgramStatusEventType.Stopping)
+            //        return;
 
-                Dispose();
-            };
+            //    //Dispose();
+            //};
         }
 
         private object ProcessMessage(object obj)
