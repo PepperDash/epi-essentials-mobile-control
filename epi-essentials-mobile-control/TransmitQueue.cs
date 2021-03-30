@@ -42,13 +42,13 @@ namespace PepperDash.Essentials
 
             Key = key;
 
-            //CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
-            //{
-            //    if (programEvent != eProgramStatusEventType.Stopping)
-            //        return;
+            CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
+            {
+                if (programEvent != eProgramStatusEventType.Stopping)
+                    return;
 
-            //    //Dispose();
-            //};
+                Dispose(true);
+            };
         }
 
         private object ProcessMessage(object obj)
