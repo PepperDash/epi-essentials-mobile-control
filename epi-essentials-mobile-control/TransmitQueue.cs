@@ -42,13 +42,13 @@ namespace PepperDash.Essentials
 
             Key = key;
 
-            CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
-            {
-                if (programEvent != eProgramStatusEventType.Stopping)
-                    return;
+            //CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
+            //{
+            //    if (programEvent != eProgramStatusEventType.Stopping)
+            //        return;
 
-                Dispose(true);
-            };
+            //    Dispose(true);
+            //};
         }
 
         private object ProcessMessage(object obj)
@@ -136,6 +136,8 @@ namespace PepperDash.Essentials
 
             if (disposing)
             {
+                Debug.Console(2, this, "Disposing..."); 
+                _queue.Clear();
                 EnqueueMessage(null);
                 _worker.Join();
                 _wh.Close();
