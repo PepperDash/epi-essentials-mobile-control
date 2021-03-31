@@ -15,6 +15,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Presets;
+using PepperDash.Essentials.Core.Queues;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using WebSocketSharp;
@@ -34,7 +35,7 @@ namespace PepperDash.Essentials
             new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
-        private readonly ReceiveQueue _receiveQueue;
+        private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
@@ -111,7 +112,8 @@ namespace PepperDash.Essentials
             Config = config;
 
             // The queue that will collect the incoming messages in the order they are received
-            _receiveQueue = new ReceiveQueue(key, ParseStreamRx);
+            //_receiveQueue = new ReceiveQueue(key, ParseStreamRx);
+            _receiveQueue = new GenericQueue(key, Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
             _transmitQueue = new TransmitQueue(key);
@@ -819,7 +821,7 @@ namespace PepperDash.Essentials
 
             if (e.IsText && e.Data.Length > 0)
             {
-                _receiveQueue.EnqueueResponse(e.Data);
+                _receiveQueue.Enqueue(new ProcessStringMessage(e.Data, ParseStreamRx));
             }
         }
 

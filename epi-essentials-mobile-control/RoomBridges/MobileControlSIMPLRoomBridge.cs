@@ -768,7 +768,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     parsedType = (eRoutingSignalType) Enum.Parse(typeof (eRoutingSignalType), routeType, true);
                 }
-                catch (Exception e)
+                catch 
                 {
                     Debug.Console(0, this, "Error parsing destination type: {0}", routeType);
                     parsedType = eRoutingSignalType.AudioVideo;
