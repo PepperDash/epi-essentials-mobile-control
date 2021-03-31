@@ -181,7 +181,6 @@
     <Compile Include="DeviceTypeInterfaces\IDPadExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\IDvrExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\INumericExtensions.cs" />
-    <Compile Include="DeviceTypeInterfaces\IPowerExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\ITransportExtensions.cs" />
     <Compile Include="Interfaces.cs" />

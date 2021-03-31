@@ -548,8 +548,8 @@ namespace PepperDash.Essentials
                         (previousDev as IDvr).UnlinkActions(Parent);
                     if (previousDev is INumericKeypad)
                         (previousDev as INumericKeypad).UnlinkActions(Parent);
-                    if (previousDev is IPower)
-                        (previousDev as IPower).UnlinkActions(Parent);
+                    if (previousDev is IHasPowerControl)
+                        (previousDev as IHasPowerControl).UnlinkActions(Parent);
                     if (previousDev is ITransport)
                         (previousDev as ITransport).UnlinkActions(Parent);
                 }
@@ -572,8 +572,8 @@ namespace PepperDash.Essentials
                         (dev as IDvr).LinkActions(Parent);
                     if (dev is INumericKeypad)
                         (dev as INumericKeypad).LinkActions(Parent);
-                    if (dev is IPower)
-                        (dev as IPower).LinkActions(Parent);
+                    if (dev is IHasPowerControl)
+                        (dev as IHasPowerControl).LinkActions(Parent);
                     if (dev is ITransport)
                         (dev as ITransport).LinkActions(Parent);
 
