@@ -79,29 +79,36 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
 
-
             AddPostActivationAction(() =>
                 {
+                    // Inform the SIMPL program that config can be sent
+                    Eisc.BooleanInput[JoinMap.ReadyForConfig.JoinNumber].BoolValue = true;
+
                     Eisc.SigChange += EISC_SigChange;
                     Eisc.OnlineStatusChange += (o, a) =>
                     {
+                        if (!a.DeviceOnLine)
+                        {
+                            return;
+                        }
+
                         Debug.Console(1, this, "SIMPL EISC online={0}. Config is ready={1}. Use Essentials Config={2}",
                             a.DeviceOnLine, Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue,
                             Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue);
 
-                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                        if (Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
                             LoadConfigValues();
 
-                        if (a.DeviceOnLine && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                        if (Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
                             UseEssentialsConfig();
                     };
                     // load config if it's already there
-                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
+                    if (Eisc.BooleanOutput[JoinMap.ConfigIsReady.JoinNumber].BoolValue)
                     {
                         LoadConfigValues();
                     }
 
-                    if (Eisc.IsOnline && Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
+                    if (Eisc.BooleanOutput[JoinMap.ConfigIsLocal.JoinNumber].BoolValue)
                     {
                         UseEssentialsConfig();
                     }
@@ -365,6 +372,8 @@ namespace PepperDash.Essentials.Room.MobileControl
             Eisc.SetSigTrueAction(JoinMap.ActivityShare.JoinNumber, () => UpdateActivity(1));
             Eisc.SetSigTrueAction(JoinMap.ActivityPhoneCall.JoinNumber, () => UpdateActivity(2));
             Eisc.SetSigTrueAction(JoinMap.ActivityVideoCall.JoinNumber, () => UpdateActivity(3));
+
+            Parent.ApiOnlineAndAuthorized.LinkInputSig(Eisc.BooleanInput[JoinMap.ApiOnlineAndAuthorized.JoinNumber]);
         }
 
 
@@ -759,7 +768,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     parsedType = (eRoutingSignalType) Enum.Parse(typeof (eRoutingSignalType), routeType, true);
                 }
-                catch (Exception e)
+                catch 
                 {
                     Debug.Console(0, this, "Error parsing destination type: {0}", routeType);
                     parsedType = eRoutingSignalType.AudioVideo;

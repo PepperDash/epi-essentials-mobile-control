@@ -42,13 +42,13 @@ namespace PepperDash.Essentials
 
             Key = key;
 
-            CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
-            {
-                if (programEvent != eProgramStatusEventType.Stopping)
-                    return;
+            //CrestronEnvironment.ProgramStatusEventHandler += programEvent =>
+            //{
+            //    if (programEvent != eProgramStatusEventType.Stopping)
+            //        return;
 
-                Dispose();
-            };
+            //    Dispose(true);
+            //};
         }
 
         private object ProcessMessage(object obj)
@@ -87,6 +87,12 @@ namespace PepperDash.Essentials
         /// <param name="message">object to be serialized and sent in post body</param>
         public void EnqueueMessage(object message)
         {
+            if (Disposed)
+            {
+                Debug.Console(1, this, "This class has been disposed and cannot enqueue any messages.  Are you trying to dispatch a message while the program is stopping?");
+                return;
+            }
+
             _queue.Enqueue(message);
             if (_wsClient == null)
                 return;
@@ -130,6 +136,8 @@ namespace PepperDash.Essentials
 
             if (disposing)
             {
+                Debug.Console(2, this, "Disposing..."); 
+                _queue.Clear();
                 EnqueueMessage(null);
                 _worker.Join();
                 _wh.Close();

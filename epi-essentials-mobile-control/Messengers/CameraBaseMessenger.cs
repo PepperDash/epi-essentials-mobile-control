@@ -110,10 +110,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     new Action((Camera as IHasCameraAutoMode).CameraAutoModeOff));
             }
 
-            if (Camera is IPower)
+            if (Camera is IHasPowerControl)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeOff", new Action((Camera as IPower).PowerOff));
-                appServerController.AddAction(MessagePath + "/cameraModeManual", new Action((Camera as IPower).PowerOn));
+                appServerController.AddAction(MessagePath + "/cameraModeOff", new Action((Camera as IHasPowerControl).PowerOff));
+                appServerController.AddAction(MessagePath + "/cameraModeManual", new Action((Camera as IHasPowerControl).PowerOn));
             }
 
             var presetsCamera = Camera as IHasCameraPresets;
@@ -161,7 +161,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             string m;
             if (Camera is IHasCameraAutoMode && (Camera as IHasCameraAutoMode).CameraAutoModeIsOnFeedback.BoolValue)
                 m = eCameraControlMode.Auto.ToString().ToLower();
-            else if (Camera is IPower && !(Camera as IPower).PowerIsOnFeedback.BoolValue)
+            else if (Camera is IHasPowerControlWithFeedback && !(Camera as IHasPowerControlWithFeedback).PowerIsOnFeedback.BoolValue)
                 m = eCameraControlMode.Off.ToString().ToLower();
             else
                 m = eCameraControlMode.Manual.ToString().ToLower();

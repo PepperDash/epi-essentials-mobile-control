@@ -289,6 +289,16 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Serial
                 });
 
+        [JoinName("ApiOnlineAndAuthorized")]
+        public JoinDataComplete ApiOnlineAndAuthorized =
+            new JoinDataComplete(new JoinData { JoinNumber = 500, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Config info from SIMPL is ready",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
         [JoinName("ConfigIsReady")] public JoinDataComplete ConfigIsReady =
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
@@ -297,6 +307,16 @@ namespace PepperDash.Essentials.AppServer
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
+
+        [JoinName("ReadyForConfig")]
+        public JoinDataComplete ReadyForConfig =
+            new JoinDataComplete(new JoinData { JoinNumber = 501, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Config info from SIMPL is ready",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
         [JoinName("HideVideoConfRecents")] public JoinDataComplete HideVideoConfRecents =
             new JoinDataComplete(new JoinData {JoinNumber = 502, JoinSpan = 1},

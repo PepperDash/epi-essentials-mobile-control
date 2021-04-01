@@ -15,6 +15,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Presets;
+using PepperDash.Essentials.Core.Queues;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using WebSocketSharp;
@@ -34,7 +35,7 @@ namespace PepperDash.Essentials
             new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
-        private readonly ReceiveQueue _receiveQueue;
+        private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
         private readonly TransmitQueue _transmitQueue;
@@ -47,7 +48,8 @@ namespace PepperDash.Essentials
         {
             get
             {
-                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid))
+                // Check to see if the SystemUuid value is populated
+                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid) || ConfigReader.ConfigObject.SystemUuid  == "missing url")
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Cannot get SystemUuid to connect to server");
                     return String.Empty;
@@ -56,10 +58,33 @@ namespace PepperDash.Essentials
             }
         }
 
+        public BoolFeedback ApiOnlineAndAuthorized { get; private set; }
+
         /// <summary>
         /// Used for tracking HTTP debugging
         /// </summary>
         private bool _httpDebugEnabled;
+
+
+        private bool _isAuthorized;
+        /// <summary>
+        /// Tracks if the system is authorized to the API server
+        /// </summary>
+        public bool IsAuthorized
+        {
+            get
+            {
+                return _isAuthorized;
+            }
+            private set
+            {
+                if (value == _isAuthorized)
+                    return;
+
+                _isAuthorized = value;
+                ApiOnlineAndAuthorized.FireUpdate();
+            }
+        }
 
         private DateTime _lastAckMessage;
 
@@ -87,7 +112,8 @@ namespace PepperDash.Essentials
             Config = config;
 
             // The queue that will collect the incoming messages in the order they are received
-            _receiveQueue = new ReceiveQueue(key, ParseStreamRx);
+            //_receiveQueue = new ReceiveQueue(key, ParseStreamRx);
+            _receiveQueue = new GenericQueue(key, Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
             _transmitQueue = new TransmitQueue(key);
@@ -149,6 +175,13 @@ namespace PepperDash.Essentials
             var cmKey = Key + "-config";
             ConfigMessenger = new ConfigMessenger(cmKey, "/config");
             ConfigMessenger.RegisterWithAppServer(this);
+
+            ApiOnlineAndAuthorized = new BoolFeedback(() => {
+                if(_wsClient2 == null)
+                    return false;
+
+                return _wsClient2.IsAlive && IsAuthorized;
+            });
         }
 
         public MobileControlConfig Config { get; private set; }
@@ -319,6 +352,8 @@ namespace PepperDash.Essentials
             {
                 return;
             }
+
+            _disableReconnect = true;
 
             StopServerReconnectTimer();
             CleanUpWebsocketClient();
@@ -700,6 +735,7 @@ namespace PepperDash.Essentials
         {
             try
             {
+                IsAuthorized = false;
                 _wsClient2.Connect();
             }
             catch (InvalidOperationException)
@@ -778,13 +814,14 @@ namespace PepperDash.Essentials
             if (e.IsPing)
             {
                 _lastAckMessage = DateTime.Now;
+                IsAuthorized = true;
                 ResetPingTimer();
                 return;
             }
 
             if (e.IsText && e.Data.Length > 0)
             {
-                _receiveQueue.EnqueueResponse(e.Data);
+                _receiveQueue.Enqueue(new ProcessStringMessage(e.Data, ParseStreamRx));
             }
         }
 
@@ -796,6 +833,7 @@ namespace PepperDash.Essentials
         private void HandleError(object sender, ErrorEventArgs e)
         {
             Debug.Console(1, this, "Websocket error {0}", e.Message);
+            IsAuthorized = false;
             StartServerReconnectTimer();
         }
 
@@ -807,7 +845,7 @@ namespace PepperDash.Essentials
         private void HandleClose(object sender, CloseEventArgs e)
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Websocket close {0} {1}, clean={2}", e.Code, e.Reason, e.WasClean);
-
+            IsAuthorized = false;
             StopPingTimer();
 
             // Start the reconnect timer
@@ -906,6 +944,7 @@ namespace PepperDash.Essentials
 
         private void ResetPingTimer()
         {
+            // This tells us we're online with the API and getting pings
             _pingTimer.Reset(PingInterval);
         }
 
