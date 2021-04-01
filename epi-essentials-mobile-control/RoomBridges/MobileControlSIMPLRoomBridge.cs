@@ -35,6 +35,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
 
+        public const string RoomKey = "simpl-01";
 
         /// <summary>
         /// 
@@ -135,7 +136,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             _vtcMessenger.RegisterWithAppServer(Parent);
 
             var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
-            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
+            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, string.Format("/room/{0}/routing", RoomKey));
             _directRouteMessenger.RegisterWithAppServer(Parent);
 
             CrestronConsole.AddNewConsoleCommand(s =>
@@ -178,31 +179,31 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void SetupFunctions()
         {
-            Parent.AddAction(@"/room/room1/promptForCode",
+            Parent.AddAction(string.Format(@"/room/{0}/promptForCode", RoomKey),
                 new Action(() => Eisc.PulseBool(JoinMap.PromptForCode.JoinNumber)));
-            Parent.AddAction(@"/room/room1/clientJoined",
+            Parent.AddAction(string.Format(@"/room/{0}/clientJoined", RoomKey),
                 new Action(() => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber)));
 
-            Parent.AddAction(@"/room/room1/status", new Action(SendFullStatus));
+            Parent.AddAction(string.Format(@"/room/{0}/status", RoomKey), new Action(SendFullStatus));
 
-            Parent.AddAction(@"/room/room1/source", new Action<SourceSelectMessageContent>(c =>
+            Parent.AddAction(string.Format(@"/room/{0}/source", RoomKey), new Action<SourceSelectMessageContent>(c =>
             {
                 Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, c.SourceListItem);
                 Eisc.PulseBool(JoinMap.SourceHasChanged.JoinNumber);
             }));
 
-            Parent.AddAction(@"/room/room1/defaultsource", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/defaultsource", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ActivityShare.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityPhone", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/activityPhone", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ActivityPhoneCall.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityVideo", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/activityVideo", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ActivityVideoCall.JoinNumber)));
 
-            Parent.AddAction(@"/room/room1/volumes/master/level", new Action<ushort>(u =>
+            Parent.AddAction(string.Format(@"/room/{0}/volumes/master/level", RoomKey), new Action<ushort>(u =>
                 Eisc.SetUshort(JoinMap.MasterVolume.JoinNumber, u)));
-            Parent.AddAction(@"/room/room1/volumes/master/muteToggle", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/volumes/master/muteToggle", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.MasterVolume.JoinNumber)));
-            Parent.AddAction(@"/room/room1/volumes/master/privacyMuteToggle", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.PrivacyMute.JoinNumber)));
 
 
@@ -214,17 +215,17 @@ namespace PepperDash.Essentials.Room.MobileControl
             for (uint i = volumeStart; i <= volumeEnd; i++)
             {
                 var index = i;
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/level", index), new Action<ushort>(u =>
+                Parent.AddAction(string.Format(@"/room/{0}/volumes/level-{1}/level", RoomKey, index), new Action<ushort>(u =>
                     Eisc.SetUshort(index, u)));
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/muteToggle", index), new Action(() =>
+                Parent.AddAction(string.Format(@"/room/{0}/volumes/level-{1}/muteToggle", RoomKey, index), new Action(() =>
                     Eisc.PulseBool(index)));
             }
 
-            Parent.AddAction(@"/room/room1/shutdownStart", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/shutdownStart", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ShutdownStart.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownEnd", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/shutdownEnd", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ShutdownEnd.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownCancel", new Action(() =>
+            Parent.AddAction(string.Format(@"/room/{0}/shutdownCancel", RoomKey), new Action(() =>
                 Eisc.PulseBool(JoinMap.ShutdownCancel.JoinNumber)));
         }
 
@@ -348,6 +349,8 @@ namespace PepperDash.Essentials.Room.MobileControl
                 }));
 
             // shutdown things
+
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
             Eisc.SetSigTrueAction(JoinMap.ShutdownCancel.JoinNumber, () =>
                 PostMessage("/room/shutdown/", new
                 {
@@ -479,7 +482,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 co.Rooms[0] = rm;
             }
             rm.Name = Eisc.StringOutput[JoinMap.ConfigRoomName.JoinNumber].StringValue;
-            rm.Key = "room1";
+            rm.Key = RoomKey;
             rm.Type = "SIMPL01";
 
             var rmProps = rm.Properties == null
