@@ -391,6 +391,7 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "wasCancelled"}};
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
             Parent.SendMessageObjectToServer(message);
         }
@@ -403,6 +404,7 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "hasFinished"}};
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
             Parent.SendMessageObjectToServer(message);
         }
@@ -419,6 +421,7 @@ namespace PepperDash.Essentials
                 {"state", "hasStarted"},
                 {"duration", Room.ShutdownPromptTimer.SecondsToCount}
             };
+            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
             var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
             Parent.SendMessageObjectToServer(message);
             // equivalent JS message:
@@ -597,6 +600,7 @@ namespace PepperDash.Essentials
         {
             Parent.SendMessageObjectToServer(new
             {
+                // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
                 type = "/room/status/",
                 content = GetFullStatus(room)
             });
@@ -640,6 +644,7 @@ namespace PepperDash.Essentials
 
             var messageObject = new MobileControlResponseMessage
             {
+                // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
                 Type = "/room/status/",
                 Content = contentObject
             };
