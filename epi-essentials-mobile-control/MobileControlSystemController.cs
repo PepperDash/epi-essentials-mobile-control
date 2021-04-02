@@ -113,10 +113,10 @@ namespace PepperDash.Essentials
 
             // The queue that will collect the incoming messages in the order they are received
             //_receiveQueue = new ReceiveQueue(key, ParseStreamRx);
-            _receiveQueue = new GenericQueue(key, Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+            _receiveQueue = new GenericQueue(key + "-rxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
-            _transmitQueue = new GenericQueue(key);
+            _transmitQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
