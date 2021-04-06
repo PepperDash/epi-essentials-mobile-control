@@ -56,6 +56,9 @@ namespace PepperDash.Essentials
             // sub-controller parsing could be attached to these classes, so that the systemController
             // doesn't need to know about everything.
 
+            Parent.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), new Action(() => this.OnUserPromptedForCode()));
+            Parent.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), new Action(() => this.OnClientJoined()));
+
             // Source Changes and room off
             Parent.AddAction(string.Format(@"/room/{0}/status", Room.Key), new ClientSpecificUpdateRequest(() => GetFullStatus(Room)));
 
