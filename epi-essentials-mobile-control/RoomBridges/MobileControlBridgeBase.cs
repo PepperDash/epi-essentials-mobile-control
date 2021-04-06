@@ -104,7 +104,7 @@ namespace PepperDash.Essentials
             }
         }
 
-        void OnUserPromptedForCode()
+        protected void OnUserPromptedForCode()
         {
             var handler = UserPromptedForCode;
             if (handler != null)
@@ -113,7 +113,7 @@ namespace PepperDash.Essentials
             }
         }
 
-        void OnClientJoined()
+        protected void OnClientJoined()
         {
             var handler = ClientJoined;
             if (handler != null)
