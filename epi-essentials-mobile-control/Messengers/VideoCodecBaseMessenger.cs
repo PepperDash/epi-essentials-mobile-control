@@ -241,6 +241,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     appServerController.AddAction(MessagePath + "/cameraModeManual",
                         new Action(speakerTrackCodec.CameraAutoModeOff));
                 }
+
+                var cameraOffCodec = Codec as IHasCameraOff;
+                if (cameraOffCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasCameraOff Actions");
+
+                    cameraOffCodec.CameraIsOffFeedback.OutputChange += (CameraIsOffFeedback_OutputChange);
+
+                    appServerController.AddAction(MessagePath + "/cameraModeOff",
+                        new Action(cameraOffCodec.CameraOff));
+                }
             }
 
             var selfViewCodec = Codec as IHasCodecSelfView;
@@ -278,6 +289,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
             appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
+        }
+
+        void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            PostCameraMode();
         }
 
         void SelfviewIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)

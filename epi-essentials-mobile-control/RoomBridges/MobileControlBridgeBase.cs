@@ -15,6 +15,10 @@ namespace PepperDash.Essentials
     {
         public event EventHandler<EventArgs> UserCodeChanged;
 
+        public event EventHandler<EventArgs> UserPromptedForCode;
+
+        public event EventHandler<EventArgs> ClientJoined;
+
         public MobileControlSystemController Parent { get; private set; }
 
         public string UserCode { get; private set; }
@@ -94,6 +98,24 @@ namespace PepperDash.Essentials
         void OnUserCodeChanged()
         {
             var handler = UserCodeChanged;
+            if (handler != null)
+            {
+                handler(this, new EventArgs());
+            }
+        }
+
+        protected void OnUserPromptedForCode()
+        {
+            var handler = UserPromptedForCode;
+            if (handler != null)
+            {
+                handler(this, new EventArgs());
+            }
+        }
+
+        protected void OnClientJoined()
+        {
+            var handler = ClientJoined;
             if (handler != null)
             {
                 handler(this, new EventArgs());
