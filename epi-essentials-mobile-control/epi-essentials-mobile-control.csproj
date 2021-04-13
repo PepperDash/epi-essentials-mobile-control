@@ -208,7 +208,7 @@
     <Compile Include="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
     <Compile Include="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
     <Compile Include="SIMPLJoinMaps\SIMPLVtcJoinMap.cs" />
-    <Compile Include="TransmitQueue.cs" />
+    <Compile Include="TransmitMessage.cs" />
     <Compile Include="Volumes.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>

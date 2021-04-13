@@ -38,7 +38,7 @@ namespace PepperDash.Essentials
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
-        private readonly TransmitQueue _transmitQueue;
+        private readonly GenericQueue _transmitQueue;
 
         private bool _disableReconnect;
         private WebSocket _wsClient2;
@@ -113,10 +113,10 @@ namespace PepperDash.Essentials
 
             // The queue that will collect the incoming messages in the order they are received
             //_receiveQueue = new ReceiveQueue(key, ParseStreamRx);
-            _receiveQueue = new GenericQueue(key, Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+            _receiveQueue = new GenericQueue(key + "-rxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
-            _transmitQueue = new TransmitQueue(key);
+            _transmitQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
@@ -713,8 +713,6 @@ namespace PepperDash.Essentials
 
                 //This version of the websocket client is TLS1.2 ONLY
 
-                _transmitQueue.WsClient = _wsClient2;
-
                 //Fires OnMessage event when PING is received.
                 _wsClient2.EmitOnPing = true;
 
@@ -901,7 +899,7 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         public void SendMessageObjectToServer(object o)
         {
-            _transmitQueue.EnqueueMessage(o);
+            _transmitQueue.Enqueue(new TransmitMessage(o, _wsClient2));
         }
 
         /// <summary>
