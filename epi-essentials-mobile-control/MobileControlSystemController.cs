@@ -846,8 +846,11 @@ namespace PepperDash.Essentials
             IsAuthorized = false;
             StopPingTimer();
 
-            // Start the reconnect timer
-            if (_disableReconnect) return;
+            // Start the reconnect timer only if disableReconnect is false and the code isn't 4200. 4200 indicates system is not authorized;
+            if (_disableReconnect || e.Code == 4200)
+            {
+                return;
+            }
 
             StartServerReconnectTimer();
         }
