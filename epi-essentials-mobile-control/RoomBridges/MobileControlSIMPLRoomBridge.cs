@@ -449,13 +449,9 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             var co = ConfigReader.ConfigObject;
 
-            // Check for existing SystemUrl
-            if (string.IsNullOrEmpty(co.SystemUrl))
+            if (!String.IsNullOrEmpty(Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue))
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Attempting to use value from SIMPL.");
-                // Use the url value from SIMPL
-
-                co.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+                Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;

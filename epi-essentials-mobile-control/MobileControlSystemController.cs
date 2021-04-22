@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
@@ -44,17 +45,31 @@ namespace PepperDash.Essentials
         private WebSocket _wsClient2;
 
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
+
+        public string SystemUrl; //set only from SIMPL Bridge!
+
         public string SystemUuid
         {
             get
             {
-                // Check to see if the SystemUuid value is populated
-                if (string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid) || ConfigReader.ConfigObject.SystemUuid  == "missing url")
+                // Check to see if the SystemUuid value is populated. If not populated from configuration, check for value from SIMPL bridge.
+                if (!string.IsNullOrEmpty(ConfigReader.ConfigObject.SystemUuid) &&
+                    ConfigReader.ConfigObject.SystemUuid != "missing url")
                 {
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Cannot get SystemUuid to connect to server");
+                    return ConfigReader.ConfigObject.SystemUuid;
+                }
+
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No system_url value defined in config.  Checking for value from SIMPL Bridge.");
+
+                if (!string.IsNullOrEmpty(SystemUrl))
+                {
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config or SIMPL Bridge.  Unable to connect to Mobile Control.");
                     return String.Empty;
                 }
-                return ConfigReader.ConfigObject.SystemUuid;
+
+                var result = Regex.Match(SystemUrl, @"https?:\/\/.*\/systems\/(.*)\/#.*");
+                string uuid = result.Groups[1].Value;
+                return uuid;
             }
         }
 
@@ -215,12 +230,18 @@ namespace PepperDash.Essentials
         /// <summary>
         /// Generates the url and creates the websocket client
         /// </summary>
-        void CreateWebsocket()
+        private bool CreateWebsocket()
         {
             if (_wsClient2 != null)
             {
                 _wsClient2.Close();
                 _wsClient2 = null;
+            }
+
+            if (String.IsNullOrEmpty(SystemUuid))
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "System UUID not defined. Unable to connect to Mobile Control");
+                return false;
             }
 
             var wsHost = Host.Replace("http", "ws");
@@ -239,6 +260,8 @@ namespace PepperDash.Essentials
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
+
+            return true;
         }
 
         public void LinkSystemMonitorToAppServer()
@@ -684,7 +707,13 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RegisterSystemToServer()
         {
-            CreateWebsocket();
+            var result = CreateWebsocket();
+
+            if (!result)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Unable to create websocket.");
+                return;
+            }
 
             ConnectWebsocketClient();
         }
