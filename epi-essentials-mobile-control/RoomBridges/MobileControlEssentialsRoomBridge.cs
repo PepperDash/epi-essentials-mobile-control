@@ -22,6 +22,8 @@ namespace PepperDash.Essentials
 
         public AudioCodecBaseMessenger AcMessenger { get; private set; }
 
+        public IHasScheduleAwarenessMessenger ScheduleMessenger { get; private set; }
+
         public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
 
 
@@ -127,6 +129,18 @@ namespace PepperDash.Essentials
                 var key = acRoom.AudioCodec.Key + "-" + parent.Key;
                 AcMessenger = new AudioCodecBaseMessenger(key, acRoom.AudioCodec, "/device/audioCodec");
                 AcMessenger.RegisterWithAppServer(Parent);
+            }
+
+            var vtcRoom = Room as EssentialsHuddleVtc1Room;
+            if (vtcRoom != null)
+            {
+                if (vtcRoom.ScheduleSource != null)
+                {
+                    var key = vtcRoom.Key + "-" + parent.Key;
+                    ScheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
+                        string.Format("/room/{0}/schedule", vtcRoom.Key));
+                    ScheduleMessenger.RegisterWithAppServer(Parent);
+                }
             }
 
             var privacyRoom = Room as IPrivacy;
