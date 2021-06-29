@@ -18,6 +18,7 @@ using PepperDash.Essentials.Core.Presets;
 using PepperDash.Essentials.Core.Queues;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
+using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
 
 namespace PepperDash.Essentials
@@ -1244,6 +1245,10 @@ namespace PepperDash.Essentials
                             else if (action is Action<DirectRoute>)
                             {
                                 (action as Action<DirectRoute>)(messageObj["content"].ToObject<DirectRoute>());
+                            }
+                            else if (action is Action<PepperDash.Essentials.Devices.Common.Codec.Meeting>)
+                            {
+                                (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
                             }
                         }
                         else
