@@ -5,13 +5,43 @@ namespace PepperDash.Essentials.AppServer
 {
     public class MobileControlSIMPLRunDirectRouteActionJoinMap:JoinMapBaseAdvanced
     {
-        [JoinName("AdvancedSharingMode")]
-        public JoinDataComplete AdvancedSharingMode =
+        [JoinName("AdvancedSharingModeFb")]
+        public JoinDataComplete AdvancedSharingModeFb =
             new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
             new JoinMetadata
             {
                 Description = "Use Advanced Sharing Mode",
-                JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("AdvancedSharingModeOn")]
+        public JoinDataComplete AdvancedSharingModeOn =
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Use Advanced Sharing Mode",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("AdvancedSharingModeOff")]
+        public JoinDataComplete AdvancedSharingModeOff =
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Use Advanced Sharing Mode",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
+                JoinType = eJoinType.Digital
+            });
+
+        [JoinName("AdvancedSharingModeToggle")]
+        public JoinDataComplete AdvancedSharingModeToggle =
+            new JoinDataComplete(new JoinData { JoinNumber = 3, JoinSpan = 1 },
+            new JoinMetadata
+            {
+                Description = "Use Advanced Sharing Mode",
+                JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
 
