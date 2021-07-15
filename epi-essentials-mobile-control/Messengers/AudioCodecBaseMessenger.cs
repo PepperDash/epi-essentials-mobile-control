@@ -13,7 +13,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// Device being bridged
         /// </summary>
-        public AudioCodecBase Codec { get; set; }
+        public AudioCodecBase Codec { get; private set; }
 
         /// <summary>
         /// Constuctor

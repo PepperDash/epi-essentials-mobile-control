@@ -248,7 +248,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Room Nnme",
+                    Description = "Room Name",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Serial
                 });

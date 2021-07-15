@@ -22,6 +22,8 @@ namespace PepperDash.Essentials
 
         public AudioCodecBaseMessenger AcMessenger { get; private set; }
 
+        public IHasScheduleAwarenessMessenger ScheduleMessenger { get; private set; }
+
         public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
 
 
@@ -56,8 +58,8 @@ namespace PepperDash.Essentials
             // sub-controller parsing could be attached to these classes, so that the systemController
             // doesn't need to know about everything.
 
-            Parent.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), new Action(() => this.OnUserPromptedForCode()));
-            Parent.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), new Action(() => this.OnClientJoined()));
+            Parent.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), new Action(OnUserPromptedForCode));
+            Parent.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), new Action(OnClientJoined));
 
             // Source Changes and room off
             Parent.AddAction(string.Format(@"/room/{0}/status", Room.Key), new ClientSpecificUpdateRequest(() => GetFullStatus(Room)));
@@ -127,6 +129,18 @@ namespace PepperDash.Essentials
                 var key = acRoom.AudioCodec.Key + "-" + parent.Key;
                 AcMessenger = new AudioCodecBaseMessenger(key, acRoom.AudioCodec, "/device/audioCodec");
                 AcMessenger.RegisterWithAppServer(Parent);
+            }
+
+            var vtcRoom = Room as EssentialsHuddleVtc1Room;
+            if (vtcRoom != null)
+            {
+                if (vtcRoom.ScheduleSource != null)
+                {
+                    var key = vtcRoom.Key + "-" + parent.Key;
+                    ScheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
+                        string.Format("/room/{0}/schedule", vtcRoom.Key));
+                    ScheduleMessenger.RegisterWithAppServer(Parent);
+                }
             }
 
             var privacyRoom = Room as IPrivacy;
@@ -378,10 +392,9 @@ namespace PepperDash.Essentials
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
             Parent.SendMessageObjectToServer(JObject.FromObject(new
             {
-                type = "/room/status/",
+                type = String.Format("/room/{0}/status/",Room.Key),
                 content = contentObject
             }));
         }
@@ -394,8 +407,7 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "wasCancelled"}};
-            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
-            var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
+            var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
             Parent.SendMessageObjectToServer(message);
         }
 
@@ -407,8 +419,7 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "hasFinished"}};
-            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
-            var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
+            var message = new JObject { { "type", String.Format("/room/{0}/shutdown/", Room.Key) }, { "content", roomStatus } };
             Parent.SendMessageObjectToServer(message);
         }
 
@@ -424,8 +435,7 @@ namespace PepperDash.Essentials
                 {"state", "hasStarted"},
                 {"duration", Room.ShutdownPromptTimer.SecondsToCount}
             };
-            // TODO: Need to modify the type to include the room key: "/room/[roomKey]/shutdown"
-            var message = new JObject {{"type", "/room/shutdown/"}, {"content", roomStatus}};
+            var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
             Parent.SendMessageObjectToServer(message);
             // equivalent JS message:
             //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
@@ -603,8 +613,7 @@ namespace PepperDash.Essentials
         {
             Parent.SendMessageObjectToServer(new
             {
-                // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
-                type = "/room/status/",
+                type = String.Format("/room/{0}/status/", Room.Key),
                 content = GetFullStatus(room)
             });
         }
@@ -647,8 +656,7 @@ namespace PepperDash.Essentials
 
             var messageObject = new MobileControlResponseMessage
             {
-                // TODO: Need to modify the type to include the room key: "/room/[roomKey]/status"
-                Type = "/room/status/",
+                Type = String.Format("/room/{0}/status/",Room.Key),
                 Content = contentObject
             };
 

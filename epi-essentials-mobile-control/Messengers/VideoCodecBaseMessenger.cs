@@ -167,6 +167,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction("/device/videoCodec/isReady", new Action(SendIsReady));
             appServerController.AddAction("/device/videoCodec/fullStatus", new Action(SendVtcFullMessageObject));
             appServerController.AddAction("/device/videoCodec/dial", new Action<string>(s => Codec.Dial(s)));
+            appServerController.AddAction("/device/videoCodec/dialMeeting", new Action<Meeting>(m => Codec.Dial(m)));
             appServerController.AddAction("/device/videoCodec/endCallById", new Action<string>(s =>
             {
                 var call = GetCallWithId(s);
