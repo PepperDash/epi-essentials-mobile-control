@@ -5,6 +5,7 @@ using System.Text;
 using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Converters;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Queues;
 using WebSocketSharp;
@@ -32,7 +33,7 @@ namespace PepperDash.Essentials
                 if (_ws != null && _ws.IsAlive)
                 {
                     var message = JsonConvert.SerializeObject(messageToSend, Formatting.None,
-                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = {new IsoDateTimeConverter()} });
 
                     Debug.Console(2, "Message TX: {0}", message);
 
