@@ -33,56 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Crestron.SimplSharpPro.AudioDistribution, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.AudioDistribution.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.CrestronConnected, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.CrestronConnected.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.DeviceSupport, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.DeviceSupport.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.DM, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.DM.dll</HintPath>
-    </Reference>
     <Reference Include="Crestron.SimplSharpPro.EthernetCommunications, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Fusion, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.Fusion.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Gateways, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.Gateways.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.GeneralIO, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.GeneralIO.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Keypads, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.Keypads.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Lighting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.Lighting.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Media, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.Media.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Remotes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.Remotes.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Shades, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.Shades.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Thermostats, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.Thermostats.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.ThreeSeriesCards, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.ThreeSeriesCards.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.UC, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.UC.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Crestron.SimplSharpPro.UI.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\lib\net47\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
     </Reference>
     <Reference Include="Essentials Devices Common, Version=1.9.1.39291, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.9.1\lib\net47\Essentials Devices Common.dll</HintPath>
@@ -295,4 +248,7 @@
     <Error Condition="!Exists('packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets'))" />
   </Target>
   <Import Project="packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets" Condition="Exists('packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets')" />
+  <PropertyGroup>
+    <PostBuildEvent>powershell.exe Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force; Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz'</PostBuildEvent>
+  </PropertyGroup>
 </Project>
