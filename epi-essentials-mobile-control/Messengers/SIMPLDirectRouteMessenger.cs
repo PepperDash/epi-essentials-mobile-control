@@ -87,9 +87,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
            
                 _eisc.SetBool(JoinMap.AdvancedSharingModeOn.JoinNumber, b);
                 _eisc.SetBool(JoinMap.AdvancedSharingModeOff.JoinNumber, !b);
+                _eisc.PulseBool(JoinMap.AdvancedSharingModeToggle.JoinNumber);
             }));
-
-            controller.AddAction(MessagePath + "/advancedSharingMode/toggle", new Action(() => _eisc.PulseBool(JoinMap.AdvancedSharingModeOn.JoinNumber)));
 
             _eisc.SetBoolSigAction(JoinMap.AdvancedSharingModeFb.JoinNumber,
                 (b) => controller.SendMessageObjectToServer(new
