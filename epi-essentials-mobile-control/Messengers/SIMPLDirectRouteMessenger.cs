@@ -74,7 +74,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     type = MessagePath + "/advancedSharingMode",
                     content = new
                     {
-                        advancedSharingActive = _eisc.BooleanOutput[JoinMap.AdvancedSharingMode.JoinNumber].BoolValue
+                        advancedSharingActive = _eisc.BooleanOutput[JoinMap.AdvancedSharingModeFb.JoinNumber].BoolValue
                     }
                 });
             }));
@@ -82,13 +82,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             controller.AddAction(MessagePath + "/advancedSharingMode",new Action<bool>((b) =>
             {
                 Debug.Console(1, "Current Sharing Mode: {2}\r\nadvanced sharing mode: {0} join number: {1}", b,
-                    JoinMap.AdvancedSharingMode.JoinNumber,
-                    _eisc.BooleanOutput[JoinMap.AdvancedSharingMode.JoinNumber].BoolValue);
+                    JoinMap.AdvancedSharingModeOn.JoinNumber,
+                    _eisc.BooleanOutput[JoinMap.AdvancedSharingModeOn.JoinNumber].BoolValue);
            
-                _eisc.SetBool(JoinMap.AdvancedSharingMode.JoinNumber, b);
+                _eisc.SetBool(JoinMap.AdvancedSharingModeOn.JoinNumber, b);
+                _eisc.SetBool(JoinMap.AdvancedSharingModeOff.JoinNumber, !b);
+                _eisc.PulseBool(JoinMap.AdvancedSharingModeToggle.JoinNumber);
             }));
 
-            _eisc.SetBoolSigAction(JoinMap.AdvancedSharingMode.JoinNumber,
+            _eisc.SetBoolSigAction(JoinMap.AdvancedSharingModeFb.JoinNumber,
                 (b) => controller.SendMessageObjectToServer(new
                 {
                     type = MessagePath + "/advancedSharingMode",
