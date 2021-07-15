@@ -101,136 +101,136 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\DisplayBaseExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\DisplayBaseExtensions.cs">
       <Link>DeviceTypeInterfaces\DisplayBaseExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\IChannelExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\IChannelExtensions.cs">
       <Link>DeviceTypeInterfaces\IChannelExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\IColorExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\IColorExtensions.cs">
       <Link>DeviceTypeInterfaces\IColorExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\IDPadExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\IDPadExtensions.cs">
       <Link>DeviceTypeInterfaces\IDPadExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\IDvrExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\IDvrExtensions.cs">
       <Link>DeviceTypeInterfaces\IDvrExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\IHasPowerExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\IHasPowerExtensions.cs">
       <Link>DeviceTypeInterfaces\IHasPowerExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\INumericExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\INumericExtensions.cs">
       <Link>DeviceTypeInterfaces\INumericExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs">
       <Link>DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\DeviceTypeInterfaces\ITransportExtensions.cs">
+    <Compile Include="..\epi-essentials-mobile-control\DeviceTypeInterfaces\ITransportExtensions.cs">
       <Link>DeviceTypeInterfaces\ITransportExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Interfaces.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Interfaces.cs">
       <Link>Interfaces.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\AudioCodecBaseMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\AudioCodecBaseMessenger.cs">
       <Link>Messengers\AudioCodecBaseMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\CameraBaseMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\CameraBaseMessenger.cs">
       <Link>Messengers\CameraBaseMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\CommMonitorMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\CommMonitorMessenger.cs">
       <Link>Messengers\CommMonitorMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\ConfigMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\ConfigMessenger.cs">
       <Link>Messengers\ConfigMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\DevicePresetsModelMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\DevicePresetsModelMessenger.cs">
       <Link>Messengers\DevicePresetsModelMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\DeviceVolumeMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\DeviceVolumeMessenger.cs">
       <Link>Messengers\DeviceVolumeMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\IHasScheduleAwarenessMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\IHasScheduleAwarenessMessenger.cs">
       <Link>Messengers\IHasScheduleAwarenessMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\IRunRouteActionMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\IRunRouteActionMessenger.cs">
       <Link>Messengers\IRunRouteActionMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\MessengerBase.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\MessengerBase.cs">
       <Link>Messengers\MessengerBase.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\RoomEventScheduleMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\RoomEventScheduleMessenger.cs">
       <Link>Messengers\RoomEventScheduleMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SIMPLAtcMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SIMPLAtcMessenger.cs">
       <Link>Messengers\SIMPLAtcMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SIMPLCameraMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SIMPLCameraMessenger.cs">
       <Link>Messengers\SIMPLCameraMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SIMPLDirectRouteMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SIMPLDirectRouteMessenger.cs">
       <Link>Messengers\SIMPLDirectRouteMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SimplMessengerPropertiesConfig.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SimplMessengerPropertiesConfig.cs">
       <Link>Messengers\SimplMessengerPropertiesConfig.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SIMPLRouteMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SIMPLRouteMessenger.cs">
       <Link>Messengers\SIMPLRouteMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SIMPLVtcMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SIMPLVtcMessenger.cs">
       <Link>Messengers\SIMPLVtcMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\SystemMonitorMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\SystemMonitorMessenger.cs">
       <Link>Messengers\SystemMonitorMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\TwoWayDisplayBaseMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\TwoWayDisplayBaseMessenger.cs">
       <Link>Messengers\TwoWayDisplayBaseMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Messengers\VideoCodecBaseMessenger.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Messengers\VideoCodecBaseMessenger.cs">
       <Link>Messengers\VideoCodecBaseMessenger.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\MobileControlConfig.cs">
+    <Compile Include="..\epi-essentials-mobile-control\MobileControlConfig.cs">
       <Link>MobileControlConfig.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\MobileControlEssentialsConfig.cs">
+    <Compile Include="..\epi-essentials-mobile-control\MobileControlEssentialsConfig.cs">
       <Link>MobileControlEssentialsConfig.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\MobileControlFactory.cs">
+    <Compile Include="..\epi-essentials-mobile-control\MobileControlFactory.cs">
       <Link>MobileControlFactory.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\MobileControlSimplDeviceBridge.cs">
+    <Compile Include="..\epi-essentials-mobile-control\MobileControlSimplDeviceBridge.cs">
       <Link>MobileControlSimplDeviceBridge.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\MobileControlSystemController.cs">
+    <Compile Include="..\epi-essentials-mobile-control\MobileControlSystemController.cs">
       <Link>MobileControlSystemController.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\RoomBridges\MobileControlBridgeBase.cs">
+    <Compile Include="..\epi-essentials-mobile-control\RoomBridges\MobileControlBridgeBase.cs">
       <Link>RoomBridges\MobileControlBridgeBase.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\RoomBridges\MobileControlEssentialsRoomBridge.cs">
+    <Compile Include="..\epi-essentials-mobile-control\RoomBridges\MobileControlEssentialsRoomBridge.cs">
       <Link>RoomBridges\MobileControlEssentialsRoomBridge.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\RoomBridges\MobileControlSIMPLRoomBridge.cs">
+    <Compile Include="..\epi-essentials-mobile-control\RoomBridges\MobileControlSIMPLRoomBridge.cs">
       <Link>RoomBridges\MobileControlSIMPLRoomBridge.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\RoomBridges\SourceDeviceMapDictionary.cs">
+    <Compile Include="..\epi-essentials-mobile-control\RoomBridges\SourceDeviceMapDictionary.cs">
       <Link>RoomBridges\SourceDeviceMapDictionary.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs">
+    <Compile Include="..\epi-essentials-mobile-control\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs">
       <Link>SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs">
+    <Compile Include="..\epi-essentials-mobile-control\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs">
       <Link>SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\SIMPLJoinMaps\SIMPLAtcJoinMap.cs">
+    <Compile Include="..\epi-essentials-mobile-control\SIMPLJoinMaps\SIMPLAtcJoinMap.cs">
       <Link>SIMPLJoinMaps\SIMPLAtcJoinMap.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\SIMPLJoinMaps\SIMPLVtcJoinMap.cs">
+    <Compile Include="..\epi-essentials-mobile-control\SIMPLJoinMaps\SIMPLVtcJoinMap.cs">
       <Link>SIMPLJoinMaps\SIMPLVtcJoinMap.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\TransmitMessage.cs">
+    <Compile Include="..\epi-essentials-mobile-control\TransmitMessage.cs">
       <Link>TransmitMessage.cs</Link>
     </Compile>
-    <Compile Include="..\..\epi-essentials-mobile-control\Volumes.cs">
+    <Compile Include="..\epi-essentials-mobile-control\Volumes.cs">
       <Link>Volumes.cs</Link>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -249,6 +249,6 @@
   </Target>
   <Import Project="packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets" Condition="Exists('packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.14.168\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets')" />
   <PropertyGroup>
-    <PostBuildEvent>powershell.exe Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force; Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz'</PostBuildEvent>
+    <PostBuildEvent>powershell.exe Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force; Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz -Force'</PostBuildEvent>
   </PropertyGroup>
 </Project>
