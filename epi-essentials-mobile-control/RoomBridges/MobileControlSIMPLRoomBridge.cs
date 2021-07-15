@@ -349,17 +349,17 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             // shutdown things
             Eisc.SetSigTrueAction(JoinMap.ShutdownCancel.JoinNumber, () =>
-                PostMessage("/room/shutdown/", new
+                PostMessage("/room/room1/shutdown/", new
                 {
                     state = "wasCancelled"
                 }));
             Eisc.SetSigTrueAction(JoinMap.ShutdownEnd.JoinNumber, () =>
-                PostMessage("/room/shutdown/", new
+                PostMessage("/room/room1/shutdown/", new
                 {
                     state = "hasFinished"
                 }));
             Eisc.SetSigTrueAction(JoinMap.ShutdownStart.JoinNumber, () =>
-                PostMessage("/room/shutdown/", new
+                PostMessage("/room/room1/shutdown/", new
                 {
                     state = "hasStarted",
                     duration = Eisc.UShortOutput[JoinMap.ShutdownPromptDuration.JoinNumber].UShortValue
@@ -449,13 +449,9 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             var co = ConfigReader.ConfigObject;
 
-            // Check for existing SystemUrl
-            if (string.IsNullOrEmpty(co.SystemUrl))
+            if (!String.IsNullOrEmpty(Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue))
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config.  Attempting to use value from SIMPL.");
-                // Use the url value from SIMPL
-
-                co.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+                Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -1010,7 +1006,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             Parent.SendMessageObjectToServer(new
             {
-                type = "/room/status/",
+                type = "/room/room1/status/",
                 content = contentObject
             });
         }
