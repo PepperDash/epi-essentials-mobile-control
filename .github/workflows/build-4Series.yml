@@ -48,12 +48,12 @@ jobs:
       - name: Setup MS-Build
         uses: microsoft/setup-msbuild@v1
       - name: restore Nuget Packages
-        run: nuget restore ${{ env.GITHUB_WORKSPACE }}/4-series/${{env.SOLUTION_FILE}}/${{env.SOLUTION_FILE}}.sln
+        run: nuget restore $($Env:GITHUB_WORKSPACE)/4-series/$($Env:SOLUTION_FILE)/$($Env:SOLUTION_FILE).sln
       # Build the solutions in the docker image
       - name: Build Solution
         shell: powershell
         run: |
-          msbuild ${{env.GITHUB_WORKSPACE}}/4-series/${{env.SOLUTION_FILE}}/${{env.SOLUTION_FILE}}.sln /p:platform="Any CPU" /p:configuration="Debug"
+          msbuild $($Env:GITHUB_WORKSPACE)/4-series/$($Env:SOLUTION_FILE)/$($Env:SOLUTION_FILE).sln /p:platform="Any CPU" /p:configuration="Debug"
       # Zip up the output files as needed
       - name: Zip Build Output
         shell: powershell
