@@ -16,6 +16,8 @@ namespace PepperDash.Essentials
 {
     public class MobileControlEssentialsRoomBridge : MobileControlBridgeBase
     {
+        public string DefaultRoomKey { get; private set; }
+
         public EssentialsRoomBase Room { get; private set; }
 
         public VideoCodecBaseMessenger VcMessenger { get; private set; }
@@ -40,9 +42,36 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room"></param>
         public MobileControlEssentialsRoomBridge(EssentialsRoomBase room) :
-            base(string.Format("mobileControlBridge-{0}", room.Key), "Essentials Mobile Control Bridge")
+            this(string.Format("mobileControlBridge-{0}", room.Key), room.Key)
         {
             Room = room;
+        }
+
+        public MobileControlEssentialsRoomBridge(string key, string roomKey): base(key, "Essentials Mobile Control Bridge")
+        {
+            DefaultRoomKey = roomKey;
+
+            AddPreActivationAction(GetRoom);
+        }
+
+        private void GetRoom()
+        {
+            if (Room != null)
+            {
+                Debug.Console(0, this, "Room with key {0} already linked.", DefaultRoomKey);
+                return;
+            }
+
+            var tempRoom = DeviceManager.GetDeviceForKey(DefaultRoomKey) as EssentialsRoomBase;
+
+            if (tempRoom == null)
+            {
+                Debug.Console(0, this, "Room with key {0} not found or is not an Essentials Room", DefaultRoomKey);
+                return;
+            }
+
+            Room = tempRoom;
+
         }
 
         /// <summary>

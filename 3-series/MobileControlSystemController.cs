@@ -26,8 +26,6 @@ namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
-        //WebSocketClient WSClient;
-
         private const long ServerHeartbeatInterval = 20000;
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
@@ -205,10 +203,31 @@ namespace PepperDash.Essentials
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
 
+        private void CreateMobileControlRoomBridges()
+        {
+            if (Config.RoomBridges.Count == 0)
+            {
+                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
+                return;
+            }
+
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
+        }
+
         #region IMobileControl Members
 
         public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
         {
+            if (Config.RoomBridges.Count > 0)
+            {
+                Debug.Console(0, this, "Room Bridges configured explicitly. Skipping creation...");
+                return;
+            }
+
             var bridge = new MobileControlEssentialsRoomBridge(room);
             AddBridgePostActivationAction(bridge);
             DeviceManager.AddDevice(bridge);
