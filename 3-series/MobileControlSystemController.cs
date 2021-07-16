@@ -220,7 +220,7 @@ namespace PepperDash.Essentials
 
         #region IMobileControl Members
 
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
+        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
         {
             if (Config.RoomBridges.Count > 0)
             {

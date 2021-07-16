@@ -18,7 +18,7 @@ namespace PepperDash.Essentials
     {
         public string DefaultRoomKey { get; private set; }
 
-        public EssentialsRoomBase Room { get; private set; }
+        public IEssentialsRoom Room { get; private set; }
 
         public VideoCodecBaseMessenger VcMessenger { get; private set; }
 
@@ -41,7 +41,7 @@ namespace PepperDash.Essentials
         /// 
         /// </summary>
         /// <param name="room"></param>
-        public MobileControlEssentialsRoomBridge(EssentialsRoomBase room) :
+        public MobileControlEssentialsRoomBridge(IEssentialsRoom room) :
             this(string.Format("mobileControlBridge-{0}", room.Key), room.Key)
         {
             Room = room;
@@ -62,7 +62,7 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            var tempRoom = DeviceManager.GetDeviceForKey(DefaultRoomKey) as EssentialsRoomBase;
+            var tempRoom = DeviceManager.GetDeviceForKey(DefaultRoomKey) as IEssentialsRoom;
 
             if (tempRoom == null)
             {
@@ -638,7 +638,7 @@ namespace PepperDash.Essentials
         /// Sends the full status of the room to the server
         /// </summary>
         /// <param name="room"></param>
-        private void SendFullStatus(EssentialsRoomBase room)
+        private void SendFullStatus(IEssentialsRoom room)
         {
             Parent.SendMessageObjectToServer(new
             {
@@ -653,7 +653,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room">The room to get status of</param>
         /// <returns>The status response message</returns>
-        MobileControlResponseMessage GetFullStatus(EssentialsRoomBase room)
+        MobileControlResponseMessage GetFullStatus(IEssentialsRoom room)
         {
             var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
 
