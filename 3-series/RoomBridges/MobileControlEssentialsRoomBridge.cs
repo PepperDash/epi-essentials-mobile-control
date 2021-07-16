@@ -160,7 +160,7 @@ namespace PepperDash.Essentials
                 AcMessenger.RegisterWithAppServer(Parent);
             }
 
-            var vtcRoom = Room as EssentialsHuddleVtc1Room;
+            var vtcRoom = Room as IEssentialsHuddleVtc1Room;
             if (vtcRoom != null)
             {
                 if (vtcRoom.ScheduleSource != null)
