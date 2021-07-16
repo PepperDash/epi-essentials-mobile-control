@@ -4,7 +4,7 @@
 # $Env:VERSION = "0.0.0-buildType-test"
 
 # Sets the root directory for the operation
-$destination = "$($Env:GITHUB_WORKSPACE)\output"
+$destination = "$($Env:GITHUB_HOME)\output"
 New-Item -ItemType Directory -Force -Path ($destination)
 Get-ChildItem ($destination)
 $exclusions = "packages"
@@ -26,7 +26,7 @@ Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz
 } | Copy-Item -Destination ($destination) -Force
 Write-Host "Getting matching files..."
 # Get any files from the output folder that match the following extensions
-Get-ChildItem -Path $destination | Where-Object {($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz" -or ($_.Extension -eq ".cplz"))} | ForEach-Object { 
+Get-ChildItem -Path '$($destination)/*' | Where-Object {($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz" -or ($_.Extension -eq ".cplz"))} | ForEach-Object { 
   # Replace the extensions with dll and xml and create an array 
   $filenames = @($($_ -replace "cpz|clz|cplz", "dll"), $($_ -replace "cpz|clz|cplz", "xml"))
   Write-Host "Filenames:"
