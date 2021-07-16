@@ -730,11 +730,11 @@ namespace PepperDash.Essentials
 
 
                 // set to 99999 to let things work on 4-Series
-                if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4)
+                if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series4) == eCrestronSeries.Series4)
                 {
                     _wsClient2.Log.Level = (LogLevel) 99999;
                 }
-                else if (CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series3)
+                else if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series3) == eCrestronSeries.Series3)
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
