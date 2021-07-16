@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace PepperDash.Essentials
 {
@@ -12,6 +13,23 @@ namespace PepperDash.Essentials
 
         [JsonProperty("clientAppUrl")]
         public string ClientAppUrl { get; set; }
+
+        [JsonProperty("roomBridges")]
+        public List<MobileControlRoomBridgePropertiesConfig> RoomBridges { get; set; }
+
+        public MobileControlConfig()
+        {
+            RoomBridges = new List<MobileControlRoomBridgePropertiesConfig>();
+        }
+    }
+
+    public class MobileControlRoomBridgePropertiesConfig
+    {
+        [JsonProperty("key")]
+        public string Key { get; set; }
+
+        [JsonProperty("roomKey")]
+        public string RoomKey { get; set; }
     }
 
     /// <summary>
