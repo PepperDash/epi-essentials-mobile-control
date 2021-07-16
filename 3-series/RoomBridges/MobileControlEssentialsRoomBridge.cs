@@ -71,7 +71,11 @@ namespace PepperDash.Essentials
             }
 
             Room = tempRoom;
+        }
 
+        public void ChangeRoom(IEssentialsRoom room)
+        {
+            Room = room;
         }
 
         /// <summary>

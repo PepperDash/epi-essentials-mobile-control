@@ -40,6 +40,8 @@ namespace PepperDash.Essentials
 
         private readonly GenericQueue _transmitQueue;
 
+        private IEssentialsRoomCombiner _roomCombiner;
+
         private bool _disableReconnect;
         private WebSocket _wsClient2;
 
@@ -196,12 +198,67 @@ namespace PepperDash.Essentials
 
                 return _wsClient2.IsAlive && IsAuthorized;
             });
+
+            CreateMobileControlRoomBridges();
+
+            AddPreActivationAction(GetRoomCombiner);
         }
 
         public MobileControlConfig Config { get; private set; }
 
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
+
+        private void GetRoomCombiner()
+        {
+            var combiners = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().ToList();
+
+            if (combiners.Count > 1)
+            {
+                //TODO: Replace `index 0` with room key
+                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Multiple room combiners found. Using combiner at index 0");
+                _roomCombiner = combiners[0];
+
+                _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
+                return;
+            }
+
+            if (combiners.Count > 0)
+            {
+                _roomCombiner = combiners[0];
+
+                _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
+                return;
+            }
+
+            Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No room combining configured for this system");
+        }
+
+        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
+        {
+            foreach (var bridge in _roomBridges.OfType<MobileControlEssentialsRoomBridge>())
+            {
+                if (!_roomCombiner.CurrentScenario.UiMap.ContainsKey(bridge.Key))
+                {
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error,
+                        "No room found for {0} in scenario {1}. Please correct configuration!", bridge.Key,
+                        _roomCombiner.CurrentScenario.Key);
+                    continue;
+                }
+
+                var roomKey = _roomCombiner.CurrentScenario.UiMap[bridge.Key];
+
+                var room = DeviceManager.GetDeviceForKey(roomKey) as IEssentialsRoom;
+
+                if (room == null)
+                {
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No room with key {0} found!", roomKey);
+                    continue;
+                }
+
+                bridge.ChangeRoom(room);
+            }
+        }
 
         private void CreateMobileControlRoomBridges()
         {
@@ -224,7 +281,7 @@ namespace PepperDash.Essentials
         {
             if (Config.RoomBridges.Count > 0)
             {
-                Debug.Console(0, this, "Room Bridges configured explicitly. Skipping creation...");
+                Debug.Console(0, this, "Room Bridges configured explicitly. Skipping creation.");
                 return;
             }
 
