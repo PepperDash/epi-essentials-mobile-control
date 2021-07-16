@@ -4,7 +4,7 @@
 # $Env:VERSION = "0.0.0-buildType-test"
 
 # Sets the root directory for the operation
-$destination = "$($Env:GITHUB_HOME)\output"
+$destination = "$($Env:GITHUB_WORKSPACE)\output"
 New-Item -ItemType Directory -Force -Path ($destination)
 Get-ChildItem ($destination)
 $exclusions = "packages"
