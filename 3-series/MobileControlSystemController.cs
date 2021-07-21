@@ -1137,6 +1137,46 @@ namespace PepperDash.Essentials
             }
         }
 
+        private void HandleClientJoined(JToken content)
+        {
+            var clientId = content["clientId"].Value<string>();
+            var roomKey = content["roomKey"].Value<string>();
+
+            if (_roomCombiner == null)
+            {
+                SendMessageObjectToServer(new
+                {
+                    type = "/system/roomKey",
+                    clientId,
+                    content = roomKey
+                });
+                return;
+            }
+
+            if (!_roomCombiner.CurrentScenario.UiMap.ContainsKey(roomKey))
+            {
+                Debug.Console(0, this,
+                    "Unable to find correct roomKey for {0} in current scenario. Returning {0} as roomKey", roomKey);
+
+                SendMessageObjectToServer(new
+                {
+                    type = "/system/roomKey",
+                    clientId,
+                    content = roomKey
+                });
+                return;
+            }
+
+            var newRoomKey = _roomCombiner.CurrentScenario.UiMap[roomKey];
+
+            SendMessageObjectToServer(new
+            {
+                type = "/system/roomKey",
+                clientId,
+                content = newRoomKey
+            });
+        }
+
         private void HandleUserCode(JToken content)
         {
             var code = content["userCode"];
@@ -1230,6 +1270,9 @@ namespace PepperDash.Essentials
                         break;
                     case "/system/userCode":
                         HandleUserCode(messageObj["content"]);
+                        break;
+                    case "/system/clientJoined":
+                        HandleClientJoined(messageObj["content"]);
                         break;
                     case "raw":
                     {
