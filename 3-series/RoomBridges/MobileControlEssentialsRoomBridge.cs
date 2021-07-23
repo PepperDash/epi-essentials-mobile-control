@@ -20,14 +20,6 @@ namespace PepperDash.Essentials
 
         public IEssentialsRoom Room { get; private set; }
 
-        public VideoCodecBaseMessenger VcMessenger { get; private set; }
-
-        public AudioCodecBaseMessenger AcMessenger { get; private set; }
-
-        public IHasScheduleAwarenessMessenger ScheduleMessenger { get; private set; }
-
-        public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
-
 
         /// <summary>
         /// 
@@ -73,11 +65,6 @@ namespace PepperDash.Essentials
             Room = tempRoom;
         }
 
-        public void ChangeRoom(IEssentialsRoom room)
-        {
-            Room = room;
-        }
-
         /// <summary>
         /// Override of base: calls base to add parent and then registers actions and events.
         /// </summary>
@@ -93,6 +80,9 @@ namespace PepperDash.Essentials
 
             Parent.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), new Action(OnUserPromptedForCode));
             Parent.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), new Action(OnClientJoined));
+
+            Parent.AddAction(string.Format(@"/room/{0}/userCode", Room.Key),
+                new UserCodeChanged(SetUserCode));
 
             // Source Changes and room off
             Parent.AddAction(string.Format(@"/room/{0}/status", Room.Key), new ClientSpecificUpdateRequest(() => GetFullStatus(Room)));
@@ -150,8 +140,12 @@ namespace PepperDash.Essentials
             if (vcRoom != null && vcRoom.VideoCodec != null)
             {
                 var key = vcRoom.VideoCodec.Key + "-" + parent.Key;
-                VcMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, "/device/videoCodec");
-                VcMessenger.RegisterWithAppServer(Parent);
+
+                if (!parent.CheckForDeviceMessenger(key))
+                {
+                    var vcMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
+                    parent.AddDeviceMessenger(vcMessenger);
+                }
 
                 vcRoom.IsSharingFeedback.OutputChange += IsSharingFeedback_OutputChange;
             }
@@ -160,8 +154,13 @@ namespace PepperDash.Essentials
             if (acRoom != null && acRoom.AudioCodec != null)
             {
                 var key = acRoom.AudioCodec.Key + "-" + parent.Key;
-                AcMessenger = new AudioCodecBaseMessenger(key, acRoom.AudioCodec, "/device/audioCodec");
-                AcMessenger.RegisterWithAppServer(Parent);
+
+                if (!parent.CheckForDeviceMessenger(key))
+                {
+                    var acMessenger = new AudioCodecBaseMessenger(key, acRoom.AudioCodec,
+                        String.Format("/device/{0}", acRoom.AudioCodec.Key));
+                    parent.AddDeviceMessenger(acMessenger);
+                }
             }
 
             var vtcRoom = Room as IEssentialsHuddleVtc1Room;
@@ -170,9 +169,13 @@ namespace PepperDash.Essentials
                 if (vtcRoom.ScheduleSource != null)
                 {
                     var key = vtcRoom.Key + "-" + parent.Key;
-                    ScheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
-                        string.Format("/room/{0}/schedule", vtcRoom.Key));
-                    ScheduleMessenger.RegisterWithAppServer(Parent);
+
+                    if (!parent.CheckForDeviceMessenger(key))
+                    {
+                        var scheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
+                            string.Format("/room/{0}/schedule", vtcRoom.Key));
+                        parent.AddDeviceMessenger(scheduleMessenger);
+                    }
                 }
             }
 
@@ -232,8 +235,7 @@ namespace PepperDash.Essentials
         {
             var scheduleMessenger = new RoomEventScheduleMessenger(techRoom.Key + "-schedule",
                 String.Format("/room/{0}/schedule", techRoom.Key), techRoom);
-            DeviceMessengers.Add(scheduleMessenger.Key, scheduleMessenger);
-            scheduleMessenger.RegisterWithAppServer(Parent);
+            Parent.AddDeviceMessenger(scheduleMessenger);
         }
 
         private void SetTunerActions(EssentialsTechRoom techRoom)
@@ -300,8 +302,6 @@ namespace PepperDash.Essentials
         /// </summary>
         private void SetupDeviceMessengers()
         {
-            DeviceMessengers = new Dictionary<string, MessengerBase>();
-
             foreach (var device in DeviceManager.AllDevices)
             {
                 Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
@@ -312,8 +312,8 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
                     var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
                         "/device/" + device.Key);
-                    DeviceMessengers.Add(device.Key, cameraMessenger);
-                    cameraMessenger.RegisterWithAppServer(Parent);
+                    Parent.AddDeviceMessenger(cameraMessenger);
+                    
                 }
 
                 if (device is BlueJeansPc)
@@ -322,8 +322,8 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding IRunRouteActionMessnger for device: {0}", device.Key);
                     var routeMessenger = new RunRouteActionMessenger(device.Key + "-" + Parent.Key, softCodecDevice,
                         "/device/" + device.Key);
-                    DeviceMessengers.Add(device.Key, routeMessenger);
-                    routeMessenger.RegisterWithAppServer(Parent);
+                    Parent.AddDeviceMessenger(routeMessenger);
+                  
                 }
 
                 if (device is ITvPresetsProvider)
@@ -338,8 +338,8 @@ namespace PepperDash.Essentials
                         Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
                         var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
                             presetsDevice);
-                        DeviceMessengers.Add(device.Key, presetsMessenger);
-                        presetsMessenger.RegisterWithAppServer(Parent);
+                        Parent.AddDeviceMessenger(presetsMessenger);
+                        
                     }
                 }
 
@@ -357,8 +357,7 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
                     var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Parent.Key,
                         String.Format("/device/{0}", device.Key), display);
-                    DeviceMessengers.Add(twoWayDisplayMessenger.Key, twoWayDisplayMessenger);
-                    twoWayDisplayMessenger.RegisterWithAppServer(Parent);
+                    Parent.AddDeviceMessenger(twoWayDisplayMessenger);
                 }
 
                 if (device is ICommunicationMonitor)
@@ -367,8 +366,8 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
                     var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key + "-monitor",
                         String.Format("/device/{0}/commMonitor", device.Key), monitor);
-                    DeviceMessengers.Add(communicationMonitorMessenger.Key, communicationMonitorMessenger);
-                    communicationMonitorMessenger.RegisterWithAppServer(Parent);
+                    Parent.AddDeviceMessenger(communicationMonitorMessenger);
+                    
                 }
 
                 if (device is IBasicVolumeWithFeedback)
@@ -378,8 +377,8 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
                     var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Parent.Key + "-volume",
                         String.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
-                    DeviceMessengers.Add(messenger.Key, messenger);
-                    messenger.RegisterWithAppServer(Parent);
+                    Parent.AddDeviceMessenger(messenger);
+                    
                 }
             }
         }
