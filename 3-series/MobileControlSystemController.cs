@@ -40,6 +40,8 @@ namespace PepperDash.Essentials
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
+        private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>(); 
+
         private readonly GenericQueue _transmitQueue;
 
         private bool _disableReconnect;
@@ -204,6 +206,45 @@ namespace PepperDash.Essentials
 
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
+        
+
+        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
+        {
+            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+        }
+
+        public bool CheckForDeviceMessenger(string key)
+        {
+            return _deviceMessengers.ContainsKey(key);
+        }
+
+        public void AddDeviceMessenger(MessengerBase messenger)
+        {
+            if (_deviceMessengers.ContainsKey(messenger.Key))
+            {
+                Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
+                return;
+            }
+
+            _deviceMessengers.Add(messenger.Key, messenger);
+
+            messenger.RegisterWithAppServer(this);
+        }
+
+        private void CreateMobileControlRoomBridges()
+        {
+            if (Config.RoomBridges.Count == 0)
+            {
+                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
+                return;
+            }
+
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
+        }
 
         #region IMobileControl Members
 
@@ -1080,10 +1121,15 @@ namespace PepperDash.Essentials
 
         private void HandleUserCode(JToken content)
         {
+            HandleUserCode(content, null);
+        }
+
+        private void HandleUserCode(JToken content, Action<string, string> action)
+        {
             var code = content["userCode"];
 
             JToken qrChecksum;
-            
+
             try
             {
                 qrChecksum = content.SelectToken("qrChecksum", false);
@@ -1100,10 +1146,17 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            foreach (var bridge in _roomBridges)
+            if (action == null)
             {
-                bridge.SetUserCode(code.Value<string>(), qrChecksum.Value<string>());
+                foreach (var bridge in _roomBridges)
+                {
+                    bridge.SetUserCode(code.Value<string>(), qrChecksum.Value<string>());
+                }
+
+                return;
             }
+
+            action(code.Value<string>(), qrChecksum.Value<string>());
         }
 
         /// <summary>
@@ -1302,6 +1355,10 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
                             }
+                            else if (action is UserCodeChanged)
+                            {
+                                this.HandleUserCode(messageObj["content"], (action as UserCodeChanged).UpdateUserCode);
+                            }
                         }
                         else
                         {
@@ -1385,6 +1442,16 @@ namespace PepperDash.Essentials
         }
 
         public Func<object> ResponseMethod { get; private set; }
+    }
+
+    public class UserCodeChanged
+    {
+        public Action<string, string> UpdateUserCode { get; private set; }
+
+        public UserCodeChanged(Action<string, string> updateMethod)
+        {
+            UpdateUserCode = updateMethod;
+        }
     }
 
     public class MobileControlResponseMessage
