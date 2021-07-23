@@ -164,11 +164,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="appServerController"></param>
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction("/device/videoCodec/isReady", new Action(SendIsReady));
-            appServerController.AddAction("/device/videoCodec/fullStatus", new Action(SendVtcFullMessageObject));
-            appServerController.AddAction("/device/videoCodec/dial", new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction("/device/videoCodec/dialMeeting", new Action<Meeting>(m => Codec.Dial(m)));
-            appServerController.AddAction("/device/videoCodec/endCallById", new Action<string>(s =>
+            appServerController.AddAction(String.Format("{0}/isReady",MessagePath), new Action(SendIsReady));
+            appServerController.AddAction(String.Format("{0}/fullStatus",MessagePath), new Action(SendVtcFullMessageObject));
+            appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
+            appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
+            appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
             {
                 var call = GetCallWithId(s);
                 if (call != null)
