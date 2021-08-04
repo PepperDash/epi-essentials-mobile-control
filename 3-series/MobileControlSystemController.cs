@@ -765,8 +765,9 @@ namespace PepperDash.Essentials
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
 
-
-            CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
+            if (_roomBridges != null && _roomBridges.Count == 1)
+            {
+                CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
 	Server address: {0}
 	System Name: {1}
     System URL: {2}
@@ -774,9 +775,36 @@ namespace PepperDash.Essentials
 	System User code: {4}
 	Connected?: {5}
     Seconds Since Last Ack: {6}"
-                , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
-                code, conn, secSinceLastAck.Seconds);
+                    , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
+                    code, conn, secSinceLastAck.Seconds);
+            }
+            else if (_roomBridges != null && _roomBridges.Count > 1)
+            {
+
+                CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
+	Server address: {0}
+    System URL: {1}
+	System UUID: {2}
+	Connected?: {3}
+    Seconds Since Last Ack: {4}
+"
+                    , url, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
+                    conn, secSinceLastAck.Seconds); 
+                
+                CrestronConsole.ConsoleCommandResponse(@"
+Room Bridges:");
+
+                foreach (var bridge in _roomBridges)
+                {
+                    CrestronConsole.ConsoleCommandResponse(@"
+
+    Room Name: {0}
+    User Code: {1}"
+                    , bridge.RoomName, bridge.UserCode);
+                }
+            }
         }
+
 
         /// <summary>
         /// Registers the room with the server
