@@ -42,7 +42,7 @@ namespace PepperDash.Essentials
 
         private readonly GenericQueue _transmitQueue;
 
-        private IEssentialsRoomCombiner _roomCombiner;
+        private object _roomCombiner;//IEssentialsRoomCombiner _roomCombiner;
 
         private bool _disableReconnect;
         private WebSocket _wsClient2;
@@ -203,7 +203,7 @@ namespace PepperDash.Essentials
 
             CreateMobileControlRoomBridges();
 
-            AddPreActivationAction(GetRoomCombiner);
+            //AddPreActivationAction(GetRoomCombiner);
         }
 
         public MobileControlConfig Config { get; private set; }
@@ -277,6 +277,19 @@ namespace PepperDash.Essentials
         #region IMobileControl Members
 
         public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+        {
+            if (Config.RoomBridges.Count > 0)
+            {
+                Debug.Console(0, this, "Room Bridges configured explicitly. Skipping creation.");
+                return;
+            }
+
+            var bridge = new MobileControlEssentialsRoomBridge(room);
+            AddBridgePostActivationAction(bridge);
+            DeviceManager.AddDevice(bridge);
+        }
+
+        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
         {
             if (Config.RoomBridges.Count > 0)
             {
@@ -1177,9 +1190,8 @@ Room Bridges:");
                     clientId,
                     content = roomKey
                 });
-                return;
             }
-
+            /*
             if (_roomCombiner.CurrentScenario == null)
             {
                 Debug.Console(0, this, "Current Scenario not set. Using default room key {0}", roomKey);
@@ -1214,6 +1226,7 @@ Room Bridges:");
                 clientId,
                 content = newRoomKey
             });
+            */
         }
 
         private void HandleUserCode(JToken content)
