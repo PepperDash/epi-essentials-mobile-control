@@ -211,35 +211,35 @@ namespace PepperDash.Essentials
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
 
-        private void GetRoomCombiner()
-        {
-            var combiners = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().ToList();
+        //private void GetRoomCombiner()
+        //{
+        //    var combiners = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().ToList();
 
-            if (combiners.Count > 1)
-            {
-                //TODO: Replace `index 0` with room key
-                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Multiple room combiners found. Using combiner at index 0");
-                _roomCombiner = combiners[0];
+        //    if (combiners.Count > 1)
+        //    {
+        //        //TODO: Replace `index 0` with room key
+        //        Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Multiple room combiners found. Using combiner at index 0");
+        //        _roomCombiner = combiners[0];
 
-                _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
-                return;
-            }
+        //        _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
+        //        return;
+        //    }
 
-            if (combiners.Count > 0)
-            {
-                _roomCombiner = combiners[0];
+        //    if (combiners.Count > 0)
+        //    {
+        //        _roomCombiner = combiners[0];
 
-                _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
-                return;
-            }
+        //        _roomCombiner.RoomCombinationScenarioChanged += RoomCombinerOnRoomCombinationScenarioChanged;
+        //        return;
+        //    }
 
-            Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No room combining configured for this system");
-        }
+        //    Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No room combining configured for this system");
+        //}
 
-        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
-        {
-            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
-        }
+        //private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
+        //{
+        //    SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+        //}
 
         public bool CheckForDeviceMessenger(string key)
         {
