@@ -115,6 +115,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 });
         }
 
+
         /// <summary>
         /// Finish wiring up everything after all devices are created. The base class will hunt down the related
         /// parent controller and link them up.
@@ -1073,7 +1074,15 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         protected override void UserCodeChange()
         {
-            base.UserCodeChange();
+
+            Debug.Console(1, this, "Server user code changed: {0}", UserCode);
+
+            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), "room1" );
+            QrCodeUrl = qrUrl;
+
+            Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
+
+            OnUserCodeChanged();
 
             Eisc.StringInput[JoinMap.UserCodeToSystem.JoinNumber].StringValue = UserCode;
             Eisc.StringInput[JoinMap.ServerUrl.JoinNumber].StringValue = McServerUrl;
