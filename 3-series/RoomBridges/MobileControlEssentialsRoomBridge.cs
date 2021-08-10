@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Crestron.SimplSharp.Ssh;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -18,7 +19,9 @@ namespace PepperDash.Essentials
     {
         public EssentialsRoomBase Room { get; private set; }
 
-
+        public string DefaultRoomKey
+        {
+            get; private set; }
         /// <summary>
         /// 
         /// </summary>
@@ -41,10 +44,10 @@ namespace PepperDash.Essentials
         {
             DefaultRoomKey = roomKey;
 
-            AddPreActivationAction(GetRoom);
+            //AddPreActivationAction(GetRoom);
         }
 
-        private void GetRoom()
+        /*private void GetRoom()
         {
             if (Room != null)
             {
@@ -61,7 +64,7 @@ namespace PepperDash.Essentials
             }
 
             Room = tempRoom;
-        }
+        }*/
 
         protected override void UserCodeChange()
         {
