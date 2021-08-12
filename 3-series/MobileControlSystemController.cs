@@ -226,6 +226,8 @@ namespace PepperDash.Essentials
                 return;
             }
 
+            Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
             _deviceMessengers.Add(messenger.Key, messenger);
 
             messenger.RegisterWithAppServer(this);
