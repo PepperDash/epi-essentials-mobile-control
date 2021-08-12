@@ -38,6 +38,8 @@ namespace PepperDash.Essentials
             base(string.Format("mobileControlBridge-{0}", room.Key), "Essentials Mobile Control Bridge")
         {
             Room = room;
+
+            DefaultRoomKey = Room.Key;
         }
 
         public MobileControlEssentialsRoomBridge(string key, string roomKey): base(key, "Essentials Mobile Control Bridge")
@@ -70,7 +72,7 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, "Server user code changed: {0}", UserCode);
 
-            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), DefaultRoomKey);
+            var qrUrl = string.Format("{0}/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), DefaultRoomKey);
             QrCodeUrl = qrUrl;
 
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
