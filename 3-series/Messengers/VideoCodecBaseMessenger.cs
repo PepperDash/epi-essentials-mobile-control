@@ -78,7 +78,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var hasDirectory = Codec as IHasDirectory;
             if (hasDirectory != null)
-                SendDirectory(hasDirectory.CurrentDirectoryResult, e.DirectoryIsOnRoot);
+                SendDirectory(e.Directory, e.DirectoryIsOnRoot);
         }
 
         /// <summary>
@@ -558,17 +558,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     cameraManualSupported = true,
                     // For now, we assume manual mode is supported and selectively hide controls based on camera selection
-                    cameraAutoSupported = Codec is IHasCameraAutoMode,
-                    cameraOffSupported = Codec is IHasCameraOff,
+                    cameraAutoSupported = Codec.SupportsCameraAutoMode,
+                    cameraOffSupported = Codec.SupportsCameraOff,
                     cameraMode = GetCameraMode(),
                     cameraList = camerasCodec.Cameras,
                     selectedCamera = GetSelectedCamera(camerasCodec)
                 };
             }
 
-            var selfView = Codec is IHasCodecSelfView 
-                ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue 
-                : false;
+            var selfView = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
 
             var info = Codec.CodecInfo;
             PostStatusMessage(new
@@ -652,14 +650,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             return new
             {
-                key = camerasCodec.SelectedCameraFeedback.StringValue,
-                isFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue,
-                capabilites = new
+                Key = camerasCodec.SelectedCameraFeedback.StringValue,
+                IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue,
+                Capabilites = new
                 {
-                    canPan = camerasCodec.SelectedCamera.CanPan,
-                    canTilt = camerasCodec.SelectedCamera.CanTilt,
-                    canZoom = camerasCodec.SelectedCamera.CanZoom,
-                    canFocus = camerasCodec.SelectedCamera.CanFocus
+                    camerasCodec.SelectedCamera.CanPan, camerasCodec.SelectedCamera.CanTilt, camerasCodec.SelectedCamera.CanZoom, camerasCodec.SelectedCamera.CanFocus
                 }
             };
         }
