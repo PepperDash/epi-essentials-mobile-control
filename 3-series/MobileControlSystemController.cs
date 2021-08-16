@@ -210,6 +210,47 @@ namespace PepperDash.Essentials
 
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
+        
+
+        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
+        {
+            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+        }
+
+        public bool CheckForDeviceMessenger(string key)
+        {
+            return _deviceMessengers.ContainsKey(key);
+        }
+
+        public void AddDeviceMessenger(MessengerBase messenger)
+        {
+            if (_deviceMessengers.ContainsKey(messenger.Key))
+            {
+                Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
+                return;
+            }
+
+            Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            _deviceMessengers.Add(messenger.Key, messenger);
+
+            messenger.RegisterWithAppServer(this);
+        }
+
+        private void CreateMobileControlRoomBridges()
+        {
+            if (Config.RoomBridges.Count == 0)
+            {
+                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
+                return;
+            }
+
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
+        }
 
         private void GetRoomCombiner()
         {

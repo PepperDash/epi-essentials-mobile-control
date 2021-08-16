@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Crestron.SimplSharp.Ssh;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -37,6 +38,46 @@ namespace PepperDash.Essentials
             this(string.Format("mobileControlBridge-{0}", room.Key), room.Key)
         {
             Room = room;
+
+            DefaultRoomKey = Room.Key;
+        }
+
+        public MobileControlEssentialsRoomBridge(string key, string roomKey): base(key, "Essentials Mobile Control Bridge")
+        {
+            DefaultRoomKey = roomKey;
+
+            //AddPreActivationAction(GetRoom);
+        }
+
+        /*private void GetRoom()
+        {
+            if (Room != null)
+            {
+                Debug.Console(0, this, "Room with key {0} already linked.", DefaultRoomKey);
+                return;
+            }
+
+            var tempRoom = DeviceManager.GetDeviceForKey(DefaultRoomKey) as IEssentialsRoom;
+
+            if (tempRoom == null)
+            {
+                Debug.Console(0, this, "Room with key {0} not found or is not an Essentials Room", DefaultRoomKey);
+                return;
+            }
+
+            Room = tempRoom;
+        }*/
+
+        protected override void UserCodeChange()
+        {
+            Debug.Console(1, this, "Server user code changed: {0}", UserCode);
+
+            var qrUrl = string.Format("{0}/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), DefaultRoomKey);
+            QrCodeUrl = qrUrl;
+
+            Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
+
+            OnUserCodeChanged();
         }
 
         public MobileControlEssentialsRoomBridge(string key, string roomKey): base(key, "Essentials Mobile Control Bridge")
