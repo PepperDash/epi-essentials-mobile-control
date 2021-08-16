@@ -7,5 +7,5 @@ using Crestron.SimplSharp.Reflection;
 [assembly: System.Reflection.AssemblyProduct("EssentialsPluginTemplateEpi")]
 [assembly: System.Reflection.AssemblyCopyright("Copyright ©  2019")]
 [assembly: System.Reflection.AssemblyVersion("3.0.0.*")]
-[assembly: System.Reflection.AssemblyInformationalVersion("3.0.0-alpha-2")]
-[assembly: Crestron.SimplSharp.Reflection.AssemblyInformationalVersion("3.0.0-alpha-2")]
+[assembly: System.Reflection.AssemblyInformationalVersion("3.0.0-local-3")]
+[assembly: Crestron.SimplSharp.Reflection.AssemblyInformationalVersion("3.0.0-local-3")]
