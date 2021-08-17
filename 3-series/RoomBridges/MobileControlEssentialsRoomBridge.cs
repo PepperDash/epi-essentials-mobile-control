@@ -50,10 +50,10 @@ namespace PepperDash.Essentials
         {
             DefaultRoomKey = roomKey;
 
-            //AddPreActivationAction(GetRoom);
+            AddPreActivationAction(GetRoom);
         }
 
-        /*private void GetRoom()
+        private void GetRoom()
         {
             if (Room != null)
             {
@@ -70,7 +70,7 @@ namespace PepperDash.Essentials
             }
 
             Room = tempRoom;
-        }*/
+        }
 
         protected override void UserCodeChange()
         {
