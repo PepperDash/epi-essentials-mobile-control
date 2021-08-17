@@ -277,44 +277,6 @@ namespace PepperDash.Essentials
             Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No room combining configured for this system");
         }
 
-        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
-        {
-            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
-        }
-
-        public bool CheckForDeviceMessenger(string key)
-        {
-            return _deviceMessengers.ContainsKey(key);
-        }
-
-        public void AddDeviceMessenger(MessengerBase messenger)
-        {
-            if (_deviceMessengers.ContainsKey(messenger.Key))
-            {
-                Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
-                return;
-            }
-
-            _deviceMessengers.Add(messenger.Key, messenger);
-
-            messenger.RegisterWithAppServer(this);
-        }
-
-        private void CreateMobileControlRoomBridges()
-        {
-            if (Config.RoomBridges.Count == 0)
-            {
-                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
-                return;
-            }
-
-            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
-            {
-                AddBridgePostActivationAction(bridge);
-                DeviceManager.AddDevice(bridge);
-            }
-        }
-
         #region IMobileControl Members
 
         public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
