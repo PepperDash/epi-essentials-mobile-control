@@ -675,7 +675,6 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room">The room to get status of</param>
         /// <returns>The status response message</returns>
-        MobileControlResponseMessage GetFullStatus(EssentialsRoomBase room)
         {
             var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
 
