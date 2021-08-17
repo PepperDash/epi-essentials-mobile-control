@@ -24,7 +24,7 @@ using WebSocketSharp;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : EssentialsDevice, IMobileControl
+    public class MobileControlSystemController : EssentialsDevice, IMobileControl3
     {
         //WebSocketClient WSClient;
 
@@ -332,6 +332,13 @@ namespace PepperDash.Essentials
             messenger.RegisterWithAppServer(appServer);
 
             DeviceManager.AddDevice(messenger);
+        }
+
+        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+        {
+            var bridge = new MobileControlEssentialsRoomBridge(room);
+            AddBridgePostActivationAction(bridge);
+            DeviceManager.AddDevice(bridge);
         }
 
         #endregion

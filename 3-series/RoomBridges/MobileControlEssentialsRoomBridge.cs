@@ -17,7 +17,7 @@ namespace PepperDash.Essentials
 {
     public class MobileControlEssentialsRoomBridge : MobileControlBridgeBase
     {
-        public EssentialsRoomBase Room { get; private set; }
+        public IEssentialsRoom Room { get; private set; }
 
         public string DefaultRoomKey
         {
@@ -35,11 +35,15 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room"></param>
         public MobileControlEssentialsRoomBridge(EssentialsRoomBase room) :
-            base(string.Format("mobileControlBridge-{0}", room.Key), "Essentials Mobile Control Bridge")
+            this(string.Format("mobileControlBridge-{0}", room.Key), room.Key)
         {
             Room = room;
+        }
 
-            DefaultRoomKey = Room.Key;
+        public MobileControlEssentialsRoomBridge(IEssentialsRoom room) :
+            this(string.Format("mobileControlBridge-{0}", room.Key), room.Key)
+        {
+            Room = room;
         }
 
         public MobileControlEssentialsRoomBridge(string key, string roomKey): base(key, "Essentials Mobile Control Bridge")
