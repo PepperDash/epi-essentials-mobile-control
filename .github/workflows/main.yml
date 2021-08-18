@@ -9,7 +9,7 @@ on:
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: epi-essentials-mobile-control\
+  SOLUTION_PATH: 3-series\
   SOLUTION_FILE: epi-essentials-mobile-control
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
@@ -175,6 +175,8 @@ jobs:
         run: |
           Write-Output ${{ env.VERSION }}
           ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      - name: Setup MS-Build
+        uses: microsoft/setup-msbuild@v1
       - name: restore Nuget Packages
         run: nuget restore ./4-series/$($Env:SOLUTION_FILE).sln
       # Build the solutions in the docker image
