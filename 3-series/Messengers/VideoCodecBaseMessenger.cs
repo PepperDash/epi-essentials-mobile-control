@@ -47,6 +47,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 recCodec.CallHistory.RecentCallsListHasChanged += CallHistory_RecentCallsListHasChanged;
             }
+
+            var pwPromptCodec = codec as IPasswordPrompt;
+            if (pwPromptCodec != null)
+            {
+                pwPromptCodec.PasswordRequired += OnPasswordRequired;
+            }
+        }
+
+        private void OnPasswordRequired(object sender, PasswordPromptEventArgs args)
+        {
+            AppServerController.SendMessageObjectToServer(new
+            {
+                type = MessagePath + "/passwordPrompt",
+                content = new
+                {
+                    message = args.Message,
+                    lastAttemptWasIncorrect = args.LastAttemptWasIncorrect,
+                    loginAttemptFailed = args.LoginAttemptFailed,
+                    loginAttemptCancelled = args.LoginAttemptCancelled,
+                }
+            });
         }
 
         /// <summary>
@@ -279,6 +300,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/cameraLayout",
                     new Action(layoutsCodec.LocalLayoutToggle));
 
+            }
+
+            var pwCodec = Codec as IPasswordPrompt;
+            if (pwCodec != null)
+            {
+                Debug.Console(2, this, "Adding IPasswordPrompt Actions");
+
+                appServerController.AddAction(MessagePath + "/password", new Action<string>(pwCodec.SubmitPassword));
             }
 
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
