@@ -62,24 +62,24 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SSPDevices\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
     </Reference>
-    <Reference Include="Essentials Devices Common, Version=1.6.6.2124, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Essentials Devices Common, Version=1.9.2.39355, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\PepperDashEssentials\lib\net35\Essentials Devices Common.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="PepperDashEssentials, Version=1.6.6.2130, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDashEssentials, Version=1.9.2.39363, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\PepperDashEssentials\lib\net35\PepperDashEssentials.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Core, Version=1.0.42.30563, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDash_Core, Version=1.0.47.28582, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\PepperDashEssentials\lib\net35\PepperDash_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_Core, Version=1.6.6.2120, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDash_Essentials_Core, Version=1.9.2.39349, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\PepperDashEssentials\lib\net35\PepperDash_Essentials_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_DM, Version=1.6.6.2127, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDash_Essentials_DM, Version=1.9.2.39359, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\PepperDashEssentials\lib\net35\PepperDash_Essentials_DM.dll</HintPath>
     </Reference>

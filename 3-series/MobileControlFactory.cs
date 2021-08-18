@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -12,14 +13,22 @@ namespace PepperDash.Essentials
     {
         public MobileControlFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.9.1";
+            MinimumEssentialsFrameworkVersion = "1.9.4";
             TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
         {
-            var props = dc.Properties.ToObject<MobileControlConfig>();
-            return new MobileControlSystemController(dc.Key, dc.Name, props);
+            try
+            {
+                var props = dc.Properties.ToObject<MobileControlConfig>();
+                return new MobileControlSystemController(dc.Key, dc.Name, props);
+            }
+            catch (Exception e)
+            {
+                Debug.Console(2, "Error building MobileConttrolSystemController", e);
+                return null;
+            }
         }
     }
 

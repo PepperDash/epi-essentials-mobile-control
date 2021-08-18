@@ -24,7 +24,7 @@ using WebSocketSharp;
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : EssentialsDevice, IMobileControl
+    public class MobileControlSystemController : EssentialsDevice, IMobileControl3
     {
         //WebSocketClient WSClient;
 
@@ -39,6 +39,8 @@ namespace PepperDash.Essentials
         private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
+
+        private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>(); 
 
         private readonly GenericQueue _transmitQueue;
 
@@ -204,6 +206,47 @@ namespace PepperDash.Essentials
 
         public string Host { get; private set; }
         public ConfigMessenger ConfigMessenger { get; private set; }
+        
+
+        private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
+        {
+            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+        }
+
+        public bool CheckForDeviceMessenger(string key)
+        {
+            return _deviceMessengers.ContainsKey(key);
+        }
+
+        public void AddDeviceMessenger(MessengerBase messenger)
+        {
+            if (_deviceMessengers.ContainsKey(messenger.Key))
+            {
+                Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
+                return;
+            }
+
+            Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            _deviceMessengers.Add(messenger.Key, messenger);
+
+            messenger.RegisterWithAppServer(this);
+        }
+
+        private void CreateMobileControlRoomBridges()
+        {
+            if (Config.RoomBridges.Count == 0)
+            {
+                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
+                return;
+            }
+
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            {
+                AddBridgePostActivationAction(bridge);
+                DeviceManager.AddDevice(bridge);
+            }
+        }
 
         #region IMobileControl Members
 
@@ -289,6 +332,13 @@ namespace PepperDash.Essentials
             messenger.RegisterWithAppServer(appServer);
 
             DeviceManager.AddDevice(messenger);
+        }
+
+        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+        {
+            var bridge = new MobileControlEssentialsRoomBridge(room);
+            AddBridgePostActivationAction(bridge);
+            DeviceManager.AddDevice(bridge);
         }
 
         #endregion
@@ -1061,12 +1111,34 @@ namespace PepperDash.Essentials
             }
         }
 
+        private void HandleClientJoined(JToken content)
+        {
+            var clientId = content["clientId"].Value<string>();
+            var roomKey = content["roomKey"].Value<string>();
+
+
+                SendMessageObjectToServer(new
+                {
+                    type = "/system/roomKey",
+                    clientId,
+                    content = roomKey
+                });
+
+
+   
+        }
+
         private void HandleUserCode(JToken content)
+        {
+            HandleUserCode(content, null);
+        }
+
+        private void HandleUserCode(JToken content, Action<string, string> action)
         {
             var code = content["userCode"];
 
             JToken qrChecksum;
-            
+
             try
             {
                 qrChecksum = content.SelectToken("qrChecksum", false);
@@ -1083,10 +1155,17 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            foreach (var bridge in _roomBridges)
+            if (action == null)
             {
-                bridge.SetUserCode(code.Value<string>(), qrChecksum.Value<string>());
+                foreach (var bridge in _roomBridges)
+                {
+                    bridge.SetUserCode(code.Value<string>(), qrChecksum.Value<string>());
+                }
+
+                return;
             }
+
+            action(code.Value<string>(), qrChecksum.Value<string>());
         }
 
         /// <summary>
@@ -1154,6 +1233,9 @@ namespace PepperDash.Essentials
                         break;
                     case "/system/userCode":
                         HandleUserCode(messageObj["content"]);
+                        break;
+                    case "/system/clientJoined":
+                        HandleClientJoined(messageObj["content"]);
                         break;
                     case "raw":
                     {
@@ -1282,6 +1364,10 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
                             }
+                            else if (action is UserCodeChanged)
+                            {
+                                this.HandleUserCode(messageObj["content"], (action as UserCodeChanged).UpdateUserCode);
+                            }
                         }
                         else
                         {
@@ -1365,6 +1451,16 @@ namespace PepperDash.Essentials
         }
 
         public Func<object> ResponseMethod { get; private set; }
+    }
+
+    public class UserCodeChanged
+    {
+        public Action<string, string> UpdateUserCode { get; private set; }
+
+        public UserCodeChanged(Action<string, string> updateMethod)
+        {
+            UpdateUserCode = updateMethod;
+        }
     }
 
     public class MobileControlResponseMessage
