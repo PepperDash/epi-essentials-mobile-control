@@ -307,7 +307,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 Debug.Console(2, this, "Adding IPasswordPrompt Actions");
 
-                appServerController.AddAction(MessagePath + "/password", new Action<string>(pwCodec.SubmitPassword));
+                appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
             }
 
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
