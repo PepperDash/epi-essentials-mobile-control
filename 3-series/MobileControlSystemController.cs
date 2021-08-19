@@ -1265,40 +1265,40 @@ namespace PepperDash.Essentials
                                     switch (stateString)
                                     {
                                         case "true":
-                                        {
-                                            if (!_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions.Add(type, new CTimer(o =>
+                                                if (!_pushedActions.ContainsKey(type))
                                                 {
-                                                    var pressAndHoldAction = action as PressAndHoldAction;
-                                                    if (pressAndHoldAction != null)
+                                                    _pushedActions.Add(type, new CTimer(o =>
                                                     {
-                                                        pressAndHoldAction(false);
-                                                    }
-                                                    _pushedActions.Remove(type);
-                                                }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
+                                                        var pressAndHoldAction = action as PressAndHoldAction;
+                                                        if (pressAndHoldAction != null)
+                                                        {
+                                                            pressAndHoldAction(false);
+                                                        }
+                                                        _pushedActions.Remove(type);
+                                                    }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
+                                                }
+                                                // Maybe add an else to reset the timer
+                                                break;
                                             }
-                                            // Maybe add an else to reset the timer
-                                            break;
-                                        }
                                         case "held":
-                                        {
-                                            if (_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions[type].Reset(ButtonHeartbeatInterval,
-                                                    ButtonHeartbeatInterval);
+                                                if (_pushedActions.ContainsKey(type))
+                                                {
+                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval,
+                                                        ButtonHeartbeatInterval);
+                                                }
+                                                return;
                                             }
-                                            return;
-                                        }
                                         case "false":
-                                        {
-                                            if (_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions[type].Stop();
-                                                _pushedActions.Remove(type);
+                                                if (_pushedActions.ContainsKey(type))
+                                                {
+                                                    _pushedActions[type].Stop();
+                                                    _pushedActions.Remove(type);
+                                                }
+                                                break;
                                             }
-                                            break;
-                                        }
                                     }
 
                                     (action as PressAndHoldAction)(stateString == "true");
@@ -1346,7 +1346,7 @@ namespace PepperDash.Essentials
                                 (action as Action<PresetChannelMessage>)(
                                     messageObj["content"].ToObject<PresetChannelMessage>());
                             }
-                            else if (action is Action<List<PresetChannel>> )
+                            else if (action is Action<List<PresetChannel>>)
                             {
                                 (action as Action<List<PresetChannel>>)(
                                     messageObj["content"].ToObject<List<PresetChannel>>());
@@ -1363,6 +1363,10 @@ namespace PepperDash.Essentials
                             else if (action is Action<PepperDash.Essentials.Devices.Common.Codec.Meeting>)
                             {
                                 (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
+                            }
+                            else if (action is Action<DirectoryContact>)
+                            {
+                                (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
                             }
                             else if (action is UserCodeChanged)
                             {
