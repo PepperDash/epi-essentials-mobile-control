@@ -1364,7 +1364,7 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
                             }
-                            else if (action is Action<DirectoryContact>)
+                            else if (action is Action<InvitableDirectoryContact>)
                             {
                                 (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
                             }
