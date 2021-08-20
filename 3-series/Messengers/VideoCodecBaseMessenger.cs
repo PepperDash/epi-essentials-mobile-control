@@ -188,7 +188,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(String.Format("{0}/isReady",MessagePath), new Action(SendIsReady));
             appServerController.AddAction(String.Format("{0}/fullStatus",MessagePath), new Action(SendVtcFullMessageObject));
             appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction(String.Format("{0)/invite", MessagePath), 
+            appServerController.AddAction(String.Format("{0}/invite", MessagePath), 
                 new Action<InvitableDirectoryContact>((c) => 
                 {
                     Codec.Dial((c));
