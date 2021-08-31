@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Interfaces;
 using Crestron.SimplSharp;
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -185,11 +186,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="appServerController"></param>
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(String.Format("{0}/isReady",MessagePath), new Action(SendIsReady));
-            appServerController.AddAction(String.Format("{0}/fullStatus",MessagePath), new Action(SendVtcFullMessageObject));
+            appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
+            appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendVtcFullMessageObject));
             appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction(String.Format("{0}/invite", MessagePath), 
-                new Action<InvitableDirectoryContact>((c) => 
+            appServerController.AddAction(String.Format("{0}/invite", MessagePath),
+                new Action<InvitableDirectoryContact>((c) =>
                 {
                     Codec.Dial((c));
                 }));
@@ -315,6 +316,25 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
             }
 
+            var startMeetingCodec = Codec as IHasStartMeeting;
+            if (startMeetingCodec != null)
+            {
+                Debug.Console(2, this, "Adding IStartMeeting Actions");
+
+                appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath), new Action(
+                    () => startMeetingCodec.StartMeeting(startMeetingCodec.DefaultMeetingDurationMin)));
+                appServerController.AddAction(String.Format("{0}/leaveMeeting", MessagePath), new Action(
+                    startMeetingCodec.LeaveMeeting));
+            }
+
+            var meetingInfoCodec = Codec as IHasMeetingInfo;
+            if (meetingInfoCodec != null)
+            {
+                Debug.Console(2, this, "Adding IHasMeetingInfo Actions");
+
+                meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
+            }
+
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
 
             appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
@@ -324,6 +344,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
             appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
+        }
+
+        void meetingInfoCodec_MeetingInfoChanged(object sender, MeetingInfoEventArgs e)
+        {
+            PostMeetingInfo(e.Info);
         }
 
         void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
@@ -600,6 +625,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 };
             }
 
+            object meetingInfo = null;
+
+            var meetingInfoCodec = Codec as IHasMeetingInfo;
+            if (meetingInfoCodec != null)
+            {
+                meetingInfo = meetingInfoCodec.MeetingInfo;
+            }
+
             var selfView = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
 
             var info = Codec.CodecInfo;
@@ -622,12 +655,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     sipURI = info.SipUri
                 },
                 showSelfViewByDefault = Codec.ShowSelfViewByDefault,
+                supportsAdHocMeeting = Codec is IHasStartMeeting,
                 hasDirectory = Codec is IHasDirectory,
                 hasDirectorySearch = true,
                 hasRecents = Codec is IHasCallHistory,
                 hasCameras = Codec is IHasCameras,
                 cameras = cameraInfo,
-                presets = GetCurrentPresets()
+                presets = GetCurrentPresets(),
+                meetingInfo = meetingInfo,
+            });
+        }
+
+        private void PostMeetingInfo(MeetingInfo info)
+        {
+            PostStatusMessage(new
+            {
+                meetingInfo = info
             });
         }
 
