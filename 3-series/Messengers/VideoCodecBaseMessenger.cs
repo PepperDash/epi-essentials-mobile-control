@@ -8,6 +8,7 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.VideoCodec.Interfaces;
 using Crestron.SimplSharp;
+using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -280,6 +281,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     appServerController.AddAction(MessagePath + "/cameraModeOff",
                         new Action(cameraOffCodec.CameraOff));
                 }
+            }
+
+            var presentOnlyMeetingCodec = Codec as IHasPresentationOnlyMeeting;
+            if (presentOnlyMeetingCodec != null)
+            {
+                Debug.Console(2, this, "Adding IHasPresentationOnlyMeeting");
+
+                appServerController.AddAction(MessagePath + "/dialPresent", new Action(() => presentOnlyMeetingCodec.StartSharingOnlyMeeting(eSharingMeetingMode.Laptop)));
+                appServerController.AddAction(MessagePath + "/dialConvert", new Action(presentOnlyMeetingCodec.StartNormalMeetingFromSharingOnlyMeeting));
             }
 
             var selfViewCodec = Codec as IHasCodecSelfView;
@@ -662,7 +672,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 hasCameras = Codec is IHasCameras,
                 cameras = cameraInfo,
                 presets = GetCurrentPresets(),
-                meetingInfo = meetingInfo,
+                meetingInfo,
+                isZoomRoom = Codec is ZoomRoom
             });
         }
 
