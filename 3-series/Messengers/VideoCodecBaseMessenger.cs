@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
@@ -345,6 +346,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
             }
 
+            var farEndContentStatus = Codec as IHasFarEndContentStatus;
+
+            if (farEndContentStatus != null)
+            {
+                farEndContentStatus.ReceivingContent.OutputChange +=
+                    (sender, args) => PostReceivingContent(args.BoolValue);
+            }
+
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
 
             appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
@@ -673,7 +682,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 cameras = cameraInfo,
                 presets = GetCurrentPresets(),
                 meetingInfo,
-                isZoomRoom = Codec is ZoomRoom
+                isZoomRoom = Codec is ZoomRoom,
+                receivingContent = Codec is IHasFarEndContentStatus && (Codec as IHasFarEndContentStatus).ReceivingContent.BoolValue,
             });
         }
 
@@ -683,6 +693,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 meetingInfo = info
             });
+        }
+
+        private void PostReceivingContent(bool receivingContent)
+        {
+            PostStatusMessage(new {receivingContent});
         }
 
         private void PostCameraSelfView()
