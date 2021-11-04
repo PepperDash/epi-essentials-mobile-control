@@ -21,7 +21,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// 
         /// </summary>
-        public VideoCodecBase Codec { get; private set; }
+        protected VideoCodecBase Codec { get; private set; }
+
+
 
         /// <summary>
         /// 
@@ -191,11 +193,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
             appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendVtcFullMessageObject));
             appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction(String.Format("{0}/invite", MessagePath),
-                new Action<InvitableDirectoryContact>((c) =>
-                {
-                    Codec.Dial((c));
-                }));
             appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
             appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
             {
@@ -284,14 +281,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             }
 
-            var presentOnlyMeetingCodec = Codec as IHasPresentationOnlyMeeting;
-            if (presentOnlyMeetingCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasPresentationOnlyMeeting");
-
-                appServerController.AddAction(MessagePath + "/dialPresent", new Action(() => presentOnlyMeetingCodec.StartSharingOnlyMeeting(eSharingMeetingMode.Laptop)));
-                appServerController.AddAction(MessagePath + "/dialConvert", new Action(presentOnlyMeetingCodec.StartNormalMeetingFromSharingOnlyMeeting));
-            }
 
             var selfViewCodec = Codec as IHasCodecSelfView;
 
@@ -327,25 +316,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
             }
 
-            var startMeetingCodec = Codec as IHasStartMeeting;
-            if (startMeetingCodec != null)
-            {
-                Debug.Console(2, this, "Adding IStartMeeting Actions");
-
-                appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath), new Action(
-                    () => startMeetingCodec.StartMeeting(startMeetingCodec.DefaultMeetingDurationMin)));
-                appServerController.AddAction(String.Format("{0}/leaveMeeting", MessagePath), new Action(
-                    startMeetingCodec.LeaveMeeting));
-            }
-
-            var meetingInfoCodec = Codec as IHasMeetingInfo;
-            if (meetingInfoCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasMeetingInfo Actions");
-
-                meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
-            }
-
             var farEndContentStatus = Codec as IHasFarEndContentStatus;
 
             if (farEndContentStatus != null)
@@ -365,10 +335,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
         }
 
-        void meetingInfoCodec_MeetingInfoChanged(object sender, MeetingInfoEventArgs e)
-        {
-            PostMeetingInfo(e.Info);
-        }
+
 
         void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
@@ -512,10 +479,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     });
                 }
             }
-        }
-
-        public void GetFullStatusMessage()
-        {
         }
 
         /// <summary>
@@ -684,14 +647,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 meetingInfo,
                 isZoomRoom = Codec is ZoomRoom,
                 receivingContent = Codec is IHasFarEndContentStatus && (Codec as IHasFarEndContentStatus).ReceivingContent.BoolValue,
-            });
-        }
-
-        private void PostMeetingInfo(MeetingInfo info)
-        {
-            PostStatusMessage(new
-            {
-                meetingInfo = info
             });
         }
 

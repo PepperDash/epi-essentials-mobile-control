@@ -1368,6 +1368,10 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
                             }
+                            else if (action is Action<Invitation>)
+                            {
+                                (action as Action<Invitation>)(messageObj["content"].ToObject<Invitation>());
+                            }
                             else if (action is UserCodeChanged)
                             {
                                 this.HandleUserCode(messageObj["content"], (action as UserCodeChanged).UpdateUserCode);

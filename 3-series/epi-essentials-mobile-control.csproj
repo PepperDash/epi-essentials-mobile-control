@@ -176,6 +176,7 @@
     <Compile Include="Messengers\RoomEventScheduleMessenger.cs" />
     <Compile Include="Messengers\SIMPLDirectRouteMessenger.cs" />
     <Compile Include="Messengers\TwoWayDisplayBaseMessenger.cs" />
+    <Compile Include="Messengers\ZoomRoomMessenger.cs" />
     <Compile Include="MobileControlEssentialsConfig.cs" />
     <Compile Include="DeviceTypeInterfaces\IChannelExtensions.cs" />
     <Compile Include="DeviceTypeInterfaces\IColorExtensions.cs" />
