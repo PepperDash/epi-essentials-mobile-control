@@ -197,15 +197,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             PostStatusMessage(new
             {
-                layouts = new
-                {
-                    availableLayouts = e.AvailableLayouts,
-                    lastSelectedLayout = e.CurrentSelectedLayout,
-                    isOnFirstPage = e.LayoutViewIsOnFirstPage,
-                    isOnLastPage = e.LayoutViewIsOnLastPage,
-                    canSwapContentWithThumbnail = e.CanSwapContentWithThumbnail,
-                    contentIsSwappedWithThumbnail = e.ContentSwappedWithThumbnail,
-                },
+                layouts = e
             });
         }
 
@@ -221,12 +213,18 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void SendFullStatus()
         {
+            if (!Codec.IsReady)
+            {
+                return;
+            }
+
             var baseStatus = GetStatus();
 
             var zoomStatus = new ZoomRoomStatus();
 
             zoomStatus = baseStatus as ZoomRoomStatus;
 
+            PostStatusMessage(zoomStatus);
         }
     }
 
@@ -242,11 +240,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
     public class ZoomRoomStatus : VideoCodecBaseStatus
     {
+        [JsonProperty("layouts", NullValueHandling = NullValueHandling.Ignore)]
+        public LayoutInfoChangedEventArgs Layouts { get; set; }
+
         [JsonProperty("meetings", NullValueHandling = NullValueHandling.Ignore)]
         public List<Meeting> Meetings { get; set; }
 
+        [JsonProperty("participants", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Participant> Participants { get; set; }
 
-        
+        [JsonProperty("sharingContentIsOn", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? SharingContentIsOn { get; set; }
+
+        [JsonProperty("cameraIsMuted", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? CameraIsMuted { get; set; }
     }
 
 }
