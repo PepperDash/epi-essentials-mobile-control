@@ -162,8 +162,17 @@ namespace PepperDash.Essentials
 
                 if (!parent.CheckForDeviceMessenger(key))
                 {
-                    var vcMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
-                    parent.AddDeviceMessenger(vcMessenger);
+                    var zr = vcRoom.VideoCodec as PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom.ZoomRoom;
+                    if (zr != null)
+                    {
+                        var zrMessenger = new ZoomRoomMessenger(key, zr, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
+                        parent.AddDeviceMessenger(zrMessenger);
+                    }
+                    else
+                    {
+                        var vcMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
+                        parent.AddDeviceMessenger(vcMessenger);
+                    }
                 }
 
                 vcRoom.IsSharingFeedback.OutputChange += IsSharingFeedback_OutputChange;

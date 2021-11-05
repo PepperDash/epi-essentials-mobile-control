@@ -131,7 +131,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 Debug.Console(2, this, "Adding IHasZoomRoomLayouts Actions");
 
-                layoutsCodec.AvailableLayoutsChanged += layoutsCodec_AvailableLayoutsChanged;
+                layoutsCodec.LayoutInfoChanged += layoutsCodec_LayoutInfoChanged;
 
                 appServerController.AddAction(String.Format("{0}/selectLayout", MessagePath), new Action<string>(s =>
                     layoutsCodec.SetLayout((zConfiguration.eLayoutStyle)Enum.Parse(typeof(zConfiguration.eLayoutStyle), s, true))));
@@ -161,22 +161,52 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void Participants_ParticipantsListHasChanged(object sender, EventArgs e)
         {
-            throw new NotImplementedException();
+            PostStatusMessage(new
+            {
+                participants = _codec.Participants.CurrentParticipants,
+            }
+        );
+
         }
 
         void MeetingIsRecordingFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
         {
-            throw new NotImplementedException();
+            PostStatusMessage(new
+            {
+                meetingInfo = new
+                {
+                    isRecording = e.BoolValue,
+                },
+            }
+            );
         }
 
         void MeetingIsLockedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
         {
-            throw new NotImplementedException();
+            PostStatusMessage(new
+                {
+                    meetingInfo = new 
+                    {
+                        isLocked = e.BoolValue,
+                    },
+                }
+            );
         }
 
-        void layoutsCodec_AvailableLayoutsChanged(object sender, LayoutInfoChangedEventArgs e)
+        void layoutsCodec_LayoutInfoChanged(object sender, LayoutInfoChangedEventArgs e)
         {
-            throw new NotImplementedException();
+            PostStatusMessage(new
+            {
+                layouts = new
+                {
+                    availableLayouts = e.AvailableLayouts,
+                    lastSelectedLayout = e.CurrentSelectedLayout,
+                    isOnFirstPage = e.LayoutViewIsOnFirstPage,
+                    isOnLastPage = e.LayoutViewIsOnLastPage,
+                    canSwapContentWithThumbnail = e.CanSwapContentWithThumbnail,
+                    contentIsSwappedWithThumbnail = e.ContentSwappedWithThumbnail,
+                },
+            });
         }
 
 
@@ -187,6 +217,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 meetingInfo = info
             });
         }
+
+
+        protected override void SendFullStatus()
+        {
+            var baseStatus = GetStatus();
+
+            var zoomStatus = new ZoomRoomStatus();
+
+            zoomStatus = baseStatus as ZoomRoomStatus;
+
+        }
     }
 
     public class Invitation
@@ -195,5 +236,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public uint Duration { get; set; }
         [JsonProperty("invitees")]
         public List<InvitableDirectoryContact> Invitees { get; set; }
+
+
     }
+
+    public class ZoomRoomStatus : VideoCodecBaseStatus
+    {
+        [JsonProperty("meetings", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Meeting> Meetings { get; set; }
+
+
+        
+    }
+
 }
