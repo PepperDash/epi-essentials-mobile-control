@@ -230,7 +230,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var recCodec = Codec as IHasCallHistory;
             if (recCodec != null)
             {
-                appServerController.AddAction(MessagePath + "/getCallHistory", new Action(GetCallHistory));
+                appServerController.AddAction(MessagePath + "/getCallHistory", new Action(PostCallHistory));
             }
             var cameraCodec = Codec as IHasCodecCameras;
             if (cameraCodec != null)
@@ -464,20 +464,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
             return m;
         }
 
-        private void GetCallHistory()
+        private void PostCallHistory()
         {
             var codec = (Codec as IHasCallHistory);
 
             if (codec != null)
             {
+                var status = new VideoCodecBaseStatus();
+
                 var recents = codec.CallHistory.RecentCalls;
 
                 if (recents != null)
                 {
-                    PostStatusMessage(new
-                    {
-                        recentCalls = recents
-                    });
+                    status.RecentCalls = codec.CallHistory.RecentCalls;
+
+                    PostStatusMessage(status);
                 }
             }
         }
@@ -574,10 +575,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendIsReady()
         {
-            PostStatusMessage(new
-            {
-                isReady = Codec.IsReady
-            });
+            var status = new VideoCodecBaseStatus();
+
+            status.IsReady = Codec.IsReady;
+            status.IsZoomRoom = Codec is ZoomRoom;
+
+            PostStatusMessage(status);
         }
 
         /// <summary>
@@ -601,6 +604,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 status.Cameras.SelectedCamera = GetSelectedCamera(camerasCodec);
             }
 
+            var directoryCodec = Codec as IHasDirectory;
+            if (directoryCodec != null)
+            {
+                status.HasDirectory = true;
+                status.HasDirectorySearch = true;
+                status.CurrentDirectory = directoryCodec.CurrentDirectoryResult;
+            }
+
             status.CameraSelfViewIsOn = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
             status.IsInCall = Codec.IsInCall;
             status.PrivacyModeIsOn = Codec.PrivacyModeIsOnFeedback.BoolValue;
@@ -611,8 +622,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
             status.Info = Codec.CodecInfo;
             status.ShowSelfViewByDefault = Codec.ShowSelfViewByDefault;
             status.SupportsAdHocMeeting = Codec is IHasStartMeeting;
-            status.HasDirectory = Codec is IHasDirectory;
-            status.HasDirectorySearch = true;
             status.HasRecents = Codec is IHasCallHistory;
             status.HasCameras = Codec is IHasCameras;
             status.Presets = GetCurrentPresets();
@@ -624,6 +633,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 status.MeetingInfo = meetingInfoCodec.MeetingInfo;
             }
+
+            //Debug.Console(2, this, "VideoCodecBaseStatus:\n{0}", JsonConvert.SerializeObject(status)); 
 
             return status;
         }
@@ -645,15 +656,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PostCameraSelfView()
         {
-            var selfView = Codec is IHasCodecSelfView
+            var status = new VideoCodecBaseStatus();
+
+            status.CameraSelfViewIsOn = Codec is IHasCodecSelfView
                 ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue
                 : false;
 
-            PostStatusMessage(new
-            {
-                cameraSelfView = selfView
-                
-            });
+            PostStatusMessage(status);
         }
 
         /// <summary>
@@ -661,27 +670,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCameraMode()
         {
-            PostStatusMessage(new
-            {
-                cameras = new
-                {
-                    cameraMode = GetCameraMode()
-                }
-            });
+            var status = new VideoCodecBaseStatus();
+
+            status.CameraMode = GetCameraMode();
+
+            PostStatusMessage(status);
         }
 
         private void PostSelectedCamera()
         {
             var camerasCodec = Codec as IHasCodecCameras;
 
-            PostStatusMessage(new
-            {
-                cameras = new
-                {
-                    selectedCamera = GetSelectedCamera(camerasCodec)
-                },
-                presets = GetCurrentPresets()
-            });
+            var status = new VideoCodecBaseStatus();
+
+            status.Cameras = new VideoCodecBaseStatus.CameraStatus() { SelectedCamera = GetSelectedCamera(camerasCodec) };
+            status.Presets = GetCurrentPresets();
+            PostStatusMessage(status);
         }
 
         private void PostCameraPresets()
@@ -750,6 +754,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("currentDialString", NullValueHandling = NullValueHandling.Ignore)]
         public string CurrentDialString { get; set; }
+
+        [JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
+        public CodecDirectory CurrentDirectory { get; set; }
 
         //[JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
         //public DirectoryResult CurrentDirectory { get; set; }

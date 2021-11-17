@@ -51,6 +51,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             appServerController.AddAction(MessagePath + "/toggleVideoMute", new Action(() => _codec.CameraMuteToggle()));
 
+            _codec.CameraIsMutedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraIsMutedFeedback_OutputChange);
 
 
             var presentOnlyMeetingCodec = _codec as IHasPresentationOnlyMeeting;
@@ -154,6 +155,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             
         }
 
+        void CameraIsMutedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
+        {
+            var status = new ZoomRoomStatus();
+
+            status.CameraIsMuted = e.BoolValue;
+
+            PostStatusMessage(status);
+        }
+
         void meetingInfoCodec_MeetingInfoChanged(object sender, MeetingInfoEventArgs e)
         {
             PostMeetingInfo(e.Info);
@@ -161,53 +171,41 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void Participants_ParticipantsListHasChanged(object sender, EventArgs e)
         {
-            PostStatusMessage(new
-            {
-                participants = _codec.Participants.CurrentParticipants,
-            }
-        );
+            var status = new ZoomRoomStatus();
+
+            status.Participants = _codec.Participants.CurrentParticipants;
+
+            PostStatusMessage(status);
 
         }
 
         void MeetingIsRecordingFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
         {
-            PostStatusMessage(new
-            {
-                meetingInfo = new
-                {
-                    isRecording = e.BoolValue,
-                },
-            }
-            );
+            PostMeetingInfo(_codec.MeetingInfo);
         }
 
         void MeetingIsLockedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
         {
-            PostStatusMessage(new
-                {
-                    meetingInfo = new 
-                    {
-                        isLocked = e.BoolValue,
-                    },
-                }
-            );
+            PostMeetingInfo(_codec.MeetingInfo);
         }
 
         void layoutsCodec_LayoutInfoChanged(object sender, LayoutInfoChangedEventArgs e)
         {
-            PostStatusMessage(new
-            {
-                layouts = e
-            });
+            var status = new ZoomRoomStatus();
+
+            status.Layouts = e;
+
+            PostStatusMessage(status);
         }
 
 
         private void PostMeetingInfo(MeetingInfo info)
         {
-            PostStatusMessage(new
-            {
-                meetingInfo = info
-            });
+            var status = new ZoomRoomStatus();
+
+            status.MeetingInfo = _codec.MeetingInfo;
+
+            PostStatusMessage(status);
         }
 
 
@@ -222,7 +220,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             var zoomStatus = new ZoomRoomStatus();
 
-            zoomStatus = baseStatus as ZoomRoomStatus;
+            PropertyCopier<VideoCodecBaseStatus, ZoomRoomStatus>.Copy(baseStatus, zoomStatus);
+
+            zoomStatus.Meetings = _codec.CodecSchedule.Meetings;
+            zoomStatus.Participants = _codec.Participants.CurrentParticipants;
+            zoomStatus.CameraIsMuted = _codec.CameraIsMutedFeedback.BoolValue;
 
             PostStatusMessage(zoomStatus);
         }
@@ -248,9 +250,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("participants", NullValueHandling = NullValueHandling.Ignore)]
         public List<Participant> Participants { get; set; }
-
-        [JsonProperty("sharingContentIsOn", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? SharingContentIsOn { get; set; }
 
         [JsonProperty("cameraIsMuted", NullValueHandling = NullValueHandling.Ignore)]
         public bool? CameraIsMuted { get; set; }
