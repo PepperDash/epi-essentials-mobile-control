@@ -1317,6 +1317,10 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<ushort>)(messageObj["content"]["value"].Value<ushort>());
                             }
+                            else if (action is Action<int>)
+                            {
+                                (action as Action<int>)(messageObj["content"]["value"].Value<int>());
+                            }
                             else if (action is Action<string>)
                             {
                                 (action as Action<string>)(messageObj["content"]["value"].Value<string>());

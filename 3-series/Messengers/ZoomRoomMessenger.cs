@@ -27,132 +27,138 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            base.CustomRegisterWithAppServer(appServerController);
-
-            appServerController.AddAction(String.Format("{0}/invite", MessagePath),
-                new Action<InvitableDirectoryContact>((c) =>
-                {
-                    Codec.Dial((c));
-                }));
-
-            appServerController.AddAction(String.Format("{0}/inviteContactsToNewMeeting", MessagePath),
-                new Action<Invitation>((c) =>
-                {
-                    _codec.InviteContactsToNewMeeting(c.Invitees, c.Duration);
-                }));
-
-            appServerController.AddAction(String.Format("{0}/inviteContactsToExistingMeeting", MessagePath),
-                new Action<Invitation>((c) =>
-                {
-                    _codec.InviteContactsToExistingMeeting(c.Invitees);
-                }));
-
-            appServerController.AddAction(MessagePath + "/muteVideo", new Action(() => _codec.CameraMuteOn()));
-
-            appServerController.AddAction(MessagePath + "/toggleVideoMute", new Action(() => _codec.CameraMuteToggle()));
-
-            _codec.CameraIsMutedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraIsMutedFeedback_OutputChange);
-
-
-            var presentOnlyMeetingCodec = _codec as IHasPresentationOnlyMeeting;
-            if (presentOnlyMeetingCodec != null)
+            try
             {
-                Debug.Console(2, this, "Adding IHasPresentationOnlyMeeting");
+                base.CustomRegisterWithAppServer(appServerController);
 
-                appServerController.AddAction(MessagePath + "/dialPresent", new Action(() => presentOnlyMeetingCodec.StartSharingOnlyMeeting(eSharingMeetingMode.Laptop)));
-                appServerController.AddAction(MessagePath + "/dialConvert", new Action(presentOnlyMeetingCodec.StartNormalMeetingFromSharingOnlyMeeting));
-            }
+                appServerController.AddAction(String.Format("{0}/invite", MessagePath),
+                    new Action<InvitableDirectoryContact>((c) =>
+                    {
+                        Codec.Dial((c));
+                    }));
 
-            var startMeetingCodec = _codec as IHasStartMeeting;
-            if (startMeetingCodec != null)
-            {
-                Debug.Console(2, this, "Adding IStartMeeting Actions");
+                appServerController.AddAction(String.Format("{0}/inviteContactsToNewMeeting", MessagePath),
+                    new Action<Invitation>((c) =>
+                    {
+                        _codec.InviteContactsToNewMeeting(c.Invitees, c.Duration);
+                    }));
 
-                appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath), new Action(
-                    () => startMeetingCodec.StartMeeting(startMeetingCodec.DefaultMeetingDurationMin)));
-                appServerController.AddAction(String.Format("{0}/leaveMeeting", MessagePath), new Action(
-                    startMeetingCodec.LeaveMeeting));
-            }
+                appServerController.AddAction(String.Format("{0}/inviteContactsToExistingMeeting", MessagePath),
+                    new Action<Invitation>((c) =>
+                    {
+                        _codec.InviteContactsToExistingMeeting(c.Invitees);
+                    }));
 
-            appServerController.AddAction(String.Format("{0}/endMeeting", MessagePath), new Action(
-                _codec.EndAllCalls));
+                appServerController.AddAction(MessagePath + "/muteVideo", new Action(() => _codec.CameraMuteOn()));
 
-            var participantsCodec = _codec as IHasParticipants;
-            if (participantsCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasParticipant Actions");
+                appServerController.AddAction(MessagePath + "/toggleVideoMute", new Action(() => _codec.CameraMuteToggle()));
 
-                participantsCodec.Participants.ParticipantsListHasChanged += Participants_ParticipantsListHasChanged;
-
-                appServerController.AddAction(String.Format("{0}/removeParticipant", MessagePath), new Action<int>((i) =>
-                    participantsCodec.RemoveParticipant(i)));
-
-                appServerController.AddAction(String.Format("{0}/setParticipantAsHost", MessagePath), new Action<int>((i) =>
-                    participantsCodec.SetParticipantAsHost(i)));
+                _codec.CameraIsMutedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraIsMutedFeedback_OutputChange);
 
 
-                var audioMuteCodec = _codec as IHasParticipantAudioMute;
-                if (audioMuteCodec != null)
+                var presentOnlyMeetingCodec = _codec as IHasPresentationOnlyMeeting;
+                if (presentOnlyMeetingCodec != null)
                 {
-                    appServerController.AddAction(String.Format("{0}/muteAllParticipants", MessagePath), new Action(
-                        audioMuteCodec.MuteAudioForAllParticipants));
+                    Debug.Console(2, this, "Adding IHasPresentationOnlyMeeting");
 
-                    appServerController.AddAction(String.Format("{0}/toggleParticipantAudioMute", MessagePath), new Action<int>((i) =>
-                        audioMuteCodec.ToggleAudioForParticipant(i)));
-
-                    appServerController.AddAction(String.Format("{0}/toggleParticipantVideoMute", MessagePath), new Action<int>((i) =>
-                        audioMuteCodec.ToggleVideoForParticipant(i)));
+                    appServerController.AddAction(MessagePath + "/dialPresent", new Action(() => presentOnlyMeetingCodec.StartSharingOnlyMeeting(eSharingMeetingMode.Laptop)));
+                    appServerController.AddAction(MessagePath + "/dialConvert", new Action(presentOnlyMeetingCodec.StartNormalMeetingFromSharingOnlyMeeting));
                 }
-            }
 
-            var lockCodec = _codec as IHasMeetingLock;
-            if (lockCodec != null)
+                var startMeetingCodec = _codec as IHasStartMeeting;
+                if (startMeetingCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IStartMeeting Actions");
+
+                    appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath), new Action(
+                        () => startMeetingCodec.StartMeeting(startMeetingCodec.DefaultMeetingDurationMin)));
+                    appServerController.AddAction(String.Format("{0}/leaveMeeting", MessagePath), new Action(
+                        startMeetingCodec.LeaveMeeting));
+                }
+
+                appServerController.AddAction(String.Format("{0}/endMeeting", MessagePath), new Action(
+                    _codec.EndAllCalls));
+
+                var participantsCodec = _codec as IHasParticipants;
+                if (participantsCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasParticipant Actions");
+
+                    participantsCodec.Participants.ParticipantsListHasChanged += Participants_ParticipantsListHasChanged;
+
+                    appServerController.AddAction(String.Format("{0}/removeParticipant", MessagePath), new Action<int>((i) =>
+                        participantsCodec.RemoveParticipant(i)));
+
+                    appServerController.AddAction(String.Format("{0}/setParticipantAsHost", MessagePath), new Action<int>((i) =>
+                        participantsCodec.SetParticipantAsHost(i)));
+
+
+                    var audioMuteCodec = _codec as IHasParticipantAudioMute;
+                    if (audioMuteCodec != null)
+                    {
+                        appServerController.AddAction(String.Format("{0}/muteAllParticipants", MessagePath), new Action(
+                            audioMuteCodec.MuteAudioForAllParticipants));
+
+                        appServerController.AddAction(String.Format("{0}/toggleParticipantAudioMute", MessagePath), new Action<int>((i) =>
+                            audioMuteCodec.ToggleAudioForParticipant(i)));
+
+                        appServerController.AddAction(String.Format("{0}/toggleParticipantVideoMute", MessagePath), new Action<int>((i) =>
+                            audioMuteCodec.ToggleVideoForParticipant(i)));
+                    }
+                }
+
+                var lockCodec = _codec as IHasMeetingLock;
+                if (lockCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasMeetingLock Actions");
+
+                    lockCodec.MeetingIsLockedFeedback.OutputChange += MeetingIsLockedFeedback_OutputChange;
+
+                    appServerController.AddAction(String.Format("{0}/toggleMeetingLock", MessagePath), new Action(
+                        lockCodec.ToggleMeetingLock));
+                }
+
+                var recordCodec = _codec as IHasMeetingRecording;
+                if (recordCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasMeetingRecording Actions");
+
+                    recordCodec.MeetingIsRecordingFeedback.OutputChange += MeetingIsRecordingFeedback_OutputChange;
+
+                    appServerController.AddAction(String.Format("{0}/toggleRecording", MessagePath), new Action(
+                        recordCodec.ToggleRecording));
+                }
+
+                var layoutsCodec = _codec as IHasZoomRoomLayouts;
+                if (layoutsCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasZoomRoomLayouts Actions");
+
+                    layoutsCodec.LayoutInfoChanged += layoutsCodec_LayoutInfoChanged;
+
+                    appServerController.AddAction(String.Format("{0}/selectLayout", MessagePath), new Action<string>(s =>
+                        layoutsCodec.SetLayout((zConfiguration.eLayoutStyle)Enum.Parse(typeof(zConfiguration.eLayoutStyle), s, true))));
+
+                    appServerController.AddAction(String.Format("{0}/particpantsNextPage", MessagePath), new Action(
+                        layoutsCodec.LayoutTurnNextPage));
+
+                    appServerController.AddAction(String.Format("{0}/participantsPreviousPage", MessagePath), new Action(
+                        layoutsCodec.LayoutTurnPreviousPage));
+                }
+
+                var meetingInfoCodec = Codec as IHasMeetingInfo;
+                if (meetingInfoCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasMeetingInfo Actions");
+
+                    meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
+                }
+
+            }
+            catch (Exception e)
             {
-                Debug.Console(2, this, "Adding IHasMeetingLock Actions");
-
-                lockCodec.MeetingIsLockedFeedback.OutputChange += MeetingIsLockedFeedback_OutputChange;
-
-                appServerController.AddAction(String.Format("{0}/toggleMeetingLock", MessagePath), new Action(
-                    lockCodec.ToggleMeetingLock));
+                Debug.Console(2, this, "Error: {0}", e);
             }
-
-            var recordCodec = _codec as IHasMeetingRecording;
-            if (recordCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasMeetingRecording Actions");
-
-                recordCodec.MeetingIsRecordingFeedback.OutputChange += MeetingIsRecordingFeedback_OutputChange;
-
-                appServerController.AddAction(String.Format("{0}/toggleRecording", MessagePath), new Action(
-                    recordCodec.ToggleRecording));
-            }
-
-            var layoutsCodec = _codec as IHasZoomRoomLayouts;
-            if (layoutsCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasZoomRoomLayouts Actions");
-
-                layoutsCodec.LayoutInfoChanged += layoutsCodec_LayoutInfoChanged;
-
-                appServerController.AddAction(String.Format("{0}/selectLayout", MessagePath), new Action<string>(s =>
-                    layoutsCodec.SetLayout((zConfiguration.eLayoutStyle)Enum.Parse(typeof(zConfiguration.eLayoutStyle), s, true))));
-
-                appServerController.AddAction(String.Format("{0}/particpantsNextPage", MessagePath), new Action(
-                    layoutsCodec.LayoutTurnNextPage));
-
-                appServerController.AddAction(String.Format("{0}/participantsPreviousPage", MessagePath), new Action(
-                    layoutsCodec.LayoutTurnPreviousPage));
-            }
-
-            var meetingInfoCodec = Codec as IHasMeetingInfo;
-            if (meetingInfoCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasMeetingInfo Actions");
-
-                meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
-            }
-
-            
         }
 
         void CameraIsMutedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
@@ -222,6 +228,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             PropertyCopier<VideoCodecBaseStatus, ZoomRoomStatus>.Copy(baseStatus, zoomStatus);
 
+            zoomStatus.Layouts = new LayoutInfoChangedEventArgs()
+                {
+                    AvailableLayouts = _codec.AvailableLayouts,
+                    //CurrentSelectedLayout = (zConfiguration.eLayoutStyle)Enum.Parse(typeof(zConfiguration.eLayoutStyle), _codec.LocalLayoutFeedback.StringValue, true),
+                    LayoutViewIsOnFirstPage = _codec.LayoutViewIsOnFirstPageFeedback.BoolValue,
+                    LayoutViewIsOnLastPage = _codec.LayoutViewIsOnLastPageFeedback.BoolValue,
+                    CanSwapContentWithThumbnail = _codec.CanSwapContentWithThumbnailFeedback.BoolValue,
+                    ContentSwappedWithThumbnail = _codec.ContentSwappedWithThumbnailFeedback.BoolValue,
+                };
             zoomStatus.Meetings = _codec.CodecSchedule.Meetings;
             zoomStatus.Participants = _codec.Participants.CurrentParticipants;
             zoomStatus.CameraIsMuted = _codec.CameraIsMutedFeedback.BoolValue;
