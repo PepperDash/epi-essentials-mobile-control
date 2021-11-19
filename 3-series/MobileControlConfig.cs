@@ -14,13 +14,32 @@ namespace PepperDash.Essentials
         [JsonProperty("clientAppUrl")]
         public string ClientAppUrl { get; set; }
 
+#if SERIES4
+        [JsonProperty("directServer")]
+        public MobileControlDirectServerPropertiesConfig DirectServer { get; set; }
+
+        [JsonProperty("enableApiServer")]
+        public bool EnableApiServer { get; set; }
+#endif
+
         [JsonProperty("roomBridges")]
         public List<MobileControlRoomBridgePropertiesConfig> RoomBridges { get; set; }
 
         public MobileControlConfig()
         {
             RoomBridges = new List<MobileControlRoomBridgePropertiesConfig>();
+
+            EnableApiServer = true; // default to true
         }
+    }
+
+    public class MobileControlDirectServerPropertiesConfig
+    {
+        [JsonProperty("enableDirectServer")]
+        public bool EnableDirectServer { get; set; }
+
+        [JsonProperty("port")]
+        public int Port { get; set; }
     }
 
     public class MobileControlRoomBridgePropertiesConfig

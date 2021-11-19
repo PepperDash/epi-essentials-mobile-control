@@ -47,6 +47,9 @@ namespace PepperDash.Essentials
         private bool _disableReconnect;
         private WebSocket _wsClient2;
 
+#if SERIES4
+        private MobileControlWebsocketServer _directServer;
+#endif
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
 
         public string SystemUrl; //set only from SIMPL Bridge!
@@ -135,6 +138,15 @@ namespace PepperDash.Essentials
 
             // The queue that will collect the outgoing messages in the order they are received
             _transmitQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+
+#if SERIES4
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
+            {
+                _directServer = new MobileControlWebsocketServer(Key + "-directServer", Config.DirectServer.Port);
+
+
+            }
+#endif
 
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
@@ -758,6 +770,13 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RegisterSystemToServer()
         {
+#if SERIES4
+            if (!Config.EnableApiServer)
+            {
+                Debug.Console(0, this, "ApiServer disabled via config.  Cancelling attempt to register to server.");
+                return;
+            }
+#endif
             var result = CreateWebsocket();
 
             if (!result)

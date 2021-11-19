@@ -7,6 +7,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 
+
 namespace PepperDash.Essentials
 {
     public class MobileControlFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
