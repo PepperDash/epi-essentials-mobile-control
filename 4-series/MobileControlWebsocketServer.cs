@@ -11,7 +11,7 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials
 {
-    public class Response : WebSocketBehavior
+    public class UiClient : WebSocketBehavior
     {
         protected override void OnOpen()
         {
@@ -28,9 +28,13 @@ namespace PepperDash.Essentials
     {
         private HttpServer _server;
 
-        public MobileControlWebsocketServer(string key, int customPort)
+        private MobileControlSystemController _parent;
+
+        public MobileControlWebsocketServer(string key, int customPort, MobileControlSystemController parent)
             :base(key)
         {
+            _parent = parent;
+
             // Set the default port to be 50000 plus the slot number of the program
             int port = 50000 + (int)Global.ControlSystem.ProgramNumber;
 
@@ -43,7 +47,7 @@ namespace PepperDash.Essentials
 
             _server.OnGet += _server_OnGet;
 
-            _server.AddWebSocketService<Response>("/");
+            _server.AddWebSocketService<UiClient>("/");
 
             _server.Start();
 

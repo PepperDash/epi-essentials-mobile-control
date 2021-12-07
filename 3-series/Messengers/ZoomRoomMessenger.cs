@@ -163,7 +163,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void CameraIsMutedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
         {
-            var status = new ZoomRoomStatus();
+            var status = new ZoomRoomStateMessage();
 
             status.CameraIsMuted = e.BoolValue;
 
@@ -177,7 +177,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void Participants_ParticipantsListHasChanged(object sender, EventArgs e)
         {
-            var status = new ZoomRoomStatus();
+            var status = new ZoomRoomStateMessage();
 
             status.Participants = _codec.Participants.CurrentParticipants;
 
@@ -197,7 +197,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void layoutsCodec_LayoutInfoChanged(object sender, LayoutInfoChangedEventArgs e)
         {
-            var status = new ZoomRoomStatus();
+            var status = new ZoomRoomStateMessage();
 
             status.Layouts = e;
 
@@ -207,7 +207,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PostMeetingInfo(MeetingInfo info)
         {
-            var status = new ZoomRoomStatus();
+            var status = new ZoomRoomStateMessage();
 
             status.MeetingInfo = _codec.MeetingInfo;
 
@@ -224,9 +224,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             var baseStatus = GetStatus();
 
-            var zoomStatus = new ZoomRoomStatus();
+            var zoomStatus = new ZoomRoomStateMessage();
 
-            PropertyCopier<VideoCodecBaseStatus, ZoomRoomStatus>.Copy(baseStatus, zoomStatus);
+            PropertyCopier<VideoCodecBaseStateMessage, ZoomRoomStateMessage>.Copy(baseStatus, zoomStatus);
 
             zoomStatus.Layouts = new LayoutInfoChangedEventArgs()
                 {
@@ -255,7 +255,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
     }
 
-    public class ZoomRoomStatus : VideoCodecBaseStatus
+    public class ZoomRoomStateMessage : VideoCodecBaseStateMessage
     {
         [JsonProperty("layouts", NullValueHandling = NullValueHandling.Ignore)]
         public LayoutInfoChangedEventArgs Layouts { get; set; }

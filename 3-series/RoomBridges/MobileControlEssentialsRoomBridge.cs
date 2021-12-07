@@ -6,12 +6,18 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.SoftCodec;
+using PepperDash.Essentials.Core.Lighting;
+using PepperDash.Essentials.Core.Shades;
+
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace PepperDash.Essentials
 {
@@ -406,7 +412,26 @@ namespace PepperDash.Essentials
                     var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Parent.Key + "-volume",
                         String.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
                     Parent.AddDeviceMessenger(messenger);
-                    
+                }
+
+                if (device is LightingBase)
+                {
+                    var deviceKey = device.Key;
+                    var lightingDevice = device as LightingBase;
+                    Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new LightingBaseMessenger(deviceKey + "-" + Parent.Key,
+                        lightingDevice, string.Format("/device/{0}", deviceKey));
+                    Parent.AddDeviceMessenger(messenger);
+                }
+
+                if (device is ShadeBase)
+                {
+                    var deviceKey = device.Key;
+                    var shadeDevice = device as ShadeBase;
+                    Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new ShadeBaseMessenger(deviceKey + "-" + Parent.Key,
+                        shadeDevice, string.Format("/device/{0}", deviceKey));
+                    Parent.AddDeviceMessenger(messenger);
                 }
             }
         }
@@ -671,11 +696,7 @@ namespace PepperDash.Essentials
         /// <param name="room"></param>
         private void SendFullStatus(EssentialsRoomBase room)
         {
-            Parent.SendMessageObjectToServer(new
-            {
-                type = String.Format("/room/{0}/status/", Room.Key),
-                content = GetFullStatus(room)
-            });
+            Parent.SendMessageObjectToServer(GetFullStatus(room));
         }
 
 
@@ -686,6 +707,8 @@ namespace PepperDash.Essentials
         /// <returns>The status response message</returns>
         MobileControlResponseMessage GetFullStatus(IEssentialsRoom room)
         {
+            Debug.Console(2, this, "GetFullStatus");
+
             var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
 
             var rmVc = room as IHasCurrentVolumeControls;
@@ -708,6 +731,9 @@ namespace PepperDash.Essentials
 
             var contentObject = new
             {
+                key = room.Key,
+                name = room.Name,
+                configuration = GetRoomConfiguration(room),
                 activityMode = 1,
                 isOn = room.OnFeedback.BoolValue,
                 selectedSourceKey = sourceKey, 
@@ -722,19 +748,174 @@ namespace PepperDash.Essentials
 
             return messageObject;
         }
+
+        /// <summary>
+        /// Determines the configuration of the room and the details about the devices associated with the room
+        /// <param name="room"></param>
+        /// <returns></returns>
+        private RoomConfiguration GetRoomConfiguration(IEssentialsRoom room)
+        {
+            var configuration = new RoomConfiguration();
+
+            var huddleRoom = room as IEssentialsHuddleSpaceRoom;
+            if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
+            {
+                configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
+            }
+
+            var vtc1Room = room as IEssentialsHuddleVtc1Room;
+            if (vtc1Room != null && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
+            {
+                configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
+            }
+
+            var vcRoom = room as IHasVideoCodec;
+            if (vcRoom != null)
+            {
+                if (vcRoom.VideoCodec != null)
+                {
+                    configuration.HasVideoConferencing = true;
+                    configuration.VideoCodecKey = vcRoom.VideoCodec.Key;
+                    configuration.VideoCodecIsZoomRoom = vcRoom.VideoCodec is Essentials.Devices.Common.VideoCodec.ZoomRoom.ZoomRoom;
+                }
+            };
+
+            var acRoom = room as IHasAudioCodec;
+            if (acRoom != null)
+            {
+                if (acRoom.AudioCodec != null)
+                {
+                    configuration.HasAudioConferencing = true;
+                    configuration.AudioCodecKey = acRoom.AudioCodec.Key;
+                }
+            }
+
+            var envRoom = room as IEnvironmentalControls;
+            {
+                configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
+
+                if(envRoom.HasEnvironmentalControlDevices)
+                {
+                    foreach (var dev in envRoom.EnvironmentalControlDevices)
+                    {
+                        eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
+
+                        if(dev is Essentials.Core.Lighting.LightingBase)
+                        {
+                            type = eEnvironmentalDeviceTypes.Lighting;
+                        }
+                        else if (dev is Essentials.Core.Shades.ShadeBase)
+                        {
+                            type = eEnvironmentalDeviceTypes.Shade;
+                        }
+                        else if (dev is Essentials.Core.Shades.ShadeController)
+                        {
+                            type = eEnvironmentalDeviceTypes.ShadeController;
+                        }
+
+                        var envDevice = new EnvironmentalDeviceConfiguration(dev.Key, type);
+
+                        configuration.EnvironmentalDevices.Add(envDevice);
+                    }
+                }
+            }
+
+            var defDisplayRoom = room as IHasDefaultDisplay;
+            if (defDisplayRoom != null)
+            {
+                configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
+                configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
+            }
+
+            var multiDisplayRoom = room as IHasMultipleDisplays;
+            if (multiDisplayRoom != null)
+            {
+                foreach(var display in multiDisplayRoom.Displays)
+                {
+                    configuration.DisplayKeys.Add(display.Value.Key);
+                }
+            }
+
+            var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
+            if (sourceList != null)
+            {
+                configuration.SourceList = sourceList;
+            }
+
+            return configuration;
+        }
     }
 
-
-
     /// <summary>
-    /// 
+    /// Represents the capabilities of the room and the associated device info
     /// </summary>
+    public class RoomConfiguration 
+    {
+        [JsonProperty("hasVideoConferencing")]
+        public bool HasVideoConferencing { get; set; }
+        [JsonProperty("videoCodecIsZoomRoom")]
+        public bool VideoCodecIsZoomRoom { get; set; }
+        [JsonProperty("hasAudioConferencing")]
+        public bool HasAudioConferencing { get; set; }
+        [JsonProperty("hasEnvironmentalControls")]
+        public bool HasEnvironmentalControls { get; set; }
+
+        [JsonProperty("videoCodecKey")]
+        public string VideoCodecKey { get; set; }
+        [JsonProperty("audioCodecKey")]
+        public string AudioCodecKey { get; set; }
+        [JsonProperty("defaultDisplayKey")]
+        public string DefaultDisplayKey { get; set; }
+        [JsonProperty("displayKeys")]
+        public List<string> DisplayKeys { get; set; }
+        [JsonProperty("environmentalDevices")]
+        public List<EnvironmentalDeviceConfiguration> EnvironmentalDevices { get; set; }
+        [JsonProperty("sourceList")]
+        public Dictionary<string, SourceListItem> SourceList { get; set; }
+
+
+        [JsonProperty("helpMessage")]
+        public string HelpMessage { get; set; }
+
+
+        public RoomConfiguration()
+        {
+            DisplayKeys = new List<string>();
+            EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();
+            SourceList = new Dictionary<string, SourceListItem>();
+        }
+
+    }
+
+    public class EnvironmentalDeviceConfiguration
+    {
+        [JsonProperty("deviceKey")]
+        public string DeviceKey { get; private set; }
+
+        [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty("deviceType")]
+        public eEnvironmentalDeviceTypes DeviceType { get; private set; }
+
+        public EnvironmentalDeviceConfiguration(string key, eEnvironmentalDeviceTypes type)
+        {
+            DeviceKey = key;
+            DeviceType = type;
+        }
+    }
+
+    public enum eEnvironmentalDeviceTypes
+    {
+        None,
+        Lighting,
+        Shade,
+        ShadeController,
+    }
+
     public class SourceSelectMessageContent
     {
         public string SourceListItem { get; set; }
         public string SourceListKey { get; set; }
-
-  }
+    }
 
     public class DirectRoute
     {

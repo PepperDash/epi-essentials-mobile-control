@@ -10,8 +10,8 @@ using PepperDash.Core;
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class PropertyCopier<TParent, TChild>
-        where TParent : VideoCodecBaseStatus
-        where TChild : ZoomRoomStatus
+        where TParent : VideoCodecBaseStateMessage
+        where TChild : ZoomRoomStateMessage
     {
         public static void Copy(TParent parent, TChild child)
         {
@@ -22,7 +22,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 foreach (var childProperty in childProperties)
                 {
-                    if (parentProperty.Name == childProperty.Name && parentProperty.PropertyType == childProperty.PropertyType)
+                    if (parentProperty.Name == childProperty.Name && parentProperty.PropertyType == childProperty.PropertyType && parentProperty.CanWrite)
                     {
                         childProperty.SetValue(child, parentProperty.GetValue(parent, null), null);
                         //Debug.Console(2, "Copying property: {0} value: {1}", parentProperty.Name, parentProperty.GetValue(parent, null));

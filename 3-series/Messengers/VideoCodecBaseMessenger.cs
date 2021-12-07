@@ -33,7 +33,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="codec"></param>
         /// <param name="messagePath"></param>
         public VideoCodecBaseMessenger(string key, VideoCodecBase codec, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, codec)
         {
             if (codec == null)
                 throw new ArgumentNullException("codec");
@@ -470,7 +470,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (codec != null)
             {
-                var status = new VideoCodecBaseStatus();
+                var status = new VideoCodecBaseStateMessage();
 
                 var recents = codec.CallHistory.RecentCalls;
 
@@ -575,7 +575,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendIsReady()
         {
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
             status.IsReady = Codec.IsReady;
             status.IsZoomRoom = Codec is ZoomRoom;
@@ -587,14 +587,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Helper method to build call status for vtc
         /// </summary>
         /// <returns></returns>
-        protected VideoCodecBaseStatus GetStatus()
+        protected VideoCodecBaseStateMessage GetStatus()
         {
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
             var camerasCodec = Codec as IHasCodecCameras;
             if (camerasCodec != null)
             {
-                status.Cameras = new VideoCodecBaseStatus.CameraStatus();
+                status.Cameras = new VideoCodecBaseStateMessage.CameraStatus();
 
                 status.Cameras.CameraManualIsSupported = true;
                 status.Cameras.CameraAutoIsSupported = Codec.SupportsCameraAutoMode;
@@ -656,7 +656,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PostCameraSelfView()
         {
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
             status.CameraSelfViewIsOn = Codec is IHasCodecSelfView
                 ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue
@@ -670,7 +670,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCameraMode()
         {
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
             status.CameraMode = GetCameraMode();
 
@@ -681,29 +681,29 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var camerasCodec = Codec as IHasCodecCameras;
 
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
-            status.Cameras = new VideoCodecBaseStatus.CameraStatus() { SelectedCamera = GetSelectedCamera(camerasCodec) };
+            status.Cameras = new VideoCodecBaseStateMessage.CameraStatus() { SelectedCamera = GetSelectedCamera(camerasCodec) };
             status.Presets = GetCurrentPresets();
             PostStatusMessage(status);
         }
 
         private void PostCameraPresets()
         {
-            var status = new VideoCodecBaseStatus();
+            var status = new VideoCodecBaseStateMessage();
 
             status.Presets = GetCurrentPresets();
 
             PostStatusMessage(status);
         }
 
-        private VideoCodecBaseStatus.CameraStatus.Camera GetSelectedCamera(IHasCodecCameras camerasCodec)
+        private VideoCodecBaseStateMessage.CameraStatus.Camera GetSelectedCamera(IHasCodecCameras camerasCodec)
         {
-            var camera = new VideoCodecBaseStatus.CameraStatus.Camera();
+            var camera = new VideoCodecBaseStateMessage.CameraStatus.Camera();
 
             camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
             camera.IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue;
-            camera.Capabilities = new VideoCodecBaseStatus.CameraStatus.Camera.CameraCapabilities()
+            camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
                 {
                     CanPan = camerasCodec.SelectedCamera.CanPan,
                     CanTilt = camerasCodec.SelectedCamera.CanTilt,
@@ -732,8 +732,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// A class that represents the state data to be sent to the user app
     /// </summary>
-    public class VideoCodecBaseStatus
+    public class VideoCodecBaseStateMessage : DeviceStateMessageBase
     {
+
         [JsonProperty("calls", NullValueHandling = NullValueHandling.Ignore)]
         public List<CodecActiveCallItem> Calls {get; set;}
 

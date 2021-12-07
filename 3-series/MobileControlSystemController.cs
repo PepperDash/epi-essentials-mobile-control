@@ -1004,28 +1004,28 @@ namespace PepperDash.Essentials
             _transmitQueue.Enqueue(new TransmitMessage(o, _wsClient2));
         }
 
-        /// <summary>
-        /// Sends a message to the server from a room
-        /// </summary>
-        /// <param name="o">object to be serialized and sent in post body</param>
-        private void SendMessageToServer(JObject o)
-        {
-            if (_wsClient2 != null && _wsClient2.IsAlive)
-            {
-                string message = JsonConvert.SerializeObject(o, Formatting.None,
-                    new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
+        ///// <summary>
+        ///// Sends a message to the server from a room
+        ///// </summary>
+        ///// <param name="o">object to be serialized and sent in post body</param>
+        //private void SendMessageToServer(JObject o)
+        //{
+        //    if (_wsClient2 != null && _wsClient2.IsAlive)
+        //    {
+        //        string message = JsonConvert.SerializeObject(o, Formatting.None,
+        //            new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
 
-                if (!message.Contains("/system/heartbeat"))
-                {
-                    Debug.Console(2, this, "Message TX: {0}", message);
-                }
-                _wsClient2.Send(message);
-            }
-            else if (_wsClient2 == null)
-            {
-                Debug.Console(1, this, "Cannot send. No client.");
-            }
-        }
+        //        if (!message.Contains("/system/heartbeat"))
+        //        {
+        //            Debug.Console(2, this, "Message TX: {0}", message);
+        //        }
+        //        _wsClient2.Send(message);
+        //    }
+        //    else if (_wsClient2 == null)
+        //    {
+        //        Debug.Console(1, this, "Cannot send. No client.");
+        //    }
+        //}
 
         /// <summary>
         /// Disconnects the Websocket Client and stops the heartbeat timer
@@ -1394,6 +1394,10 @@ namespace PepperDash.Essentials
                             else if (action is Action<Invitation>)
                             {
                                 (action as Action<Invitation>)(messageObj["content"].ToObject<Invitation>());
+                            }
+                            else if (action is Action<Essentials.Core.Lighting.LightingScene>)
+                            {
+                                (action as Action<Essentials.Core.Lighting.LightingScene>)(messageObj["content"].ToObject<Essentials.Core.Lighting.LightingScene>());
                             }
                             else if (action is UserCodeChanged)
                             {

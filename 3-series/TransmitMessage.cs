@@ -9,6 +9,7 @@ using Newtonsoft.Json.Converters;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Queues;
 using WebSocketSharp;
+using PepperDash.Essentials.AppServer.Messengers;
 
 namespace PepperDash.Essentials
 {
@@ -22,17 +23,29 @@ namespace PepperDash.Essentials
             _ws = ws;
             msgToSend = msg;
         }
+
+        public TransmitMessage(DeviceStateMessageBase msg, WebSocket ws)
+        {
+            _ws = ws;
+            msgToSend = msg;
+        }
+
         #region Implementation of IQueueMessage
 
         public void Dispatch()
         {
             try
             {
-                var messageToSend = JObject.FromObject(msgToSend);
+
+                //Debug.Console(2, "Dispatching message type: {0}", msgToSend.GetType());
+
+                //Debug.Console(2, "Message: {0}", msgToSend.ToString());
+
+                //var messageToSend = JObject.FromObject(msgToSend);
 
                 if (_ws != null && _ws.IsAlive)
                 {
-                    var message = JsonConvert.SerializeObject(messageToSend, Formatting.None,
+                    var message = JsonConvert.SerializeObject(msgToSend, Formatting.None,
                         new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = {new IsoDateTimeConverter()} });
 
                     Debug.Console(2, "Message TX: {0}", message);

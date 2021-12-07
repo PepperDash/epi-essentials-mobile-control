@@ -29,7 +29,9 @@ namespace PepperDash.Essentials
         {
             RoomBridges = new List<MobileControlRoomBridgePropertiesConfig>();
 
+#if SERIES4
             EnableApiServer = true; // default to true
+#endif
         }
     }
 
