@@ -738,7 +738,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("calls", NullValueHandling = NullValueHandling.Ignore)]
         public List<CodecActiveCallItem> Calls {get; set;}
 
-        [JsonProperty("camerMode", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("cameraMode", NullValueHandling = NullValueHandling.Ignore)]
         public string CameraMode { get; set; }
 
         [JsonProperty("cameraSelfView", NullValueHandling = NullValueHandling.Ignore)]
