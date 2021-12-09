@@ -15,9 +15,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         public static void Copy(TParent parent, TChild child)
         {
+#if SERIES4
+            var parentProperties = parent.GetType().GetProperties();
+            var childProperties = child.GetType().GetProperties();
+#endif
+
+#if SERIES3
             var parentProperties = parent.GetCType().GetProperties();
             var childProperties = child.GetCType().GetProperties();
-
+#endif
             foreach (var parentProperty in parentProperties)
             {
                 foreach (var childProperty in childProperties)

@@ -36,6 +36,11 @@ namespace PepperDash.Essentials
             get { return Room.Name; }
         }
 
+        public override string RoomKey
+        {
+            get { return Room.Key; }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -477,7 +482,7 @@ namespace PepperDash.Essentials
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            Parent.SendMessageObjectToServer(JObject.FromObject(new
+            Parent.SendMessageObject(JObject.FromObject(new
             {
                 type = String.Format("/room/{0}/status/",Room.Key),
                 content = contentObject
@@ -493,7 +498,7 @@ namespace PepperDash.Essentials
         {
             var roomStatus = new JObject {{"state", "wasCancelled"}};
             var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
-            Parent.SendMessageObjectToServer(message);
+            Parent.SendMessageObject(message);
         }
 
         /// <summary>
@@ -505,7 +510,7 @@ namespace PepperDash.Essentials
         {
             var roomStatus = new JObject {{"state", "hasFinished"}};
             var message = new JObject { { "type", String.Format("/room/{0}/shutdown/", Room.Key) }, { "content", roomStatus } };
-            Parent.SendMessageObjectToServer(message);
+            Parent.SendMessageObject(message);
         }
 
         /// <summary>
@@ -521,7 +526,7 @@ namespace PepperDash.Essentials
                 {"duration", Room.ShutdownPromptTimer.SecondsToCount}
             };
             var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
-            Parent.SendMessageObjectToServer(message);
+            Parent.SendMessageObject(message);
             // equivalent JS message:
             //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
         }
@@ -696,7 +701,7 @@ namespace PepperDash.Essentials
         /// <param name="room"></param>
         private void SendFullStatus(EssentialsRoomBase room)
         {
-            Parent.SendMessageObjectToServer(GetFullStatus(room));
+            Parent.SendMessageObject(GetFullStatus(room));
         }
 
 

@@ -50,6 +50,11 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
         }
 
+        public override string RoomKey
+        {
+            get { return "room1"; }
+        }
+
         private readonly MobileControlSimplDeviceBridge _sourceBridge;
 
         private SIMPLAtcMessenger _atcMessenger;
@@ -1005,7 +1010,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatusMessage(object contentObject)
         {
-            Parent.SendMessageObjectToServer(new
+            Parent.SendMessageObject(new
             {
                 type = "/room/room1/status/",
                 content = contentObject
@@ -1019,7 +1024,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject"></param>
         private void PostMessage(string messageType, object contentObject)
         {
-            Parent.SendMessageObjectToServer(new
+            Parent.SendMessageObject(new
             {
                 type = messageType,
                 content = contentObject

@@ -42,7 +42,9 @@ namespace PepperDash.Essentials
 
         private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>(); 
 
-        private readonly GenericQueue _transmitQueue;
+        private readonly GenericQueue _transmitToServerQueue;
+
+        private readonly GenericQueue _transmitToClientsQueue;
 
         private bool _disableReconnect;
         private WebSocket _wsClient2;
@@ -137,14 +139,14 @@ namespace PepperDash.Essentials
             _receiveQueue = new GenericQueue(key + "-rxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
-            _transmitQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+            _transmitToServerQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
 #if SERIES4
             if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
             {
-                _directServer = new MobileControlWebsocketServer(Key + "-directServer", Config.DirectServer.Port);
+                _directServer = new MobileControlWebsocketServer(Key + "-directServer", Config.DirectServer.Port, this);
 
-
+                _transmitToClientsQueue = new GenericQueue(key + "-clienttxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
             }
 #endif
 
@@ -222,7 +224,7 @@ namespace PepperDash.Essentials
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
-            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+            SendMessageObject(new {type = "/system/roomCombinationChanged"});
         }
 
         public bool CheckForDeviceMessenger(string key)
@@ -504,6 +506,11 @@ namespace PepperDash.Essentials
 
                 RegisterSystemToServer();
             }
+        }
+
+        public MobileControlBridgeBase GetRoomBridge(string key)
+        {
+            return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
 
         /// <summary>
@@ -895,7 +902,7 @@ namespace PepperDash.Essentials
             StopServerReconnectTimer();
             StartPingTimer();
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
-            SendMessageObjectToServer(new
+            SendMessageObject(new
             {
                 type = "hello"
             });
@@ -992,16 +999,23 @@ namespace PepperDash.Essentials
                 }
             };
 
-            SendMessageObjectToServer(msg);
+            SendMessageObject(msg);
         }
 
         /// <summary>
         /// Sends any object type to server
         /// </summary>
         /// <param name="o"></param>
-        public void SendMessageObjectToServer(object o)
+        public void SendMessageObject(object o)
         {
-            _transmitQueue.Enqueue(new TransmitMessage(o, _wsClient2));
+            _transmitToServerQueue.Enqueue(new TransmitMessage(o, _wsClient2));
+
+#if SERIES4
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
+            {
+                _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
+            }
+#endif
         }
 
         ///// <summary>
@@ -1113,7 +1127,7 @@ namespace PepperDash.Essentials
         /// <param name="content"></param>
         private void HandleHeartBeat(JToken content)
         {
-            SendMessageObjectToServer(new
+            SendMessageObject(new
             {
                 type = "/system/heartbeatAck"
             });
@@ -1136,7 +1150,7 @@ namespace PepperDash.Essentials
             var roomKey = content["roomKey"].Value<string>();
 
 
-                SendMessageObjectToServer(new
+                SendMessageObject(new
                 {
                     type = "/system/roomKey",
                     clientId,
@@ -1219,6 +1233,11 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, this, "HttpDebugError: {0}", ex);
             }
+        }
+
+        public void HandleClientMessage(string message)
+        {
+            _receiveQueue.Enqueue(new ProcessStringMessage(message, ParseStreamRx));
         }
 
         /// <summary>
@@ -1361,7 +1380,7 @@ namespace PepperDash.Essentials
                                 {
                                     respObj.ClientId = clientId;
 
-                                    SendMessageObjectToServer(respObj);
+                                    SendMessageObject(respObj);
                                 }
                             }
                             else if (action is Action<PresetChannelMessage>)

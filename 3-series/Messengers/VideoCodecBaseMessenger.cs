@@ -63,7 +63,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void OnPasswordRequired(object sender, PasswordPromptEventArgs args)
         {
-            AppServerController.SendMessageObjectToServer(new
+            AppServerController.SendMessageObject(new
             {
                 type = MessagePath + "/passwordPrompt",
                 content = new

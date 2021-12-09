@@ -54,7 +54,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
 
@@ -69,7 +69,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
         private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
@@ -83,7 +83,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
         private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
@@ -97,7 +97,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
         #endregion

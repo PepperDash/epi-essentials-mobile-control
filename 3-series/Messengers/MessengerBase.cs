@@ -93,7 +93,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (AppServerController != null)
             {
-                AppServerController.SendMessageObjectToServer(new
+                AppServerController.SendMessageObject(new
                 {
                     type = MessagePath,
                     content = contentObject
@@ -116,7 +116,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 message.Name = _device.Name;
 
-                AppServerController.SendMessageObjectToServer(new
+                AppServerController.SendMessageObject(new
                 {
                     type = MessagePath,
                     content = message,

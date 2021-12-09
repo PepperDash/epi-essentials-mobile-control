@@ -56,7 +56,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
         private void IsOnlineFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
@@ -72,7 +72,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             };
 
-            AppServerController.SendMessageObjectToServer(messageObj);
+            AppServerController.SendMessageObject(messageObj);
         }
 
         #endregion
