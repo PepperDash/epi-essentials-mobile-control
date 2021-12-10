@@ -21,6 +21,7 @@ using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
+using WebSocketSharp.Net.WebSockets;
 
 namespace PepperDash.Essentials
 {
@@ -28,7 +29,6 @@ namespace PepperDash.Essentials
     {
         //WebSocketClient WSClient;
 
-        private const long ServerHeartbeatInterval = 20000;
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
         private const long ButtonHeartbeatInterval = 1000;
@@ -145,6 +145,7 @@ namespace PepperDash.Essentials
             if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
             {
                 _directServer = new MobileControlWebsocketServer(Key + "-directServer", Config.DirectServer.Port, this);
+                DeviceManager.AddDevice(_directServer);
 
                 _transmitToClientsQueue = new GenericQueue(key + "-clienttxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
             }
@@ -1008,38 +1009,20 @@ namespace PepperDash.Essentials
         /// <param name="o"></param>
         public void SendMessageObject(object o)
         {
-            _transmitToServerQueue.Enqueue(new TransmitMessage(o, _wsClient2));
-
 #if SERIES4
-            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
+            if (Config.EnableApiServer)
+            {
+#endif
+                _transmitToServerQueue.Enqueue(new TransmitMessage(o, _wsClient2));
+#if SERIES4
+            }
+
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
             {
                 _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
             }
 #endif
         }
-
-        ///// <summary>
-        ///// Sends a message to the server from a room
-        ///// </summary>
-        ///// <param name="o">object to be serialized and sent in post body</param>
-        //private void SendMessageToServer(JObject o)
-        //{
-        //    if (_wsClient2 != null && _wsClient2.IsAlive)
-        //    {
-        //        string message = JsonConvert.SerializeObject(o, Formatting.None,
-        //            new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
-
-        //        if (!message.Contains("/system/heartbeat"))
-        //        {
-        //            Debug.Console(2, this, "Message TX: {0}", message);
-        //        }
-        //        _wsClient2.Send(message);
-        //    }
-        //    else if (_wsClient2 == null)
-        //    {
-        //        Debug.Console(1, this, "Cannot send. No client.");
-        //    }
-        //}
 
         /// <summary>
         /// Disconnects the Websocket Client and stops the heartbeat timer
@@ -1156,9 +1139,6 @@ namespace PepperDash.Essentials
                     clientId,
                     content = roomKey
                 });
-
-
-   
         }
 
         private void HandleUserCode(JToken content)
@@ -1523,7 +1503,7 @@ namespace PepperDash.Essentials
         public string Type { get; set; }
 
         [JsonProperty("clientId")]
-        public int ClientId { get; set; }
+        public object ClientId { get; set; }
 
         [JsonProperty("content")]
         public object Content { get; set; }

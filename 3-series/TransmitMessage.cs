@@ -7,9 +7,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Converters;
 using PepperDash.Core;
+using PepperDash.Essentials;
 using PepperDash.Essentials.Core.Queues;
 using WebSocketSharp;
 using PepperDash.Essentials.AppServer.Messengers;
+
+using WebSocketSharp.Net.WebSockets;
 
 namespace PepperDash.Essentials
 {
@@ -92,21 +95,30 @@ namespace PepperDash.Essentials
         {
             try
             {
-
                 //Debug.Console(2, "Dispatching message type: {0}", msgToSend.GetType());
 
                 //Debug.Console(2, "Message: {0}", msgToSend.ToString());
 
-                //var messageToSend = JObject.FromObject(msgToSend);
-
                 if (_server != null)
                 {
                     var message = JsonConvert.SerializeObject(msgToSend, Formatting.None,
-                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
+                    new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
-                    Debug.Console(2, "Message TX: {0}", message);
+                    var clientSpecificMessage = msgToSend as MobileControlResponseMessage;
+                    if (clientSpecificMessage != null)
+                    {
+                        var clientId = clientSpecificMessage.ClientId;
 
-                    _server.SendMessageToAllClients(message);
+                        Debug.Console(2, "Message TX To Client ID: {0} Message: {1}", clientId,  message);
+
+                        _server.SendMessageToClient(clientId, message);
+                    }
+                    else 
+                    {
+                        _server.SendMessageToAllClients(message);
+
+                        Debug.Console(2, "Message TX To Clients: {0}", message);
+                    }
                 }
                 else if (_server == null)
                 {
@@ -115,12 +127,13 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.ConsoleWithLog(0, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
             }
 
 
         }
         #endregion
     }
+
 #endif
 }
