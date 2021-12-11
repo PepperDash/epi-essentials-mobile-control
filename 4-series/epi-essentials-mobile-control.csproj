@@ -295,15 +295,16 @@
     <Compile Include="..\3-series\Volumes.cs">
       <Link>Volumes.cs</Link>
     </Compile>
-    <Compile Include="MobileControlWebsocketServer.cs" />
+    <Compile Include="WebSocketServer\MobileControlWebsocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebSocketServer\WebSocketServerSecretProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>powershell.exe Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force; if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'};  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
+    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
   </PropertyGroup>
   <Import Project="packages\Crestron.SimplSharp.SDK.Library.2.17.80\build\Crestron.SimplSharp.SDK.Library.targets" Condition="Exists('packages\Crestron.SimplSharp.SDK.Library.2.17.80\build\Crestron.SimplSharp.SDK.Library.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

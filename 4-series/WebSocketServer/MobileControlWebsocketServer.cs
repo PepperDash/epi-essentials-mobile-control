@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using WebSocketSharp.Net;
 using Crestron.SimplSharp;
+using System.Text.RegularExpressions;
 
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace PepperDash.Essentials
 {
@@ -20,7 +20,7 @@ namespace PepperDash.Essentials
     {
         public MobileControlSystemController Controller { get; set; }
 
-        public JoinToken Token { get; set; }
+        public string RoomKey { get; set; }
 
         public UiClient()
         {
@@ -31,29 +31,45 @@ namespace PepperDash.Essentials
         {
             base.OnOpen();
 
-            var uri = Context.RequestUri;
+            var url = Context.WebSocket.Url;
+            Debug.Console(2, "********* New WS Connection from: {0}", url);
 
-            //_token = 
+            var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
 
-            // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
-        }
-
-        public void BroadcastMessage(string message)
-        {
-            Sessions.Broadcast(message);
-        }
-
-        public void SendMessageToSession(string clientId, string message)
-        {
-            IWebSocketSession session;
-
-            if (Sessions.TryGetSession(clientId, out session))
+            if (match.Success)
             {
-                if (session.State == WebSocketState.Open)
+                var clientId = match.Groups[1].Value;
+
+                Debug.Console(2, "********* Client Id: {0}", clientId);
+
+                var clientJoined = new MobileControlResponseMessage()
                 {
-                    session.Context.WebSocket.Send(message);
+                    Type = "/system/clientJoined",
+                    ClientId = clientId,
+                    Content = RoomKey,
+                };
+
+                Debug.Console(2, "********* Serializing clientJoined: {0}", clientJoined);
+
+                var msg = JsonConvert.SerializeObject(clientJoined);
+
+                //Formatting.None,
+                //new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
+
+                Debug.Console(2, "********* Sending initial message: {0}", msg);
+
+                // Inform controller of client joining
+                if (Controller != null)
+                {
+                    Controller.HandleClientMessage(msg);
+                }
+                else
+                {
+                    Debug.Console(2, "!!!!!!!!!!!!!!!!!!!!!! Controller is null");
                 }
             }
+
+            // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -62,6 +78,8 @@ namespace PepperDash.Essentials
 
             if (e.IsText && e.Data.Length > 0 && Controller != null)
             {
+                Debug.Console(2, "********* New message from: {0}", e.Data);
+
                 Controller.HandleClientMessage(e.Data);
             }
         }
@@ -69,14 +87,17 @@ namespace PepperDash.Essentials
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
+
+            Debug.Console(2, "********* Closing: {0} reason: {1}", e.Code, e.Reason);
+
         }
 
         protected override void OnError(ErrorEventArgs e)
         {
             base.OnError(e);
+
+            Debug.Console(2, "********* OnError: {0} message: {1}", e.Exception, e.Message);
         }
-
-
     }
 
     public class MobileControlWebsocketServer : EssentialsDevice
@@ -88,9 +109,13 @@ namespace PepperDash.Essentials
 
         private HttpServer _server;
 
-        private Dictionary<string, UiClient> _uiClients;
+        private Dictionary<string, UiClientContext> _uiClients;
 
         private MobileControlSystemController _parent;
+
+        private WebSocketServerSecretProvider _secretProvider;
+
+        private ServerTokenSecrets _secret;
 
         private int _previousClientId = 0;
 
@@ -113,7 +138,7 @@ namespace PepperDash.Essentials
                 _port = customPort;
             }
 
-            _uiClients = new Dictionary<string, UiClient>();
+            _uiClients = new Dictionary<string, UiClientContext>();
 
             //_joinTokens = new Dictionary<string, JoinToken>();
 
@@ -128,6 +153,7 @@ namespace PepperDash.Essentials
 
             _server = new HttpServer(_port, false);
 
+
             _server.OnGet += _server_OnGet;
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
@@ -138,6 +164,68 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, this, "Mobile Control WebSocket Server lisening on port: {0}", _server.Port);
             }
+
+            RetrieveSecret();
+        }
+
+        private void RetrieveSecret()
+        {
+            // Add secret provider
+            _secretProvider = new WebSocketServerSecretProvider(this.Key);
+
+            // Check for existing secrets
+            var secret = _secretProvider.GetSecret(this.Key);
+
+            if (secret != null)
+            {
+                Debug.Console(2, this, "Secret successfully retrieved");
+
+                // populate the local secrets object
+                _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
+
+                // populate the _uiClient collection
+                foreach (var token in _secret.Tokens)
+                {
+                    _uiClients.Add(token.Key, new UiClientContext(token.Value));
+                }
+
+                foreach (var client in _uiClients)
+                {
+                    var key = client.Key;
+                    var path = _wsPath + key;
+                    var roomKey = client.Value.Token.RoomKey;
+
+                    _server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                    {
+                        Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                        c.Controller = _parent;
+                        c.RoomKey = roomKey;
+                        //new UiClient() { Controller = _parent, RoomKey = roomKey };
+                        _uiClients[key].SetClient(c);
+                    });
+                }
+            }
+            else
+            {
+                Debug.Console(2, this, "No secret found");
+            }
+
+            Debug.Console(2, this, "{0} UiClients restored from secrets data", _uiClients.Count);
+        }
+
+        private void UpdateSecret()
+        {
+
+            _secret.Tokens.Clear();
+
+            foreach (var uiClientContext in _uiClients)
+            {
+                _secret.Tokens.Add(uiClientContext.Key, uiClientContext.Value.Token);
+            }
+
+            var serializedSecret = JsonConvert.SerializeObject(_secret);
+
+            _secretProvider.SetSecret(this.Key, serializedSecret);
         }
 
         /// <summary>
@@ -159,42 +247,51 @@ namespace PepperDash.Essentials
             // TODO: Authenticate grant code passed in
             // For now, we just generate a random guid as the token and use it as the ClientId as well
 
-            var bridge = _parent.GetRoomBridge(roomKey);
-            if (bridge != null)
+            var grantCodeIsValid = true;
+
+            if (grantCodeIsValid)
             {
-                var guid = Guid.NewGuid().ToString();
 
-                var token = new JoinToken();
-                token.RoomKey = roomKey;
-                token.Uuid = _parent.SystemUuid;
-                token.Code = bridge.UserCode;
-                token.ClientId = guid;
+                if (_secret == null)
+                {
+                    _secret = new ServerTokenSecrets(grantCode);
+                }
 
-                var path = _wsPath + guid;
+                var bridge = _parent.GetRoomBridge(roomKey);
+                if (bridge != null)
+                {
+                    var guid = Guid.NewGuid().ToString();
 
-                _server.AddWebSocketService<UiClient>(path, () => new UiClient() { Controller = _parent, Token = token });
+                    var token = new JoinToken() { Code = bridge.UserCode, RoomKey = bridge.RoomKey, Uuid = _parent.SystemUuid };
 
-                // TODO: Solve the issue with not having access to the UiClient object
+                    _uiClients.Add(guid, new UiClientContext(token));
 
-                Debug.Console(0, this, "Added new WebSocket UiClient service at path: {0}", path);
+                    var path = _wsPath + guid;
 
-                Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
+                    _server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                    {
+                        Debug.Console(2, this, "Constructing UiClient with id: {0}", guid);
+                        new UiClient() { Controller = _parent, RoomKey = roomKey };
+                        _uiClients[guid].SetClient(c);
+                    });
 
-                CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", guid));
 
-                //{
-                //    c = new UiClient() { Controller = _parent, Token = token };
-                //    //c.Controller = _parent;
-                //    //c.Token = token;
-                //    _uiClients.Add(guid, c);
-                //    Debug.Console(0, this, "Added new WebSocket UiClient service at path: {0}", path);
+                    Debug.Console(0, this, "Added new WebSocket UiClient service at path: {0}", path);
 
-                //    CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", guid));
-                //});
+                    Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
+
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", guid));
+
+                    UpdateSecret();
+                }
+                else
+                {
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find room with key: {0}", roomKey));
+                }
             }
             else
             {
-                CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find room with key: {0}", roomKey));
+                CrestronConsole.ConsoleCommandResponse("Grant Code is not valid");
             }
         }
 
@@ -210,42 +307,46 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            UiClient uiClient;
+            var key = s;
 
-            if (_uiClients.TryGetValue(s, out uiClient))
-            {
-                if (uiClient.Context.WebSocket.IsAlive)
+            if(_uiClients.ContainsKey(key))
+            { 
+                var uiClientContext = _uiClients[key];
+
+                if (uiClientContext.Client != null && uiClientContext.Client.Context.WebSocket.IsAlive)
                 {
-                    uiClient.Context.WebSocket.Close();
+                    uiClientContext.Client.Context.WebSocket.Close(CloseStatusCode.Normal, "Token removed from server");
                 }
 
-                var path = _wsPath + uiClient.Token.ClientId;
+                var path = _wsPath + key;
                 if (_server.RemoveWebSocketService(path))
                 {
-                    _uiClients.Remove(s);
+                    _uiClients.Remove(key);
 
-                    CrestronConsole.ConsoleCommandResponse(string.Format("Client removed with token: {0}", s));
+                    UpdateSecret();
+
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Client removed with token: {0}", key));
                 }
                 else
                 {
-                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to remove client with token : {0}", s));
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to remove client with token : {0}", key));
                 }
             }
             else
             {
-                CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find client with token: {0}", s));
+                CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find client with token: {0}", key));
             }
         }
 
         private void PrintClientInfo()
         {
-            CrestronConsole.ConsoleCommandResponse("Mobile Control UI Client Info:");
+            CrestronConsole.ConsoleCommandResponse("Mobile Control UI Client Info:\r");
 
-            CrestronConsole.ConsoleCommandResponse(string.Format("{0} clients found:", _uiClients.Count));
+            CrestronConsole.ConsoleCommandResponse(string.Format("{0} clients found:\r", _uiClients.Count));
 
-            foreach (var client in _uiClients.Values)
+            foreach (var client in _uiClients)
             {
-                CrestronConsole.ConsoleCommandResponse(string.Format("RoomKey: {0} Token: {1}", client.Token.RoomKey, client.Token.ClientId));
+                CrestronConsole.ConsoleCommandResponse(string.Format("RoomKey: {0} Token: {1}\r", client.Value.Token.RoomKey, client.Key));
             }
         }
 
@@ -253,6 +354,14 @@ namespace PepperDash.Essentials
         {
             if (programEventType == eProgramStatusEventType.Stopping)
             {
+                foreach(var client in _uiClients.Values)
+                {
+                    if (client.Client != null && client.Client.Context.WebSocket.IsAlive)
+                    {
+                        client.Client.Context.WebSocket.Close(CloseStatusCode.Normal, "Server Shutting Down");
+                    }
+                }
+
                 StopServer();
             }
         }
@@ -269,6 +378,8 @@ namespace PepperDash.Essentials
                 var req = e.Request;
                 var res = e.Response;
 
+                res.AddHeader("Access-Control-Allow-Origin", "*");
+
                 var path = req.RawUrl;
 
                 Debug.Console(2, this, "Request received at path: {0}", path);
@@ -280,13 +391,13 @@ namespace PepperDash.Essentials
 
                     Debug.Console(2, this, "Join Room Request with token: {0}", token);
 
-                    UiClient client = null;
+                    UiClientContext clientContext = null;
 
-                    if (_uiClients.TryGetValue(token, out client))
+                    if (_uiClients.TryGetValue(token, out clientContext))
                     {
-                        var room = _parent.GetRoomBridge(client.Token.RoomKey);
+                        var bridge = _parent.GetRoomBridge(clientContext.Token.RoomKey);
 
-                        if (room != null)
+                        if (bridge != null)
                         {
                             res.StatusCode = 200;
                             res.ContentEncoding = Encoding.UTF8;
@@ -294,13 +405,13 @@ namespace PepperDash.Essentials
 
                             // Construct the response object
                             JoinResponse jRes = new JoinResponse();
-                            jRes.ClientId = GetNextClientId();
-                            jRes.RoomKey = room.RoomKey;
+                            jRes.ClientId = token;
+                            jRes.RoomKey = bridge.RoomKey;
                             jRes.SystemUuid = _parent.SystemUuid;
                             jRes.RoomUuid = _parent.SystemUuid;
                             jRes.Config = ConfigReader.ConfigObject;
-                            jRes.CodeExpires = new DateTime();
-                            jRes.UserCode = room.UserCode;
+                            jRes.CodeExpires = new DateTime().AddYears(1);
+                            jRes.UserCode = bridge.UserCode;
                             jRes.UserAppUrl = string.Format("http://{0}:{1}/mc/app",
                                 CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0),
                                 _port);
@@ -312,17 +423,17 @@ namespace PepperDash.Essentials
                             res.ContentLength64 = body.LongLength;
 
                             // Send the response
-                            res.Close(body, false);
+                            res.Close(body, true);
                         }
                         else
                         {
-                            var message = string.Format("Unable to find bridge with key: {0}", client.Token.RoomKey);
+                            var message = string.Format("Unable to find bridge with key: {0}", clientContext.Token.RoomKey);
                             res.StatusCode = 404;
                             res.ContentEncoding = Encoding.UTF8;
                             res.ContentType = "application/json";
                             var body = Encoding.UTF8.GetBytes(message);
                             res.ContentLength64 = body.LongLength;
-                            res.Close(body, false);
+                            res.Close(body, true);
                             Debug.Console(2, this, "{0}", message);
                         }
                     }
@@ -335,7 +446,7 @@ namespace PepperDash.Essentials
                         Debug.Console(2, this, "{0}", message);
                         var body = Encoding.UTF8.GetBytes(message);
                         res.ContentLength64 = body.LongLength;
-                        res.Close(body, false);
+                        res.Close(body, true);
                     }
                 }
                 else if (path.Contains("/mc/api/version"))
@@ -349,7 +460,7 @@ namespace PepperDash.Essentials
 
                     var body = Encoding.UTF8.GetBytes(message);
                     res.ContentLength64 = body.LongLength;
-                    res.Close(body, false);
+                    res.Close(body, true);
                 }
                 else if (path.Contains("/mc/app"))
                 {
@@ -385,7 +496,7 @@ namespace PepperDash.Essentials
                 }
                 else
                 {
-                    // All 
+                    // All other paths
                     res.StatusCode = 404;
                     res.Close();
                 }
@@ -398,6 +509,7 @@ namespace PepperDash.Essentials
 
         public void StopServer()
         {
+            Debug.Console(2, this, "Stopping WebSocket Server");
             _server.Stop(CloseStatusCode.Normal, "Server Shutting Down");
         }
 
@@ -407,11 +519,11 @@ namespace PepperDash.Essentials
         /// <param name="message"></param>
         public void SendMessageToAllClients(string message)
         {
-            foreach (var behavior in _uiClients)
+            foreach (var clientContext in _uiClients.Values)
             {
-                if (behavior.Value.Context.WebSocket.IsAlive)
+                if (clientContext.Client != null && clientContext.Client.Context.WebSocket.IsAlive)
                 {
-                    behavior.Value.Context.WebSocket.Send(message);
+                    clientContext.Client.Context.WebSocket.Send(message);
                 }
             }
         }
@@ -423,15 +535,18 @@ namespace PepperDash.Essentials
         /// <param name="message"></param>
         public void SendMessageToClient(object clientId, string message)
         {
-            UiClient behavior;
+            UiClientContext clientContext;
 
-            if (_uiClients.TryGetValue((string)clientId, out behavior))
+            if (_uiClients.TryGetValue((string)clientId, out clientContext))
             {
-                var socket = behavior.Context.WebSocket;
-
-                if (socket.IsAlive)
+                if (clientContext.Client != null)
                 {
-                    socket.Send(message);
+                    var socket = clientContext.Client.Context.WebSocket;
+
+                    if (socket.IsAlive)
+                    {
+                        socket.Send(message);
+                    }
                 }
             }
             else
@@ -445,20 +560,59 @@ namespace PepperDash.Essentials
     {
         [JsonProperty("serverVersion")]
         public string ServerVersion { get; set; }
+
+        [JsonProperty("serverIsRunningOnProcessorHardware")]
+        public bool ServerIsRunningOnProcessorHardware { get; private set; }
+
+        public Version()
+        {
+            ServerIsRunningOnProcessorHardware = true;
+        }
+    }
+
+    public class UiClientContext
+    {
+        public UiClient Client { get; private set; }
+        public JoinToken Token { get; private set; }
+
+        public UiClientContext(JoinToken token)
+        {
+            Token = token;
+        }
+
+        public void SetClient(UiClient client)
+        {
+            Client = client;
+        }
+
+    }
+
+    public class ServerTokenSecrets
+    {
+        public string GrantCode { get; set; }
+
+        public Dictionary<string, JoinToken> Tokens { get; set; }
+
+        public ServerTokenSecrets(string grantCode)
+        {
+            GrantCode = grantCode;
+            Tokens = new Dictionary<string, JoinToken>();
+        }
     }
 
     public class JoinToken
     {
         public string Code { get; set; }
+
         public string RoomKey { get; set; }
+
         public string Uuid { get; set; }
-        public string ClientId { get; set; }
     }
 
     public class JoinResponse
     {
         [JsonProperty("clientId")]
-        public int ClientId { get; set; }
+        public string ClientId { get; set; }
 
         [JsonProperty("roomKey")]
         public string RoomKey { get; set; }
