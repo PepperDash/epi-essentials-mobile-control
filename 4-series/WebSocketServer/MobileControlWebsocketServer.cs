@@ -42,11 +42,17 @@ namespace PepperDash.Essentials
 
                 Debug.Console(2, "********* Client Id: {0}", clientId);
 
+                var content = new
+                {
+                    clientId,
+                    roomKey = RoomKey,
+                };
+
                 var clientJoined = new MobileControlResponseMessage()
                 {
                     Type = "/system/clientJoined",
                     ClientId = clientId,
-                    Content = RoomKey,
+                    Content = content,
                 };
 
                 Debug.Console(2, "********* Serializing clientJoined: {0}", clientJoined);
@@ -403,13 +409,15 @@ namespace PepperDash.Essentials
                             res.ContentEncoding = Encoding.UTF8;
                             res.ContentType = "application/json";
 
+                            
+
                             // Construct the response object
                             JoinResponse jRes = new JoinResponse();
                             jRes.ClientId = token;
                             jRes.RoomKey = bridge.RoomKey;
                             jRes.SystemUuid = _parent.SystemUuid;
                             jRes.RoomUuid = _parent.SystemUuid;
-                            jRes.Config = ConfigReader.ConfigObject;
+                            jRes.Config = _parent.GetConfigWithPluginVersion();
                             jRes.CodeExpires = new DateTime().AddYears(1);
                             jRes.UserCode = bridge.UserCode;
                             jRes.UserAppUrl = string.Format("http://{0}:{1}/mc/app",

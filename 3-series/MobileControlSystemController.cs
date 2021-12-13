@@ -969,6 +969,21 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, "Sending initial join message");
 
+
+            var msg = new
+            {
+                type = "join",
+                content = new
+                {
+                    config = GetConfigWithPluginVersion(),
+                }
+            };
+
+            SendMessageObject(msg);
+        }
+
+        public MobileControlEssentialsConfig GetConfigWithPluginVersion()
+        {
             // Populate the application name and version number
             var confObject = new MobileControlEssentialsConfig(ConfigReader.ConfigObject);
 
@@ -977,10 +992,15 @@ namespace PepperDash.Essentials
             var essentialsVersion = Global.AssemblyVersion;
             confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
 
+#if DEBUG
+            // Set for local testing
+            confObject.RuntimeInfo.PluginVersion = "3.0.0-localBuild-1";
+
+#else
             // Populate the plugin version 
             var pluginVersion =
                 Assembly.GetExecutingAssembly()
-                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+                    .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
 
             var fullVersionAtt = pluginVersion[0] as AssemblyInformationalVersionAttribute;
 
@@ -990,17 +1010,8 @@ namespace PepperDash.Essentials
 
                 confObject.RuntimeInfo.PluginVersion = pluginInformationalVersion;
             }
-
-            var msg = new
-            {
-                type = "join",
-                content = new
-                {
-                    config = confObject,
-                }
-            };
-
-            SendMessageObject(msg);
+#endif
+            return confObject;
         }
 
         /// <summary>
@@ -1239,7 +1250,11 @@ namespace PepperDash.Essentials
             {
                 var messageObj = JObject.Parse(message);
 
+                Debug.Console(2, this, "messageObj: {0}", messageObj);
+
                 var type = messageObj["type"].Value<string>();
+
+                Debug.Console(2, this, "type: {0}", type);
 
                 switch (type)
                 {
