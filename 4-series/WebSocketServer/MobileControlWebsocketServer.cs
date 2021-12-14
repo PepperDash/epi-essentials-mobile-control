@@ -40,7 +40,7 @@ namespace PepperDash.Essentials
             {
                 var clientId = match.Groups[1].Value;
 
-                Debug.Console(2, "********* Client Id: {0}", clientId);
+                //Debug.Console(2, "********* Client Id: {0}", clientId);
 
                 var content = new
                 {
@@ -55,14 +55,14 @@ namespace PepperDash.Essentials
                     Content = content,
                 };
 
-                Debug.Console(2, "********* Serializing clientJoined: {0}", clientJoined);
+                //Debug.Console(2, "********* Serializing clientJoined: {0}", clientJoined);
 
                 var msg = JsonConvert.SerializeObject(clientJoined);
 
                 //Formatting.None,
                 //new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
-                Debug.Console(2, "********* Sending initial message: {0}", msg);
+                //Debug.Console(2, "********* Sending initial message: {0}", msg);
 
                 // Inform controller of client joining
                 if (Controller != null)
@@ -84,7 +84,7 @@ namespace PepperDash.Essentials
 
             if (e.IsText && e.Data.Length > 0 && Controller != null)
             {
-                Debug.Console(2, "********* New message from: {0}", e.Data);
+                //Debug.Console(2, "********* New message from: {0}", e.Data);
 
                 Controller.HandleClientMessage(e.Data);
             }
@@ -123,7 +123,13 @@ namespace PepperDash.Essentials
 
         private ServerTokenSecrets _secret;
 
-        private int _previousClientId = 0;
+        private string _secretProviderKey
+        {
+            get
+            {
+                return string.Format("{0}:{1}-tokens", Global.ControlSystem.ProgramNumber, this.Key);
+            }
+        }
 
         private int _port;
 
@@ -177,10 +183,10 @@ namespace PepperDash.Essentials
         private void RetrieveSecret()
         {
             // Add secret provider
-            _secretProvider = new WebSocketServerSecretProvider(this.Key);
+            _secretProvider = new WebSocketServerSecretProvider(_secretProviderKey);
 
             // Check for existing secrets
-            var secret = _secretProvider.GetSecret(this.Key);
+            var secret = _secretProvider.GetSecret(_secretProviderKey);
 
             if (secret != null)
             {
@@ -206,7 +212,6 @@ namespace PepperDash.Essentials
                         Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
-                        //new UiClient() { Controller = _parent, RoomKey = roomKey };
                         _uiClients[key].SetClient(c);
                     });
                 }
@@ -231,7 +236,7 @@ namespace PepperDash.Essentials
 
             var serializedSecret = JsonConvert.SerializeObject(_secret);
 
-            _secretProvider.SetSecret(this.Key, serializedSecret);
+            _secretProvider.SetSecret(_secretProviderKey, serializedSecret);
         }
 
         /// <summary>
@@ -266,19 +271,20 @@ namespace PepperDash.Essentials
                 var bridge = _parent.GetRoomBridge(roomKey);
                 if (bridge != null)
                 {
-                    var guid = Guid.NewGuid().ToString();
+                    var key = Guid.NewGuid().ToString();
 
                     var token = new JoinToken() { Code = bridge.UserCode, RoomKey = bridge.RoomKey, Uuid = _parent.SystemUuid };
 
-                    _uiClients.Add(guid, new UiClientContext(token));
+                    _uiClients.Add(key, new UiClientContext(token));
 
-                    var path = _wsPath + guid;
+                    var path = _wsPath + key;
 
                     _server.WebSocketServices.AddService<UiClient>(path, (c) =>
                     {
-                        Debug.Console(2, this, "Constructing UiClient with id: {0}", guid);
-                        new UiClient() { Controller = _parent, RoomKey = roomKey };
-                        _uiClients[guid].SetClient(c);
+                        Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                        c.Controller = _parent;
+                        c.RoomKey = roomKey;
+                        _uiClients[key].SetClient(c);
                     });
 
 
@@ -286,7 +292,7 @@ namespace PepperDash.Essentials
 
                     Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
 
-                    CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", guid));
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", key));
 
                     UpdateSecret();
                 }
@@ -370,11 +376,6 @@ namespace PepperDash.Essentials
 
                 StopServer();
             }
-        }
-
-        private int GetNextClientId()
-        {
-            return _previousClientId++;
         }
 
         private void _server_OnGet(object sender, HttpRequestEventArgs e)

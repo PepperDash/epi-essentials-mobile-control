@@ -1250,11 +1250,7 @@ namespace PepperDash.Essentials
             {
                 var messageObj = JObject.Parse(message);
 
-                Debug.Console(2, this, "messageObj: {0}", messageObj);
-
                 var type = messageObj["type"].Value<string>();
-
-                Debug.Console(2, this, "type: {0}", type);
 
                 switch (type)
                 {
