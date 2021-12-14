@@ -1361,7 +1361,7 @@ namespace PepperDash.Essentials
                             }
                             else if (action is ClientSpecificUpdateRequest)
                             {
-                                var clientId = Int32.Parse(messageObj["clientId"].ToString());
+                                var clientId = messageObj["clientId"].ToString();
 
                                 var respObj =
                                     (action as ClientSpecificUpdateRequest).ResponseMethod() as
