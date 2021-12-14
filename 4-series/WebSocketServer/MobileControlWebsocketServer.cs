@@ -16,6 +16,9 @@ using Newtonsoft.Json.Converters;
 
 namespace PepperDash.Essentials
 {
+    /// <summary>
+    /// Represents the behaviour to associate with a UiClient for WebSocket communication
+    /// </summary>
     public class UiClient : WebSocketBehavior
     {
         public MobileControlSystemController Controller { get; set; }
@@ -32,15 +35,13 @@ namespace PepperDash.Essentials
             base.OnOpen();
 
             var url = Context.WebSocket.Url;
-            Debug.Console(2, "********* New WS Connection from: {0}", url);
+            Debug.Console(2, "New WebSocket Connection from: {0}", url);
 
             var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
 
             if (match.Success)
             {
                 var clientId = match.Groups[1].Value;
-
-                //Debug.Console(2, "********* Client Id: {0}", clientId);
 
                 var content = new
                 {
@@ -55,14 +56,7 @@ namespace PepperDash.Essentials
                     Content = content,
                 };
 
-                //Debug.Console(2, "********* Serializing clientJoined: {0}", clientJoined);
-
                 var msg = JsonConvert.SerializeObject(clientJoined);
-
-                //Formatting.None,
-                //new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
-
-                //Debug.Console(2, "********* Sending initial message: {0}", msg);
 
                 // Inform controller of client joining
                 if (Controller != null)
@@ -71,7 +65,7 @@ namespace PepperDash.Essentials
                 }
                 else
                 {
-                    Debug.Console(2, "!!!!!!!!!!!!!!!!!!!!!! Controller is null");
+                    Debug.Console(2, "WebSocket UiClient Controller is null");
                 }
             }
 
@@ -84,8 +78,7 @@ namespace PepperDash.Essentials
 
             if (e.IsText && e.Data.Length > 0 && Controller != null)
             {
-                //Debug.Console(2, "********* New message from: {0}", e.Data);
-
+                // Forward the message to the controller to be put on the receive queue
                 Controller.HandleClientMessage(e.Data);
             }
         }
@@ -94,7 +87,7 @@ namespace PepperDash.Essentials
         {
             base.OnClose(e);
 
-            Debug.Console(2, "********* Closing: {0} reason: {1}", e.Code, e.Reason);
+            Debug.Console(2, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
 
         }
 
@@ -102,7 +95,7 @@ namespace PepperDash.Essentials
         {
             base.OnError(e);
 
-            Debug.Console(2, "********* OnError: {0} message: {1}", e.Exception, e.Message);
+            Debug.Console(2, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);
         }
     }
 
@@ -131,11 +124,25 @@ namespace PepperDash.Essentials
             }
         }
 
+        /// <summary>
+        /// The prot the server will run on
+        /// </summary>
         private int _port;
 
+        /// <summary>
+        /// The path for the WebSocket messaging
+        /// </summary>
         private string _wsPath = "/mc/api/ui/join/";
 
-        private string _appPath = string.Format("{0}/mcUserApp/", Global.FilePathPrefix);
+        /// <summary>
+        /// The path to the location of the files for the user app (single page Angular app)
+        /// </summary>
+        private string _appPath = string.Format("{0}mcUserApp", Global.FilePathPrefix);
+
+        /// <summary>
+        /// The base HREF that the user app uses
+        /// </summary>
+        private string _userAppBaseHref = "/mc/app";
 
         public MobileControlWebsocketServer(string key, int customPort, MobileControlSystemController parent)
             : base(key)
@@ -159,6 +166,7 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand((s) => PrintClientInfo(), "MobileGetClientInfo", "Displays the current client info", ConsoleAccessLevelEnum.AccessOperator);
         }
 
+
         public override void Initialize()
         {
             base.Initialize();
@@ -180,6 +188,9 @@ namespace PepperDash.Essentials
             RetrieveSecret();
         }
 
+        /// <summary>
+        /// Attempts to retrieve secrets previously stored in memory
+        /// </summary>
         private void RetrieveSecret()
         {
             // Add secret provider
@@ -224,6 +235,9 @@ namespace PepperDash.Essentials
             Debug.Console(2, this, "{0} UiClients restored from secrets data", _uiClients.Count);
         }
 
+        /// <summary>
+        /// Stores secrets to memory to persist through reboot
+        /// </summary>
         private void UpdateSecret()
         {
 
@@ -350,6 +364,9 @@ namespace PepperDash.Essentials
             }
         }
 
+        /// <summary>
+        /// Prints out info about current client IDs
+        /// </summary>
         private void PrintClientInfo()
         {
             CrestronConsole.ConsoleCommandResponse("Mobile Control UI Client Info:\r");
@@ -378,12 +395,18 @@ namespace PepperDash.Essentials
             }
         }
 
+        /// <summary>
+        /// Handler for GET requests to server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void _server_OnGet(object sender, HttpRequestEventArgs e)
         {
             try
             {
                 var req = e.Request;
                 var res = e.Response;
+                res.ContentEncoding = Encoding.UTF8;
 
                 res.AddHeader("Access-Control-Allow-Origin", "*");
 
@@ -391,117 +414,20 @@ namespace PepperDash.Essentials
 
                 Debug.Console(2, this, "Request received at path: {0}", path);
 
-                if (path.Contains("/mc/api/ui/joinroom"))
+                // Call for user app to join the room with a token
+                if (path.StartsWith("/mc/api/ui/joinroom"))
                 {
-                    var qp = req.QueryString;
-                    var token = qp["token"];
-
-                    Debug.Console(2, this, "Join Room Request with token: {0}", token);
-
-                    UiClientContext clientContext = null;
-
-                    if (_uiClients.TryGetValue(token, out clientContext))
-                    {
-                        var bridge = _parent.GetRoomBridge(clientContext.Token.RoomKey);
-
-                        if (bridge != null)
-                        {
-                            res.StatusCode = 200;
-                            res.ContentEncoding = Encoding.UTF8;
-                            res.ContentType = "application/json";
-
-                            
-
-                            // Construct the response object
-                            JoinResponse jRes = new JoinResponse();
-                            jRes.ClientId = token;
-                            jRes.RoomKey = bridge.RoomKey;
-                            jRes.SystemUuid = _parent.SystemUuid;
-                            jRes.RoomUuid = _parent.SystemUuid;
-                            jRes.Config = _parent.GetConfigWithPluginVersion();
-                            jRes.CodeExpires = new DateTime().AddYears(1);
-                            jRes.UserCode = bridge.UserCode;
-                            jRes.UserAppUrl = string.Format("http://{0}:{1}/mc/app",
-                                CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0),
-                                _port);
-                            jRes.EnableDebug = false;
-
-                            // Serialize to JSON and convert to Byte[]
-                            var json = JsonConvert.SerializeObject(jRes);
-                            var body = Encoding.UTF8.GetBytes(json);
-                            res.ContentLength64 = body.LongLength;
-
-                            // Send the response
-                            res.Close(body, true);
-                        }
-                        else
-                        {
-                            var message = string.Format("Unable to find bridge with key: {0}", clientContext.Token.RoomKey);
-                            res.StatusCode = 404;
-                            res.ContentEncoding = Encoding.UTF8;
-                            res.ContentType = "application/json";
-                            var body = Encoding.UTF8.GetBytes(message);
-                            res.ContentLength64 = body.LongLength;
-                            res.Close(body, true);
-                            Debug.Console(2, this, "{0}", message);
-                        }
-                    }
-                    else
-                    {
-                        var message = "Token invalid or has expired";
-                        res.StatusCode = 401;
-                        res.ContentEncoding = Encoding.UTF8;
-                        res.ContentType = "application/json";
-                        Debug.Console(2, this, "{0}", message);
-                        var body = Encoding.UTF8.GetBytes(message);
-                        res.ContentLength64 = body.LongLength;
-                        res.Close(body, true);
-                    }
+                    HandleJoinRequest(req, res);
                 }
-                else if (path.Contains("/mc/api/version"))
+                // Call to get the server version
+                else if (path.StartsWith("/mc/api/version"))
                 {
-                    res.StatusCode = 200;
-                    res.ContentEncoding = Encoding.UTF8;
-                    res.ContentType = "application/json";
-                    var version = new Version() { ServerVersion = "3.0.0" };
-                    var message = JsonConvert.SerializeObject(version);
-                    Debug.Console(2, this, "{0}", message);
-
-                    var body = Encoding.UTF8.GetBytes(message);
-                    res.ContentLength64 = body.LongLength;
-                    res.Close(body, true);
+                    HandleVersionRequest(res);
                 }
-                else if (path.Contains("/mc/app"))
+                // Call to serve the Angular user app
+                else if (path.StartsWith(_userAppBaseHref))
                 {
-                    string filePath = _appPath;
-
-                    if (path == "/mc/app")
-                    {
-                        filePath = _appPath + "/index.html";
-                    }
-
-                    if (path.EndsWith(".html"))
-                    {
-                        res.ContentType = "text/html";
-                        res.ContentEncoding = Encoding.UTF8;
-                        filePath = _appPath + "/index.html";
-                    }
-                    else if (path.EndsWith(".js"))
-                    {
-                        res.ContentType = "application/javascript";
-                        res.ContentEncoding = Encoding.UTF8;
-                        // TODO: Replace URL path prefix with actual path prefix
-                    }
-
-                    byte[] contents;
-                    if (!e.TryReadFile(filePath, out contents))
-                    {
-                        res.StatusCode = (int)HttpStatusCode.NotFound;
-                        return;
-                    }
-
-                    res.ContentLength64 = contents.LongLength;
-                    res.Close(contents, true);
+                    HandleUserAppRequest(req, res, path);
                 }
                 else
                 {
@@ -514,6 +440,180 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
             }
+        }
+
+        /// <summary>
+        /// Handle the request to join the room with a token
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="res"></param>
+        private void HandleJoinRequest(HttpListenerRequest req, HttpListenerResponse res)
+        {
+            var qp = req.QueryString;
+            var token = qp["token"];
+
+            Debug.Console(2, this, "Join Room Request with token: {0}", token);
+
+            UiClientContext clientContext = null;
+
+            if (_uiClients.TryGetValue(token, out clientContext))
+            {
+                var bridge = _parent.GetRoomBridge(clientContext.Token.RoomKey);
+
+                if (bridge != null)
+                {
+                    res.StatusCode = 200;
+                    res.ContentType = "application/json";
+
+                    // Construct the response object
+                    JoinResponse jRes = new JoinResponse();
+                    jRes.ClientId = token;
+                    jRes.RoomKey = bridge.RoomKey;
+                    jRes.SystemUuid = _parent.SystemUuid;
+                    jRes.RoomUuid = _parent.SystemUuid;
+                    jRes.Config = _parent.GetConfigWithPluginVersion();
+                    jRes.CodeExpires = new DateTime().AddYears(1);
+                    jRes.UserCode = bridge.UserCode;
+                    jRes.UserAppUrl = string.Format("http://{0}:{1}/mc/app",
+                        CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0),
+                        _port);
+                    jRes.EnableDebug = false;
+
+                    // Serialize to JSON and convert to Byte[]
+                    var json = JsonConvert.SerializeObject(jRes);
+                    var body = Encoding.UTF8.GetBytes(json);
+                    res.ContentLength64 = body.LongLength;
+
+                    // Send the response
+                    res.Close(body, true);
+                }
+                else
+                {
+                    var message = string.Format("Unable to find bridge with key: {0}", clientContext.Token.RoomKey);
+                    res.StatusCode = 404;
+                    res.ContentType = "application/json";
+                    var body = Encoding.UTF8.GetBytes(message);
+                    res.ContentLength64 = body.LongLength;
+                    res.Close(body, true);
+                    Debug.Console(2, this, "{0}", message);
+                }
+            }
+            else
+            {
+                var message = "Token invalid or has expired";
+                res.StatusCode = 401;
+                res.ContentType = "application/json";
+                Debug.Console(2, this, "{0}", message);
+                var body = Encoding.UTF8.GetBytes(message);
+                res.ContentLength64 = body.LongLength;
+                res.Close(body, true);
+            }
+        }
+
+        /// <summary>
+        /// Handles a server version request
+        /// </summary>
+        /// <param name="res"></param>
+        private void HandleVersionRequest(HttpListenerResponse res)
+        {
+            res.StatusCode = 200;
+            res.ContentType = "application/json";
+            var version = new Version() { ServerVersion = _parent.GetConfigWithPluginVersion().RuntimeInfo.PluginVersion };
+            var message = JsonConvert.SerializeObject(version);
+            Debug.Console(2, this, "{0}", message);
+
+            var body = Encoding.UTF8.GetBytes(message);
+            res.ContentLength64 = body.LongLength;
+            res.Close(body, true);
+        }
+
+        /// <summary>
+        /// Handles requests to serve files for the Angular single page app
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="res"></param>
+        /// <param name="path"></param>
+        private void HandleUserAppRequest(HttpListenerRequest req, HttpListenerResponse res, string path)
+        {
+            Debug.Console(2, this, "Requesting User app file...");
+
+            var qp = req.QueryString;
+            var token = qp["token"];
+
+            // remove the token from the path if found
+            string filePath = path.Replace(string.Format("?token={0}", token), "");
+
+            // if there's no file suffix strip any extra path data after the base href
+            if (filePath != _userAppBaseHref && !filePath.Contains(".") && (!filePath.EndsWith(_userAppBaseHref) || !filePath.EndsWith(_userAppBaseHref += "/")))
+            {
+                var suffix = filePath.Substring(_userAppBaseHref.Length, filePath.Length - _userAppBaseHref.Length);
+                if (suffix != "/")
+                {
+                    //Debug.Console(2, this, "Suffix: {0}", suffix);
+                    filePath = filePath.Replace(suffix, "");
+                }
+            }
+
+            // swap the base href prefix for the file path prefix
+            filePath = filePath.Replace(_userAppBaseHref, _appPath);
+
+            Debug.Console(2, this, "filepath: {0}", filePath);
+
+
+            // append index.html if no specific file is specified
+            if (!filePath.Contains("."))
+            {
+                if (filePath.EndsWith("/"))
+                {
+                    filePath += "index.html";
+                }
+                else
+                {
+                    filePath += "/index.html";
+                }
+            }
+
+            // Set ContentType based on file type
+            if (filePath.EndsWith(".html"))
+            {
+                Debug.Console(2, this, "Client requesting User App...");
+
+                res.ContentType = "text/html";
+            }
+            else
+            {
+                if (path.EndsWith(".js"))
+                {
+                    res.ContentType = "application/javascript";
+                }
+                else if (path.EndsWith(".css"))
+                {
+                    res.ContentType = "text/css";
+                }
+                else if (path.EndsWith(".json"))
+                {
+                    res.ContentType = "application/json";
+                }
+            }
+
+            Debug.Console(2, this, "Attempting to serve file: {0}", filePath);
+
+            byte[] contents;
+            if (System.IO.File.Exists(filePath))
+            {
+                Debug.Console(2, this, "File found");
+                contents = System.IO.File.ReadAllBytes(filePath);
+            }
+            else
+            {
+                Debug.Console(2, this, "File not found: {0}", filePath);
+                res.StatusCode = (int)HttpStatusCode.NotFound;
+                res.Close();
+                return;
+            }
+
+            res.ContentLength64 = contents.LongLength;
+            res.Close(contents, true);
         }
 
         public void StopServer()
@@ -565,6 +665,9 @@ namespace PepperDash.Essentials
         }
     }
 
+    /// <summary>
+    /// Class to describe the server version info
+    /// </summary>
     public class Version
     {
         [JsonProperty("serverVersion")]
@@ -579,6 +682,9 @@ namespace PepperDash.Essentials
         }
     }
 
+    /// <summary>
+    /// Represents an instance of a UiClient and the associated Token
+    /// </summary>
     public class UiClientContext
     {
         public UiClient Client { get; private set; }
@@ -596,6 +702,9 @@ namespace PepperDash.Essentials
 
     }
 
+    /// <summary>
+    /// Represents the data structure for the grant code and UiClient tokens to be stored in the secrets manager
+    /// </summary>
     public class ServerTokenSecrets
     {
         public string GrantCode { get; set; }
@@ -609,6 +718,9 @@ namespace PepperDash.Essentials
         }
     }
 
+    /// <summary>
+    /// Represents a join token with the associated properties
+    /// </summary>
     public class JoinToken
     {
         public string Code { get; set; }
@@ -618,6 +730,9 @@ namespace PepperDash.Essentials
         public string Uuid { get; set; }
     }
 
+    /// <summary>
+    /// Represents the structure of the join response
+    /// </summary>
     public class JoinResponse
     {
         [JsonProperty("clientId")]
@@ -646,6 +761,5 @@ namespace PepperDash.Essentials
 
         [JsonProperty("enableDebug")]
         public bool EnableDebug { get; set; }
-
     }
 }
