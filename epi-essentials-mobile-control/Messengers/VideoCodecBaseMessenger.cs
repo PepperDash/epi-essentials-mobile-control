@@ -289,6 +289,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
             appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
+
+            Codec.SharingContentIsOnFeedback.OutputChange += SharingContentIsOnFeedback_OutputChange;
+            Codec.SharingSourceFeedback.OutputChange += SharingContentIsOnFeedback_OutputChange;
+        }
+
+        void SharingContentIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            PostSharingStatus();
         }
 
         void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
@@ -557,8 +565,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     cameraManualSupported = true,
                     // For now, we assume manual mode is supported and selectively hide controls based on camera selection
-                    cameraAutoSupported = Codec is IHasCameraAutoMode,
-                    cameraOffSupported = Codec is IHasCameraOff,
+                    cameraAutoSupported = Codec.SupportsCameraAutoMode,
+                    cameraOffSupported = Codec.SupportsCameraOff,
                     cameraMode = GetCameraMode(),
                     cameraList = camerasCodec.Cameras,
                     selectedCamera = GetSelectedCamera(camerasCodec)
@@ -595,6 +603,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 hasCameras = Codec is IHasCameras,
                 cameras = cameraInfo,
                 presets = GetCurrentPresets()
+            });
+        }
+
+        private void PostSharingStatus()
+        {
+            PostStatusMessage(new
+            {
+                sharingContentIsOn = Codec.SharingContentIsOnFeedback.BoolValue,
+                sharingSource = Codec.SharingSourceFeedback.StringValue,
             });
         }
 
