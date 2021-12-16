@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
+using PepperDash.Essentials.Devices.Common.VideoCodec.Interfaces;
 using Crestron.SimplSharp;
+using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
+using Newtonsoft.Json;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -18,7 +22,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// 
         /// </summary>
-        public VideoCodecBase Codec { get; private set; }
+        protected VideoCodecBase Codec { get; private set; }
+
+
 
         /// <summary>
         /// 
@@ -27,7 +33,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="codec"></param>
         /// <param name="messagePath"></param>
         public VideoCodecBaseMessenger(string key, VideoCodecBase codec, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, codec)
         {
             if (codec == null)
                 throw new ArgumentNullException("codec");
@@ -47,6 +53,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 recCodec.CallHistory.RecentCallsListHasChanged += CallHistory_RecentCallsListHasChanged;
             }
+
+            var pwPromptCodec = codec as IPasswordPrompt;
+            if (pwPromptCodec != null)
+            {
+                pwPromptCodec.PasswordRequired += OnPasswordRequired;
+            }
+        }
+
+        private void OnPasswordRequired(object sender, PasswordPromptEventArgs args)
+        {
+            AppServerController.SendMessageObject(new
+            {
+                type = MessagePath + "/passwordPrompt",
+                content = new
+                {
+                    message = args.Message,
+                    lastAttemptWasIncorrect = args.LastAttemptWasIncorrect,
+                    loginAttemptFailed = args.LoginAttemptFailed,
+                    loginAttemptCancelled = args.LoginAttemptCancelled,
+                }
+            });
         }
 
         /// <summary>
@@ -164,8 +191,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="appServerController"></param>
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(String.Format("{0}/isReady",MessagePath), new Action(SendIsReady));
-            appServerController.AddAction(String.Format("{0}/fullStatus",MessagePath), new Action(SendVtcFullMessageObject));
+            appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
+            appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
             appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
             appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
             appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
@@ -203,7 +230,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var recCodec = Codec as IHasCallHistory;
             if (recCodec != null)
             {
-                appServerController.AddAction(MessagePath + "/getCallHistory", new Action(GetCallHistory));
+                appServerController.AddAction(MessagePath + "/getCallHistory", new Action(PostCallHistory));
             }
             var cameraCodec = Codec as IHasCodecCameras;
             if (cameraCodec != null)
@@ -255,6 +282,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             }
 
+
             var selfViewCodec = Codec as IHasCodecSelfView;
 
             if (selfViewCodec != null)
@@ -281,6 +309,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             }
 
+            var pwCodec = Codec as IPasswordPrompt;
+            if (pwCodec != null)
+            {
+                Debug.Console(2, this, "Adding IPasswordPrompt Actions");
+
+                appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
+            }
+
+            var farEndContentStatus = Codec as IHasFarEndContentStatus;
+
+            if (farEndContentStatus != null)
+            {
+                farEndContentStatus.ReceivingContent.OutputChange +=
+                    (sender, args) => PostReceivingContent(args.BoolValue);
+            }
+
             Debug.Console(2, this, "Adding Privacy & Standby Actions");
 
             appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
@@ -291,6 +335,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
         }
+
+
 
         void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
@@ -418,26 +464,23 @@ namespace PepperDash.Essentials.AppServer.Messengers
             return m;
         }
 
-        private void GetCallHistory()
+        private void PostCallHistory()
         {
             var codec = (Codec as IHasCallHistory);
 
             if (codec != null)
             {
+                var status = new VideoCodecBaseStateMessage();
+
                 var recents = codec.CallHistory.RecentCalls;
 
                 if (recents != null)
                 {
-                    PostStatusMessage(new
-                    {
-                        recentCalls = recents
-                    });
+                    status.RecentCalls = codec.CallHistory.RecentCalls;
+
+                    PostStatusMessage(status);
                 }
             }
-        }
-
-        public void GetFullStatusMessage()
-        {
         }
 
         /// <summary>
@@ -524,7 +567,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void codec_CallStatusChange(object sender, CodecCallStatusItemChangeEventArgs e)
         {
-            SendVtcFullMessageObject();
+            SendFullStatus();
         }
 
         /// <summary>
@@ -532,82 +575,94 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendIsReady()
         {
-            PostStatusMessage(new
-            {
-                isReady = Codec.IsReady
-            });
+            var status = new VideoCodecBaseStateMessage();
+
+            status.IsReady = Codec.IsReady;
+            status.IsZoomRoom = Codec is ZoomRoom;
+
+            PostStatusMessage(status);
         }
 
         /// <summary>
         /// Helper method to build call status for vtc
         /// </summary>
         /// <returns></returns>
-        private void SendVtcFullMessageObject()
+        protected VideoCodecBaseStateMessage GetStatus()
+        {
+            var status = new VideoCodecBaseStateMessage();
+
+            var camerasCodec = Codec as IHasCodecCameras;
+            if (camerasCodec != null)
+            {
+                status.Cameras = new VideoCodecBaseStateMessage.CameraStatus();
+
+                status.Cameras.CameraManualIsSupported = true;
+                status.Cameras.CameraAutoIsSupported = Codec.SupportsCameraAutoMode;
+                status.Cameras.CameraOffIsSupported = Codec.SupportsCameraOff;
+                status.Cameras.CameraMode = GetCameraMode();
+                status.Cameras.Cameras = camerasCodec.Cameras;
+                status.Cameras.SelectedCamera = GetSelectedCamera(camerasCodec);
+            }
+
+            var directoryCodec = Codec as IHasDirectory;
+            if (directoryCodec != null)
+            {
+                status.HasDirectory = true;
+                status.HasDirectorySearch = true;
+                status.CurrentDirectory = directoryCodec.CurrentDirectoryResult;
+            }
+
+            status.CameraSelfViewIsOn = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
+            status.IsInCall = Codec.IsInCall;
+            status.PrivacyModeIsOn = Codec.PrivacyModeIsOnFeedback.BoolValue;
+            status.SharingContentIsOn = Codec.SharingContentIsOnFeedback.BoolValue;
+            status.SharingSource = Codec.SharingSourceFeedback.StringValue;
+            status.StandbyIsOn = Codec.StandbyIsOnFeedback.BoolValue;
+            status.Calls = Codec.ActiveCalls;
+            status.Info = Codec.CodecInfo;
+            status.ShowSelfViewByDefault = Codec.ShowSelfViewByDefault;
+            status.SupportsAdHocMeeting = Codec is IHasStartMeeting;
+            status.HasRecents = Codec is IHasCallHistory;
+            status.HasCameras = Codec is IHasCameras;
+            status.Presets = GetCurrentPresets();
+            status.IsZoomRoom = Codec is ZoomRoom;
+            status.ReceivingContent = Codec is IHasFarEndContentStatus && (Codec as IHasFarEndContentStatus).ReceivingContent.BoolValue;
+
+            var meetingInfoCodec = Codec as IHasMeetingInfo;
+            if (meetingInfoCodec != null)
+            {
+                status.MeetingInfo = meetingInfoCodec.MeetingInfo;
+            }
+
+            //Debug.Console(2, this, "VideoCodecBaseStatus:\n{0}", JsonConvert.SerializeObject(status)); 
+
+            return status;
+        }
+
+        protected virtual void SendFullStatus()
         {
             if (!Codec.IsReady)
             {
                 return;
             }
 
-            object cameraInfo = null;
+            PostStatusMessage(GetStatus());        
+        }
 
-            var camerasCodec = Codec as IHasCodecCameras;
-            if (camerasCodec != null)
-            {
-                cameraInfo = new
-                {
-                    cameraManualSupported = true,
-                    // For now, we assume manual mode is supported and selectively hide controls based on camera selection
-                    cameraAutoSupported = Codec.SupportsCameraAutoMode,
-                    cameraOffSupported = Codec.SupportsCameraOff,
-                    cameraMode = GetCameraMode(),
-                    cameraList = camerasCodec.Cameras,
-                    selectedCamera = GetSelectedCamera(camerasCodec)
-                };
-            }
-
-            var selfView = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
-
-            var info = Codec.CodecInfo;
-            PostStatusMessage(new
-            {
-                cameraSelfView = selfView,
-                isInCall = Codec.IsInCall,
-                privacyModeIsOn = Codec.PrivacyModeIsOnFeedback.BoolValue,
-                sharingContentIsOn = Codec.SharingContentIsOnFeedback.BoolValue,
-                sharingSource = Codec.SharingSourceFeedback.StringValue,
-                standbyIsOn = Codec.StandbyIsOnFeedback.StringValue,
-                calls = Codec.ActiveCalls,
-                info = new
-                {
-                    autoAnswerEnabled = info.AutoAnswerEnabled,
-                    e164Alias = info.E164Alias,
-                    h323Id = info.H323Id,
-                    ipAddress = info.IpAddress,
-                    sipPhoneNumber = info.SipPhoneNumber,
-                    sipURI = info.SipUri
-                },
-                showSelfViewByDefault = Codec.ShowSelfViewByDefault,
-                hasDirectory = Codec is IHasDirectory,
-                hasDirectorySearch = true,
-                hasRecents = Codec is IHasCallHistory,
-                hasCameras = Codec is IHasCameras,
-                cameras = cameraInfo,
-                presets = GetCurrentPresets()
-            });
+        private void PostReceivingContent(bool receivingContent)
+        {
+            PostStatusMessage(new {receivingContent});
         }
 
         private void PostCameraSelfView()
         {
-            var selfView = Codec is IHasCodecSelfView
+            var status = new VideoCodecBaseStateMessage();
+
+            status.CameraSelfViewIsOn = Codec is IHasCodecSelfView
                 ? (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue
                 : false;
 
-            PostStatusMessage(new
-            {
-                cameraSelfView = selfView
-                
-            });
+            PostStatusMessage(status);
         }
 
         /// <summary>
@@ -615,48 +670,48 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCameraMode()
         {
-            PostStatusMessage(new
-            {
-                cameras = new
-                {
-                    cameraMode = GetCameraMode()
-                }
-            });
+            var status = new VideoCodecBaseStateMessage();
+
+            status.CameraMode = GetCameraMode();
+
+            PostStatusMessage(status);
         }
 
         private void PostSelectedCamera()
         {
             var camerasCodec = Codec as IHasCodecCameras;
 
-            PostStatusMessage(new
-            {
-                cameras = new
-                {
-                    selectedCamera = GetSelectedCamera(camerasCodec)
-                },
-                presets = GetCurrentPresets()
-            });
+            var status = new VideoCodecBaseStateMessage();
+
+            status.Cameras = new VideoCodecBaseStateMessage.CameraStatus() { SelectedCamera = GetSelectedCamera(camerasCodec) };
+            status.Presets = GetCurrentPresets();
+            PostStatusMessage(status);
         }
 
         private void PostCameraPresets()
         {
-            PostStatusMessage(new
-            {
-                presets = GetCurrentPresets()
-            });
+            var status = new VideoCodecBaseStateMessage();
+
+            status.Presets = GetCurrentPresets();
+
+            PostStatusMessage(status);
         }
 
-        private object GetSelectedCamera(IHasCodecCameras camerasCodec)
+        private VideoCodecBaseStateMessage.CameraStatus.Camera GetSelectedCamera(IHasCodecCameras camerasCodec)
         {
-            return new
-            {
-                Key = camerasCodec.SelectedCameraFeedback.StringValue,
-                IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue,
-                Capabilites = new
+            var camera = new VideoCodecBaseStateMessage.CameraStatus.Camera();
+
+            camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
+            camera.IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue;
+            camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
                 {
-                    camerasCodec.SelectedCamera.CanPan, camerasCodec.SelectedCamera.CanTilt, camerasCodec.SelectedCamera.CanZoom, camerasCodec.SelectedCamera.CanFocus
-                }
-            };
+                    CanPan = camerasCodec.SelectedCamera.CanPan,
+                    CanTilt = camerasCodec.SelectedCamera.CanTilt,
+                    CanZoom = camerasCodec.SelectedCamera.CanZoom,
+                    CanFocus = camerasCodec.SelectedCamera.CanFocus,
+                };
+           
+           return camera; 
         }
 
         private List<CodecRoomPreset> GetCurrentPresets()
@@ -672,5 +727,153 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             return currentPresets;
         }
+    }
+
+    /// <summary>
+    /// A class that represents the state data to be sent to the user app
+    /// </summary>
+    public class VideoCodecBaseStateMessage : DeviceStateMessageBase
+    {
+
+        [JsonProperty("calls", NullValueHandling = NullValueHandling.Ignore)]
+        public List<CodecActiveCallItem> Calls {get; set;}
+
+        [JsonProperty("cameraMode", NullValueHandling = NullValueHandling.Ignore)]
+        public string CameraMode { get; set; }
+
+        [JsonProperty("cameraSelfView", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? CameraSelfViewIsOn { get; set; }
+
+        [JsonProperty("cameras", NullValueHandling = NullValueHandling.Ignore)]
+        public CameraStatus Cameras { get; set; }
+
+        [JsonProperty("cameraSupportsAutoMode", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? CameraSupportsAutoMode { get; set; }
+
+        [JsonProperty("cameraSupportsOffMode", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? CameraSupportsOffMode { get; set; }
+
+        [JsonProperty("currentDialString", NullValueHandling = NullValueHandling.Ignore)]
+        public string CurrentDialString { get; set; }
+
+        [JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
+        public CodecDirectory CurrentDirectory { get; set; }
+
+        //[JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
+        //public DirectoryResult CurrentDirectory { get; set; }
+
+        [JsonProperty("directorySelectedFolderName", NullValueHandling = NullValueHandling.Ignore)]
+        public string DirectorySelectedFolderName { get; set; }
+
+        [JsonProperty("hasCameras", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasCameras { get; set; }
+
+        [JsonProperty("hasDirectory", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasDirectory { get; set; }
+
+        [JsonProperty("hasDirectorySearch", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasDirectorySearch { get; set; }
+
+        [JsonProperty("hasPresets", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasPresets { get; set; }
+
+        [JsonProperty("hasRecents", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasRecents { get; set; }
+
+        [JsonProperty("info", NullValueHandling = NullValueHandling.Ignore)]
+        public VideoCodecInfo Info { get; set; }
+
+        [JsonProperty("isInCall", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsInCall { get; set; }
+
+        [JsonProperty("isReady", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsReady { get; set; }
+
+        [JsonProperty("isZoomRoom", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsZoomRoom { get; set; }
+
+        [JsonProperty("meetingInfo", NullValueHandling = NullValueHandling.Ignore)]
+        public MeetingInfo MeetingInfo { get; set; }
+
+        [JsonProperty("presets", NullValueHandling = NullValueHandling.Ignore)]
+        public List<CodecRoomPreset> Presets { get; set; }
+
+        [JsonProperty("privacyModeIsOn", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? PrivacyModeIsOn { get; set; }
+
+        [JsonProperty("receivingContent", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? ReceivingContent { get; set; }
+
+        [JsonProperty("recentCalls", NullValueHandling = NullValueHandling.Ignore)]
+        public List<CodecCallHistory.CallHistoryEntry> RecentCalls { get; set; }
+
+        [JsonProperty("sharingContentIsOn", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? SharingContentIsOn { get; set; }
+
+        [JsonProperty("sharingSource", NullValueHandling = NullValueHandling.Ignore)]
+        public string SharingSource { get; set; }
+
+        [JsonProperty("showCamerasWhenNotInCall", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? ShowCamerasWhenNotInCall { get; set; }
+
+        [JsonProperty("showSelfViewByDefault", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? ShowSelfViewByDefault { get; set; }
+
+        [JsonProperty("standbyIsOn", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? StandbyIsOn { get; set; }
+
+        [JsonProperty("supportsAdHocMeeting", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? SupportsAdHocMeeting { get; set; }
+
+        public class CameraStatus 
+        {
+            [JsonProperty("cameraManualSupported", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? CameraManualIsSupported { get; set; }
+
+            [JsonProperty("cameraAutoSupported", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? CameraAutoIsSupported { get; set; }
+
+            [JsonProperty("cameraOffSupported", NullValueHandling = NullValueHandling.Ignore)]
+            public bool? CameraOffIsSupported { get; set; }
+
+            [JsonProperty("cameraMode", NullValueHandling = NullValueHandling.Ignore)]
+            public string CameraMode { get; set; }
+
+            [JsonProperty("cameraList", NullValueHandling = NullValueHandling.Ignore)]
+            public List<CameraBase> Cameras { get; set; }
+
+            [JsonProperty("selectedCamera", NullValueHandling = NullValueHandling.Ignore)]
+            public Camera SelectedCamera { get; set; }
+
+            public class Camera
+            {
+                [JsonProperty("Key", NullValueHandling = NullValueHandling.Ignore)]
+                public string Key { get; set; }
+
+                [JsonProperty("IsFarEnd", NullValueHandling = NullValueHandling.Ignore)]
+                public bool? IsFarEnd { get; set; }
+
+                [JsonProperty("Capabilities", NullValueHandling = NullValueHandling.Ignore)]
+                public CameraCapabilities Capabilities { get; set; }
+
+                public class CameraCapabilities
+                {
+                    [JsonProperty("canPan", NullValueHandling = NullValueHandling.Ignore)]
+                    public bool? CanPan { get; set; }
+
+                    [JsonProperty("canTilt", NullValueHandling = NullValueHandling.Ignore)]
+                    public bool? CanTilt { get; set; }
+
+                    [JsonProperty("canZoom", NullValueHandling = NullValueHandling.Ignore)]
+                    public bool? CanZoom { get; set; }
+
+                    [JsonProperty("canFocus", NullValueHandling = NullValueHandling.Ignore)]
+                    public bool? CanFocus { get; set; }
+
+                }
+            }
+
+        }
+
     }
 }

@@ -31,6 +31,8 @@ namespace PepperDash.Essentials
 
         public abstract string RoomName { get; }
 
+        public abstract string RoomKey { get; }
+
         protected MobileControlBridgeBase(string key, string name)
             : base(key, name)
         {

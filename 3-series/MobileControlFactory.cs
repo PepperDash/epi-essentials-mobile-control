@@ -7,13 +7,14 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 
+
 namespace PepperDash.Essentials
 {
     public class MobileControlFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
     {
         public MobileControlFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.9.4";
+            MinimumEssentialsFrameworkVersion = "1.9.8";
             TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
         }
 
@@ -36,7 +37,7 @@ namespace PepperDash.Essentials
     {
         public MobileControlSimplFactory()
         {
-            MinimumEssentialsFrameworkVersion = "1.8.3";
+            MinimumEssentialsFrameworkVersion = "1.9.8";
             TypeNames = new List<string> {"mobilecontrolbridge-ddvc01", "mobilecontrolbridge-simpl"};
         }
 

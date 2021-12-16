@@ -21,6 +21,7 @@ using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
+using WebSocketSharp.Net.WebSockets;
 
 namespace PepperDash.Essentials
 {
@@ -28,7 +29,6 @@ namespace PepperDash.Essentials
     {
         //WebSocketClient WSClient;
 
-        private const long ServerHeartbeatInterval = 20000;
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
         private const long ButtonHeartbeatInterval = 1000;
@@ -42,11 +42,16 @@ namespace PepperDash.Essentials
 
         private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>(); 
 
-        private readonly GenericQueue _transmitQueue;
+        private readonly GenericQueue _transmitToServerQueue;
+
+        private readonly GenericQueue _transmitToClientsQueue;
 
         private bool _disableReconnect;
         private WebSocket _wsClient2;
 
+#if SERIES4
+        private MobileControlWebsocketServer _directServer;
+#endif
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
 
         public string SystemUrl; //set only from SIMPL Bridge!
@@ -134,7 +139,17 @@ namespace PepperDash.Essentials
             _receiveQueue = new GenericQueue(key + "-rxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
 
             // The queue that will collect the outgoing messages in the order they are received
-            _transmitQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+            _transmitToServerQueue = new GenericQueue(key + "-txqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+
+#if SERIES4
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer)
+            {
+                _directServer = new MobileControlWebsocketServer(Key + "-directServer", Config.DirectServer.Port, this);
+                DeviceManager.AddDevice(_directServer);
+
+                _transmitToClientsQueue = new GenericQueue(key + "-clienttxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
+            }
+#endif
 
             Host = config.ServerUrl;
             if (!Host.StartsWith("http"))
@@ -210,7 +225,7 @@ namespace PepperDash.Essentials
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
-            SendMessageObjectToServer(new {type = "/system/roomCombinationChanged"});
+            SendMessageObject(new {type = "/system/roomCombinationChanged"});
         }
 
         public bool CheckForDeviceMessenger(string key)
@@ -494,6 +509,11 @@ namespace PepperDash.Essentials
             }
         }
 
+        public MobileControlBridgeBase GetRoomBridge(string key)
+        {
+            return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -758,6 +778,13 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RegisterSystemToServer()
         {
+#if SERIES4
+            if (!Config.EnableApiServer)
+            {
+                Debug.Console(0, this, "ApiServer disabled via config.  Cancelling attempt to register to server.");
+                return;
+            }
+#endif
             var result = CreateWebsocket();
 
             if (!result)
@@ -876,7 +903,7 @@ namespace PepperDash.Essentials
             StopServerReconnectTimer();
             StartPingTimer();
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
-            SendMessageObjectToServer(new
+            SendMessageObject(new
             {
                 type = "hello"
             });
@@ -942,6 +969,21 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, "Sending initial join message");
 
+
+            var msg = new
+            {
+                type = "join",
+                content = new
+                {
+                    config = GetConfigWithPluginVersion(),
+                }
+            };
+
+            SendMessageObject(msg);
+        }
+
+        public MobileControlEssentialsConfig GetConfigWithPluginVersion()
+        {
             // Populate the application name and version number
             var confObject = new MobileControlEssentialsConfig(ConfigReader.ConfigObject);
 
@@ -950,10 +992,15 @@ namespace PepperDash.Essentials
             var essentialsVersion = Global.AssemblyVersion;
             confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
 
+#if DEBUG
+            // Set for local testing
+            confObject.RuntimeInfo.PluginVersion = "3.0.0-localBuild-1";
+
+#else
             // Populate the plugin version 
             var pluginVersion =
                 Assembly.GetExecutingAssembly()
-                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+                    .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
 
             var fullVersionAtt = pluginVersion[0] as AssemblyInformationalVersionAttribute;
 
@@ -963,49 +1010,29 @@ namespace PepperDash.Essentials
 
                 confObject.RuntimeInfo.PluginVersion = pluginInformationalVersion;
             }
-
-            var msg = new
-            {
-                type = "join",
-                content = new
-                {
-                    config = confObject,
-                }
-            };
-
-            SendMessageObjectToServer(msg);
+#endif
+            return confObject;
         }
 
         /// <summary>
         /// Sends any object type to server
         /// </summary>
         /// <param name="o"></param>
-        public void SendMessageObjectToServer(object o)
+        public void SendMessageObject(object o)
         {
-            _transmitQueue.Enqueue(new TransmitMessage(o, _wsClient2));
-        }
-
-        /// <summary>
-        /// Sends a message to the server from a room
-        /// </summary>
-        /// <param name="o">object to be serialized and sent in post body</param>
-        private void SendMessageToServer(JObject o)
-        {
-            if (_wsClient2 != null && _wsClient2.IsAlive)
+#if SERIES4
+            if (Config.EnableApiServer)
             {
-                string message = JsonConvert.SerializeObject(o, Formatting.None,
-                    new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore});
+#endif
+                _transmitToServerQueue.Enqueue(new TransmitMessage(o, _wsClient2));
+#if SERIES4
+            }
 
-                if (!message.Contains("/system/heartbeat"))
-                {
-                    Debug.Console(2, this, "Message TX: {0}", message);
-                }
-                _wsClient2.Send(message);
-            }
-            else if (_wsClient2 == null)
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
             {
-                Debug.Console(1, this, "Cannot send. No client.");
+                _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
             }
+#endif
         }
 
         /// <summary>
@@ -1094,7 +1121,7 @@ namespace PepperDash.Essentials
         /// <param name="content"></param>
         private void HandleHeartBeat(JToken content)
         {
-            SendMessageObjectToServer(new
+            SendMessageObject(new
             {
                 type = "/system/heartbeatAck"
             });
@@ -1117,15 +1144,12 @@ namespace PepperDash.Essentials
             var roomKey = content["roomKey"].Value<string>();
 
 
-                SendMessageObjectToServer(new
+                SendMessageObject(new
                 {
                     type = "/system/roomKey",
                     clientId,
                     content = roomKey
                 });
-
-
-   
         }
 
         private void HandleUserCode(JToken content)
@@ -1202,6 +1226,11 @@ namespace PepperDash.Essentials
             }
         }
 
+        public void HandleClientMessage(string message)
+        {
+            _receiveQueue.Enqueue(new ProcessStringMessage(message, ParseStreamRx));
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -1265,40 +1294,40 @@ namespace PepperDash.Essentials
                                     switch (stateString)
                                     {
                                         case "true":
-                                        {
-                                            if (!_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions.Add(type, new CTimer(o =>
+                                                if (!_pushedActions.ContainsKey(type))
                                                 {
-                                                    var pressAndHoldAction = action as PressAndHoldAction;
-                                                    if (pressAndHoldAction != null)
+                                                    _pushedActions.Add(type, new CTimer(o =>
                                                     {
-                                                        pressAndHoldAction(false);
-                                                    }
-                                                    _pushedActions.Remove(type);
-                                                }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
+                                                        var pressAndHoldAction = action as PressAndHoldAction;
+                                                        if (pressAndHoldAction != null)
+                                                        {
+                                                            pressAndHoldAction(false);
+                                                        }
+                                                        _pushedActions.Remove(type);
+                                                    }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
+                                                }
+                                                // Maybe add an else to reset the timer
+                                                break;
                                             }
-                                            // Maybe add an else to reset the timer
-                                            break;
-                                        }
                                         case "held":
-                                        {
-                                            if (_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions[type].Reset(ButtonHeartbeatInterval,
-                                                    ButtonHeartbeatInterval);
+                                                if (_pushedActions.ContainsKey(type))
+                                                {
+                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval,
+                                                        ButtonHeartbeatInterval);
+                                                }
+                                                return;
                                             }
-                                            return;
-                                        }
                                         case "false":
-                                        {
-                                            if (_pushedActions.ContainsKey(type))
                                             {
-                                                _pushedActions[type].Stop();
-                                                _pushedActions.Remove(type);
+                                                if (_pushedActions.ContainsKey(type))
+                                                {
+                                                    _pushedActions[type].Stop();
+                                                    _pushedActions.Remove(type);
+                                                }
+                                                break;
                                             }
-                                            break;
-                                        }
                                     }
 
                                     (action as PressAndHoldAction)(stateString == "true");
@@ -1317,6 +1346,10 @@ namespace PepperDash.Essentials
                             {
                                 (action as Action<ushort>)(messageObj["content"]["value"].Value<ushort>());
                             }
+                            else if (action is Action<int>)
+                            {
+                                (action as Action<int>)(messageObj["content"]["value"].Value<int>());
+                            }
                             else if (action is Action<string>)
                             {
                                 (action as Action<string>)(messageObj["content"]["value"].Value<string>());
@@ -1328,7 +1361,7 @@ namespace PepperDash.Essentials
                             }
                             else if (action is ClientSpecificUpdateRequest)
                             {
-                                var clientId = Int32.Parse(messageObj["clientId"].ToString());
+                                var clientId = messageObj["clientId"].ToString();
 
                                 var respObj =
                                     (action as ClientSpecificUpdateRequest).ResponseMethod() as
@@ -1338,7 +1371,7 @@ namespace PepperDash.Essentials
                                 {
                                     respObj.ClientId = clientId;
 
-                                    SendMessageObjectToServer(respObj);
+                                    SendMessageObject(respObj);
                                 }
                             }
                             else if (action is Action<PresetChannelMessage>)
@@ -1346,7 +1379,7 @@ namespace PepperDash.Essentials
                                 (action as Action<PresetChannelMessage>)(
                                     messageObj["content"].ToObject<PresetChannelMessage>());
                             }
-                            else if (action is Action<List<PresetChannel>> )
+                            else if (action is Action<List<PresetChannel>>)
                             {
                                 (action as Action<List<PresetChannel>>)(
                                     messageObj["content"].ToObject<List<PresetChannel>>());
@@ -1363,6 +1396,18 @@ namespace PepperDash.Essentials
                             else if (action is Action<PepperDash.Essentials.Devices.Common.Codec.Meeting>)
                             {
                                 (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
+                            }
+                            else if (action is Action<InvitableDirectoryContact>)
+                            {
+                                (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
+                            }
+                            else if (action is Action<Invitation>)
+                            {
+                                (action as Action<Invitation>)(messageObj["content"].ToObject<Invitation>());
+                            }
+                            else if (action is Action<Essentials.Core.Lighting.LightingScene>)
+                            {
+                                (action as Action<Essentials.Core.Lighting.LightingScene>)(messageObj["content"].ToObject<Essentials.Core.Lighting.LightingScene>());
                             }
                             else if (action is UserCodeChanged)
                             {
@@ -1469,7 +1514,7 @@ namespace PepperDash.Essentials
         public string Type { get; set; }
 
         [JsonProperty("clientId")]
-        public int ClientId { get; set; }
+        public object ClientId { get; set; }
 
         [JsonProperty("content")]
         public object Content { get; set; }

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using PepperDash.Core;
+
+using Newtonsoft.Json;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -9,6 +12,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public abstract class MessengerBase : IKeyed
     {
         public string Key { get; private set; }
+
+        private Device _device;
+
+        private List<string> _deviceIntefaces;
 
         /// <summary>
         /// 
@@ -32,6 +39,31 @@ namespace PepperDash.Essentials.AppServer.Messengers
             MessagePath = messagePath;
         }
 
+        protected MessengerBase(string key, string messagePath, Device device)
+            :this(key, messagePath) 
+        {
+            _device = device;
+
+            _deviceIntefaces = GetInterfaces(_device);
+        }
+
+        /// <summary>
+        /// Gets the intefaces implmented on the device
+        /// </summary>
+        /// <param name="device"></param>
+        /// <returns></returns>
+        private List<string> GetInterfaces(Device device)
+        {
+            var interfaceTypes = device.GetType().GetInterfaces();
+
+            List<string> interfaces = new List<string>();
+
+            foreach (var i in interfaceTypes)
+            {
+                interfaces.Add(i.Name);
+            }
+            return interfaces;
+        }
 
         /// <summary>
         /// Registers this messenger with appserver controller
@@ -56,16 +88,81 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Helper for posting status message
         /// </summary>
         /// <param name="contentObject">The contents of the content object</param>
+        [Obsolete("Will be removed in next major release, please use overload as substitute")]
         protected void PostStatusMessage(object contentObject)
         {
             if (AppServerController != null)
             {
-                AppServerController.SendMessageObjectToServer(new
+                AppServerController.SendMessageObject(new
                 {
                     type = MessagePath,
                     content = contentObject
                 });
             }
+        }
+
+        /// <summary>
+        /// Helper for posting status message
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="message"></param>
+        protected void PostStatusMessage(DeviceStateMessageBase message)
+        {
+            if (AppServerController != null)
+            {
+                message.SetIntefaces(_deviceIntefaces);
+
+                message.Key = _device.Key;
+
+                message.Name = _device.Name;
+
+                AppServerController.SendMessageObject(new
+                {
+                    type = MessagePath,
+                    content = message,
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Base class for messages that includes the type of message and the implmeneted interfaces
+    /// </summary>
+    public abstract class DeviceStateMessageBase
+    {
+        /// <summary>
+        /// The device key
+        /// </summary>
+        [JsonProperty("key")]
+        public string Key { get; set; }
+
+        /// <summary>
+        /// The device name
+        /// </summary>
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// The type of the message class
+        /// </summary>
+        [JsonProperty("messageType")]
+        public string MessageType
+        {
+            get
+            {
+                return this.GetType().Name;
+            }
+        }
+
+        /// <summary>
+        /// The interfaces implmented by the device sending the messsage
+        /// </summary>
+        [JsonProperty("interfaces")]
+        public List<string> Interfaces { get; private set; }
+
+        public void SetIntefaces(List<string> interfaces)
+        {
+            Interfaces = interfaces;
         }
     }
 }

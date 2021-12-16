@@ -41,7 +41,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     }
                 };
 
-                controller.SendMessageObjectToServer(messageObject);
+                controller.SendMessageObject(messageObject);
             }));
         }
 

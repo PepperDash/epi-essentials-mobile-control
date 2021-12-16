@@ -32,7 +32,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             //Audio source
             _eisc.SetStringSigAction(JoinMap.SourceForDestinationAudio.JoinNumber,
-                s => controller.SendMessageObjectToServer(new
+                s => controller.SendMessageObject(new
                 {
                     type = MessagePath + "/programAudio/currentSource",
                     content = new
@@ -60,7 +60,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     UpdateSourceForDestination(source, key);
                 }
 
-                controller.SendMessageObjectToServer(new
+                controller.SendMessageObject(new
                 {
                     type = MessagePath + "/programAudio/currentSource",
                     content = new
@@ -69,7 +69,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     }
                 });
 
-                controller.SendMessageObjectToServer(new
+                controller.SendMessageObject(new
                 {
                     type = MessagePath + "/advancedSharingMode",
                     content = new
@@ -91,7 +91,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }));
 
             _eisc.SetBoolSigAction(JoinMap.AdvancedSharingModeFb.JoinNumber,
-                (b) => controller.SendMessageObjectToServer(new
+                (b) => controller.SendMessageObject(new
                 {
                     type = MessagePath + "/advancedSharingMode",
                     content = new
@@ -123,7 +123,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void UpdateSourceForDestination(string sourceKey, string destKey)
         {
-            AppServerController.SendMessageObjectToServer(new
+            AppServerController.SendMessageObject(new
             {
                 type = String.Format("{0}/{1}/currentSource", MessagePath, destKey),
                 content = new
