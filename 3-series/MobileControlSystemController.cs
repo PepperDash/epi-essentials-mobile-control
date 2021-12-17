@@ -760,8 +760,10 @@ namespace PepperDash.Essentials
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
 
+            if (Config.EnableApiServer)
+            {
+                CrestronConsole.ConsoleCommandResponse(@"Mobile Control Edge Server API Information:
 
-            CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
 	Server address: {0}
 	System Name: {1}
     System URL: {2}
@@ -769,9 +771,71 @@ namespace PepperDash.Essentials
 	System User code: {4}
 	Connected?: {5}
     Seconds Since Last Ack: {6}"
-                , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
-                code, conn, secSinceLastAck.Seconds);
+                    , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
+                    code, conn, secSinceLastAck.Seconds);
+            }
+            else
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Edge Server API Information:
+    Not Enabled in Config.");
+            }
+
+
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Direct Server Infromation:
+    User App URL: {0}
+    Server port: {1}
+",
+    _directServer.UserAppUrl,
+    _directServer.Port);
+
+                CrestronConsole.ConsoleCommandResponse(
+@"
+    UI Client Info:
+    Tokens Defined: {0}
+    Clients Connected: {1}
+", _directServer.UiClients.Count,
+_directServer.ConnectedUiClientsCount);
+
+
+                    var clientNo = 1;
+                    foreach (var clientContext in _directServer.UiClients)
+                    {
+                        var isAlive = false;
+                        var duration = "Not Connected";
+
+                        if (clientContext.Value.Client != null)
+                        {
+                            isAlive = clientContext.Value.Client.Context.WebSocket.IsAlive;
+                            duration = clientContext.Value.Client.ConnectedDuration.ToString();
+                        }
+
+                        CrestronConsole.ConsoleCommandResponse(
+@"
+    Client {0}:
+    Token: {1}
+    Connected: {2}
+    Duration: {3}
+",
+clientNo,
+clientContext.Key,
+isAlive,
+duration);
+                        clientNo++;
+                    }
+                
+            }
+            else
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Direct Server Infromation:
+    Not Enabled in Config.");
+            }
         }
+
 
         /// <summary>
         /// Registers the room with the server
