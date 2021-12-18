@@ -778,7 +778,8 @@ namespace PepperDash.Essentials
             {
                 CrestronConsole.ConsoleCommandResponse(@"
 Mobile Control Edge Server API Information:
-    Not Enabled in Config.");
+    Not Enabled in Config.
+");
             }
 
 
@@ -801,32 +802,31 @@ Mobile Control Direct Server Infromation:
 _directServer.ConnectedUiClientsCount);
 
 
-                    var clientNo = 1;
-                    foreach (var clientContext in _directServer.UiClients)
+                var clientNo = 1;
+                foreach (var clientContext in _directServer.UiClients)
+                {
+                    var isAlive = false;
+                    var duration = "Not Connected";
+
+                    if (clientContext.Value.Client != null)
                     {
-                        var isAlive = false;
-                        var duration = "Not Connected";
+                        isAlive = clientContext.Value.Client.Context.WebSocket.IsAlive;
+                        duration = clientContext.Value.Client.ConnectedDuration.ToString();
+                    }
 
-                        if (clientContext.Value.Client != null)
-                        {
-                            isAlive = clientContext.Value.Client.Context.WebSocket.IsAlive;
-                            duration = clientContext.Value.Client.ConnectedDuration.ToString();
-                        }
-
-                        CrestronConsole.ConsoleCommandResponse(
+                    CrestronConsole.ConsoleCommandResponse(
 @"
-    Client {0}:
-    Token: {1}
-    Connected: {2}
-    Duration: {3}
+Client {0}:
+Token: {1}
+Connected: {2}
+Duration: {3}
 ",
 clientNo,
 clientContext.Key,
 isAlive,
 duration);
-                        clientNo++;
-                    }
-                
+                    clientNo++;
+                }
             }
             else
             {
