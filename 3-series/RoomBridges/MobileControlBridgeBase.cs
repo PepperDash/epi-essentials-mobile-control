@@ -4,6 +4,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Core;
 
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.AppServer.Messengers;
 
 
 namespace PepperDash.Essentials
@@ -11,7 +12,7 @@ namespace PepperDash.Essentials
     /// <summary>
     /// 
     /// </summary>
-    public abstract class MobileControlBridgeBase : EssentialsDevice, IMobileControlRoomBridge
+    public abstract class MobileControlBridgeBase : MessengerBase, IMobileControlRoomBridge
     {
         public event EventHandler<EventArgs> UserCodeChanged;
 
@@ -33,8 +34,13 @@ namespace PepperDash.Essentials
 
         public abstract string RoomKey { get; }
 
-        protected MobileControlBridgeBase(string key, string name)
-            : base(key, name)
+        protected MobileControlBridgeBase(string key, string messagePath)
+            : base(key, messagePath)
+        {
+        }
+
+        protected MobileControlBridgeBase(string key, string messagePath, Device device)
+            : base(key, messagePath, device)
         {
         }
 
@@ -49,7 +55,7 @@ namespace PepperDash.Essentials
 
             McServerUrl = Parent.Config.ClientAppUrl;
 
-
+            RegisterWithAppServer(parent);
         }
 
         /// <summary>

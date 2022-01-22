@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using PepperDash.Core;
+using PepperDash.Essentials.Core;
 
 using Newtonsoft.Json;
 
@@ -9,10 +10,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// Provides a messaging bridge
     /// </summary>
-    public abstract class MessengerBase : IKeyed
+    public abstract class MessengerBase : EssentialsDevice
     {
-        public string Key { get; private set; }
-
         private Device _device;
 
         private List<string> _deviceIntefaces;
@@ -30,6 +29,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="key"></param>
         /// <param name="messagePath"></param>
         protected MessengerBase(string key, string messagePath)
+            : base(key)
         {
             Key = key;
 
@@ -123,7 +123,31 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 });
             }
         }
+
+        protected void PostStatusMessage(MobileControlResponseMessage message)
+        {
+            if (AppServerController != null)
+            {
+                var deviceState = message.Content as DeviceStateMessageBase;
+                if (deviceState != null)
+                {
+                    Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
+                    deviceState.SetIntefaces(_deviceIntefaces);
+
+                    deviceState.Key = _device.Key;
+
+                    deviceState.Name = _device.Name;
+                }
+                else
+                {
+                    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
+                }
+
+                AppServerController.SendMessageObject(message);
+            }
+        }
     }
+    
 
     /// <summary>
     /// Base class for messages that includes the type of message and the implmeneted interfaces

@@ -83,16 +83,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="e"></param>
         private void CallHistory_RecentCallsListHasChanged(object sender, EventArgs e)
         {
+            var state = new VideoCodecBaseStateMessage();
+
             var codecCallHistory = sender as CodecCallHistory;
             if (codecCallHistory == null) return;
             var recents = codecCallHistory.RecentCalls;
 
             if (recents != null)
             {
-                PostStatusMessage(new
-                {
-                    recentCalls = recents
-                });
+                state.RecentCalls = recents;
+
+                PostStatusMessage(state);
             }
         }
 
@@ -113,13 +114,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendDirectory(CodecDirectory directory, bool isRoot)
         {
+            var state = new VideoCodecBaseStateMessage();
+
             var dirCodec = Codec as IHasDirectory;
 
             if (dirCodec != null)
-            {
-                var prefixedDirectoryResults = PrefixDirectoryFolderItems(directory);
+            {      
+                state.CurrentDirectory = PrefixDirectoryFolderItems(directory);
+                CrestronInvoke.BeginInvoke((o) => PostStatusMessage(state));
 
-                var directoryMessage = new
+/*                var directoryMessage = new
                 {
                     currentDirectory = new
                     {
@@ -129,7 +133,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 };
 
                 //Spool up a thread in case this is a large quantity of data
-                CrestronInvoke.BeginInvoke((o) => PostStatusMessage(directoryMessage));            
+                CrestronInvoke.BeginInvoke((o) => PostStatusMessage(directoryMessage));           */ 
             }
         }
 
@@ -138,8 +142,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="directory"></param>
         /// <returns></returns>
-        private List<DirectoryItem> PrefixDirectoryFolderItems(CodecDirectory directory)
+        private CodecDirectory PrefixDirectoryFolderItems(CodecDirectory directory)
         {
+            var tempCodecDirectory = new CodecDirectory();
             var tempDirectoryList = new List<DirectoryItem>();
 
             if (directory.CurrentDirectoryResults.Count > 0)
@@ -169,7 +174,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
             //    tempDirectoryList.Add(noResults);
             //}
 
-            return tempDirectoryList;
+            tempCodecDirectory.AddContactsToDirectory(tempDirectoryList.OfType<DirectoryContact>().Cast<DirectoryItem>().ToList());
+            tempCodecDirectory.AddFoldersToDirectory(tempDirectoryList.OfType<DirectoryFolder>().Cast<DirectoryItem>().ToList());
+
+            return tempCodecDirectory;
         }
 
         /// <summary>
@@ -179,10 +187,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="e"></param>
         private void codec_IsReadyChange(object sender, EventArgs e)
         {
-            PostStatusMessage(new
-            {
-                isReady = true
-            });
+            var state = new VideoCodecBaseStateMessage();
+
+            state.IsReady = true;
+
+            PostStatusMessage(state);
         }
 
         /// <summary>
@@ -224,6 +233,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/directoryById", new Action<string>(GetDirectory));
                 appServerController.AddAction(MessagePath + "/directorySearch", new Action<string>(DirectorySearch));
                 appServerController.AddAction(MessagePath + "/directoryBack", new Action(GetPreviousDirectory));
+
+                dirCodec.PhonebookSyncState.InitialSyncCompleted += PhonebookSyncState_InitialSyncCompleted;
             }
 
             // History actions
@@ -336,7 +347,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
         }
 
+        private void PhonebookSyncState_InitialSyncCompleted(object sender, EventArgs e)
+        {
+            var state = new VideoCodecBaseStateMessage();
+            state.InitialPhonebookSyncComplete = true;
 
+            PostStatusMessage(state);
+        }
 
         void CameraIsOffFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
@@ -533,19 +550,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
             if (!dirCodec.PhonebookSyncState.InitialSyncComplete)
             {
-                PostStatusMessage(new
-                {
-                    initialSyncComplete = false
-                });
+                var state = new VideoCodecBaseStateMessage();
+                state.InitialPhonebookSyncComplete = false;
+
+                PostStatusMessage(state);
                 return;
             }
 
             dirCodec.SetCurrentDirectoryToRoot();
-
-            //PostStatusMessage(new
-            //{
-            //    currentDirectory = dirCodec.DirectoryRoot
-            //});
         }
 
         /// <summary>
@@ -609,7 +621,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 status.HasDirectory = true;
                 status.HasDirectorySearch = true;
-                status.CurrentDirectory = directoryCodec.CurrentDirectoryResult;
+                status.CurrentDirectory = PrefixDirectoryFolderItems(directoryCodec.CurrentDirectoryResult);
             }
 
             status.CameraSelfViewIsOn = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
@@ -651,7 +663,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PostReceivingContent(bool receivingContent)
         {
-            PostStatusMessage(new {receivingContent});
+            var state = new VideoCodecBaseStateMessage();
+            state.ReceivingContent = receivingContent;
+            PostStatusMessage(state);
         }
 
         private void PostCameraSelfView()
@@ -759,9 +773,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
         public CodecDirectory CurrentDirectory { get; set; }
 
-        //[JsonProperty("currentDirectory", NullValueHandling = NullValueHandling.Ignore)]
-        //public DirectoryResult CurrentDirectory { get; set; }
-
         [JsonProperty("directorySelectedFolderName", NullValueHandling = NullValueHandling.Ignore)]
         public string DirectorySelectedFolderName { get; set; }
 
@@ -779,6 +790,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("hasRecents", NullValueHandling = NullValueHandling.Ignore)]
         public bool? HasRecents { get; set; }
+
+        [JsonProperty("initialPhonebookSyncComplete", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? InitialPhonebookSyncComplete { get; set; }
 
         [JsonProperty("info", NullValueHandling = NullValueHandling.Ignore)]
         public VideoCodecInfo Info { get; set; }

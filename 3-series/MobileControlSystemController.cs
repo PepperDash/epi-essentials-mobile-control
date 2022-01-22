@@ -256,7 +256,8 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => 
+                new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey, DeviceManager.GetDeviceForKey(bridgeConfig.RoomKey) as Device)))
             {
                 AddBridgePostActivationAction(bridge);
                 DeviceManager.AddDevice(bridge);
@@ -790,7 +791,7 @@ Mobile Control Direct Server Infromation:
     User App URL: {0}
     Server port: {1}
 ",
-    _directServer.UserAppUrl,
+    string.Format("{0}[insert_client_token]", _directServer.UserAppUrlPrefix),
     _directServer.Port);
 
                 CrestronConsole.ConsoleCommandResponse(
@@ -818,11 +819,13 @@ _directServer.ConnectedUiClientsCount);
 @"
 Client {0}:
 Token: {1}
-Connected: {2}
-Duration: {3}
+Client URL: {2}
+Connected: {3}
+Duration: {4}
 ",
 clientNo,
 clientContext.Key,
+string.Format("{0}{1}", _directServer.UserAppUrlPrefix, clientContext.Key),
 isAlive,
 duration);
                     clientNo++;
@@ -1427,16 +1430,15 @@ Mobile Control Direct Server Infromation:
                             {
                                 var clientId = messageObj["clientId"].ToString();
 
-                                var respObj =
-                                    (action as ClientSpecificUpdateRequest).ResponseMethod() as
-                                        MobileControlResponseMessage;
+                                
+                                (action as ClientSpecificUpdateRequest).ResponseMethod(clientId);
 
-                                if (respObj != null)
-                                {
-                                    respObj.ClientId = clientId;
+                                //if (respObj != null)
+                                //{
+                                //    respObj.ClientId = clientId;
 
-                                    SendMessageObject(respObj);
-                                }
+                                //    SendMessageObject(respObj);
+                                //}
                             }
                             else if (action is Action<PresetChannelMessage>)
                             {
@@ -1554,12 +1556,12 @@ Mobile Control Direct Server Infromation:
 
     public class ClientSpecificUpdateRequest
     {
-        public ClientSpecificUpdateRequest(Func<object> func)
+        public ClientSpecificUpdateRequest(Action<string> action )
         {
-            ResponseMethod = func;
+            ResponseMethod = action;
         }
 
-        public Func<object> ResponseMethod { get; private set; }
+        public Action<string> ResponseMethod { get; private set; }
     }
 
     public class UserCodeChanged

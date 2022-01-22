@@ -70,7 +70,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="name"></param>
         /// <param name="ipId"></param>
         public MobileControlSIMPLRoomBridge(string key, string name, uint ipId)
-            : base(key, name)
+            : base(key, "/room/room1")
         {
             Eisc = new ThreeSeriesTcpIpEthernetIntersystemCommunications(ipId, "127.0.0.2", Global.ControlSystem);
             var reg = Eisc.Register();
@@ -129,8 +129,8 @@ namespace PepperDash.Essentials.Room.MobileControl
         public override bool CustomActivate()
         {
             Debug.Console(0, this, "Final activation. Setting up actions and feedbacks");
-            SetupFunctions();
-            SetupFeedbacks();
+            //SetupFunctions();
+            //SetupFeedbacks();
 
             var atcKey = string.Format("atc-{0}-{1}", Key, Parent.Key);
             _atcMessenger = new SIMPLAtcMessenger(atcKey, Eisc, "/device/audioCodec");
@@ -177,6 +177,12 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
 
             ConfigIsLoaded = true;
+        }
+
+        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        {
+            SetupFunctions();
+            SetupFeedbacks();
         }
 
         /// <summary>
@@ -261,21 +267,21 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             // Power 
             Eisc.SetBoolSigAction(JoinMap.RoomIsOn.JoinNumber, b =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     isOn = b
                 }));
 
             // Source change things
             Eisc.SetSigTrueAction(JoinMap.SourceHasChanged.JoinNumber, () =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     selectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue
                 }));
 
             // Volume things
             Eisc.SetUShortSigAction(JoinMap.MasterVolume.JoinNumber, u =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     volumes = new
                     {
@@ -290,7 +296,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             // 
 
             Eisc.SetBoolSigAction(JoinMap.MasterVolume.JoinNumber, b =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     volumes = new
                     {
@@ -301,7 +307,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     }
                 }));
             Eisc.SetBoolSigAction(JoinMap.PrivacyMute.JoinNumber, b =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     volumes = new
                     {
@@ -322,7 +328,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     // need a dict in order to create the level-n property on auxFaders
                     var dict = new Dictionary<string, object> {{"level-" + index, new {level = u}}};
-                    PostStatusMessage(new
+                    PostStatus(new
                     {
                         volumes = new
                         {
@@ -334,7 +340,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     // need a dict in order to create the level-n property on auxFaders
                     var dict = new Dictionary<string, object> {{"level-" + index, new {muted = b}}};
-                    PostStatusMessage(new
+                    PostStatus(new
                     {
                         volumes = new
                         {
@@ -345,7 +351,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
 
             Eisc.SetUShortSigAction(JoinMap.NumberOfAuxFaders.JoinNumber, u =>
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     volumes = new
                     {
@@ -388,7 +394,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void UpdateActivity(int mode)
         {
-            PostStatusMessage(new
+            PostStatus(new
             {
                 activityMode = mode,
             });
@@ -973,7 +979,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 // TODO: Add property to status message to indicate if advanced sharing is supported and if users can change share mode
 
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     activityMode = GetActivityMode(),
                     isOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
@@ -985,7 +991,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             }
             else
             {
-                PostStatusMessage(new
+                PostStatus(new
                 {
                     error = "systemNotReady"
                 });
@@ -1008,7 +1014,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// Helper for posting status message
         /// </summary>
         /// <param name="contentObject">The contents of the content object</param>
-        private void PostStatusMessage(object contentObject)
+        private void PostStatus(object contentObject)
         {
             Parent.SendMessageObject(new
             {

@@ -163,11 +163,11 @@ namespace PepperDash.Essentials
         /// </summary>
         public int Port { get; private set; }
 
-        public string UserAppUrl 
+        public string UserAppUrlPrefix 
         {
             get
             {
-                return string.Format("http://{0}:{1}{2}?token=[insert_token_value]",
+                return string.Format("http://{0}:{1}{2}?token=",
                     CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0),
                     Port,
                     _userAppBaseHref);

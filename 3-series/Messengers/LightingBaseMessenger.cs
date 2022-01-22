@@ -26,7 +26,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             Device = device;
             Device.LightingSceneChange += new EventHandler<LightingSceneChangeEventArgs>(LightingDevice_LightingSceneChange);
 
-
+           
         }
 
         void LightingDevice_LightingSceneChange(object sender, LightingSceneChangeEventArgs e)
@@ -48,7 +48,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void SendFullStatus()
         {
-            Debug.Console(2, "LighitngBaseMessenger GetFullStatus");
+            Debug.Console(2, "LightingBaseMessenger GetFullStatus");
 
             var state = new LightingBaseStateMessage();
 
@@ -63,6 +63,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         [JsonProperty("scenes", NullValueHandling = NullValueHandling.Ignore)]
         public List<LightingScene> Scenes { get; set; }
+
         [JsonProperty("currentLightingScene", NullValueHandling = NullValueHandling.Ignore)]
         public LightingScene CurrentLightingScene { get; set; }
     }
