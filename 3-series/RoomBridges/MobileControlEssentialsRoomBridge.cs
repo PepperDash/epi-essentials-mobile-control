@@ -943,7 +943,7 @@ namespace PepperDash.Essentials
         public bool? IsWarmingUp { get; set; }
         [JsonProperty("isCoolingDown", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IsCoolingDown { get; set; }
-        [JsonProperty("selctedSourceKey", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("selectedSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string SelectedSourceKey { get; set; }
         [JsonProperty("share", NullValueHandling = NullValueHandling.Ignore)]
         public ShareState Share { get; set; }
