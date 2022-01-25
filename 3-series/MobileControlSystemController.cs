@@ -760,9 +760,10 @@ namespace PepperDash.Essentials
             var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
-
+#if SERIES4
             if (Config.EnableApiServer)
             {
+#endif
                 CrestronConsole.ConsoleCommandResponse(@"Mobile Control Edge Server API Information:
 
 	Server address: {0}
@@ -774,6 +775,7 @@ namespace PepperDash.Essentials
     Seconds Since Last Ack: {6}"
                     , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
                     code, conn, secSinceLastAck.Seconds);
+#if SERIES4
             }
             else
             {
@@ -837,6 +839,7 @@ duration);
 Mobile Control Direct Server Infromation:
     Not Enabled in Config.");
             }
+#endif
         }
 
 
