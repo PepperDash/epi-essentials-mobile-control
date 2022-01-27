@@ -256,7 +256,8 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey)))
+            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => 
+                new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey, DeviceManager.GetDeviceForKey(bridgeConfig.RoomKey) as Device)))
             {
                 AddBridgePostActivationAction(bridge);
                 DeviceManager.AddDevice(bridge);
@@ -759,9 +760,12 @@ namespace PepperDash.Essentials
             var conn = _wsClient2 == null ? "No client" : (_wsClient2.IsAlive ? "Yes" : "No");
 
             var secSinceLastAck = DateTime.Now - _lastAckMessage;
+#if SERIES4
+            if (Config.EnableApiServer)
+            {
+#endif
+                CrestronConsole.ConsoleCommandResponse(@"Mobile Control Edge Server API Information:
 
-
-            CrestronConsole.ConsoleCommandResponse(@"Mobile Control Information:
 	Server address: {0}
 	System Name: {1}
     System URL: {2}
@@ -769,9 +773,75 @@ namespace PepperDash.Essentials
 	System User code: {4}
 	Connected?: {5}
     Seconds Since Last Ack: {6}"
-                , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
-                code, conn, secSinceLastAck.Seconds);
+                    , url, name, ConfigReader.ConfigObject.SystemUrl, SystemUuid,
+                    code, conn, secSinceLastAck.Seconds);
+#if SERIES4
+            }
+            else
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Edge Server API Information:
+    Not Enabled in Config.
+");
+            }
+
+
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Direct Server Infromation:
+    User App URL: {0}
+    Server port: {1}
+",
+    string.Format("{0}[insert_client_token]", _directServer.UserAppUrlPrefix),
+    _directServer.Port);
+
+                CrestronConsole.ConsoleCommandResponse(
+@"
+    UI Client Info:
+    Tokens Defined: {0}
+    Clients Connected: {1}
+", _directServer.UiClients.Count,
+_directServer.ConnectedUiClientsCount);
+
+
+                var clientNo = 1;
+                foreach (var clientContext in _directServer.UiClients)
+                {
+                    var isAlive = false;
+                    var duration = "Not Connected";
+
+                    if (clientContext.Value.Client != null)
+                    {
+                        isAlive = clientContext.Value.Client.Context.WebSocket.IsAlive;
+                        duration = clientContext.Value.Client.ConnectedDuration.ToString();
+                    }
+
+                    CrestronConsole.ConsoleCommandResponse(
+@"
+Client {0}:
+Token: {1}
+Client URL: {2}
+Connected: {3}
+Duration: {4}
+",
+clientNo,
+clientContext.Key,
+string.Format("{0}{1}", _directServer.UserAppUrlPrefix, clientContext.Key),
+isAlive,
+duration);
+                    clientNo++;
+                }
+            }
+            else
+            {
+                CrestronConsole.ConsoleCommandResponse(@"
+Mobile Control Direct Server Infromation:
+    Not Enabled in Config.");
+            }
+#endif
         }
+
 
         /// <summary>
         /// Registers the room with the server
@@ -1363,16 +1433,15 @@ namespace PepperDash.Essentials
                             {
                                 var clientId = messageObj["clientId"].ToString();
 
-                                var respObj =
-                                    (action as ClientSpecificUpdateRequest).ResponseMethod() as
-                                        MobileControlResponseMessage;
+                                
+                                (action as ClientSpecificUpdateRequest).ResponseMethod(clientId);
 
-                                if (respObj != null)
-                                {
-                                    respObj.ClientId = clientId;
+                                //if (respObj != null)
+                                //{
+                                //    respObj.ClientId = clientId;
 
-                                    SendMessageObject(respObj);
-                                }
+                                //    SendMessageObject(respObj);
+                                //}
                             }
                             else if (action is Action<PresetChannelMessage>)
                             {
@@ -1490,12 +1559,12 @@ namespace PepperDash.Essentials
 
     public class ClientSpecificUpdateRequest
     {
-        public ClientSpecificUpdateRequest(Func<object> func)
+        public ClientSpecificUpdateRequest(Action<string> action )
         {
-            ResponseMethod = func;
+            ResponseMethod = action;
         }
 
-        public Func<object> ResponseMethod { get; private set; }
+        public Action<string> ResponseMethod { get; private set; }
     }
 
     public class UserCodeChanged

@@ -5,14 +5,14 @@ namespace PepperDash.Essentials.Room.MobileControl
 {
     public class Volumes
     {
-        [JsonProperty("master")]
+        [JsonProperty("master", NullValueHandling = NullValueHandling.Ignore)]
         public Volume Master { get; set; }
 
-        [JsonProperty("auxFaders")]
+        [JsonProperty("auxFaders", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, Volume> AuxFaders { get; set; }
 
-        [JsonProperty("numberOfAuxFaders")]
-        public int NumberOfAuxFaders { get; set; }
+        [JsonProperty("numberOfAuxFaders", NullValueHandling = NullValueHandling.Ignore)]
+        public int? NumberOfAuxFaders { get; set; }
 
         public Volumes()
         {
@@ -22,39 +22,56 @@ namespace PepperDash.Essentials.Room.MobileControl
 
     public class Volume
     {
-        [JsonProperty("key")]
+        [JsonProperty("key", NullValueHandling = NullValueHandling.Ignore)]
         public string Key { get; set; }
 
-        [JsonProperty("level")]
-        public ushort Level { get; set; }
+        [JsonProperty("level", NullValueHandling = NullValueHandling.Ignore)]
+        public int? Level { get; set; }
 
-        [JsonProperty("muted")]
-        public bool Muted { get; set; }
+        [JsonProperty("muted", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Muted { get; set; }
 
-        [JsonProperty("label")]
+        [JsonProperty("label", NullValueHandling = NullValueHandling.Ignore)]
         public string Label { get; set; }
 
-        [JsonProperty("hasMute")]
-        public bool HasMute { get; set; }
+        [JsonProperty("hasMute", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasMute { get; set; }
 
-        [JsonProperty("hasPrivacyMute")]
-        public bool HasPrivacyMute { get; set; }
+        [JsonProperty("hasPrivacyMute", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasPrivacyMute { get; set; }
 
-        [JsonProperty("privacyMuted")]
-        public bool PrivacyMuted { get; set; }
+        [JsonProperty("privacyMuted", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? PrivacyMuted { get; set; }
 
 
-        [JsonProperty("muteIcon")]
+        [JsonProperty("muteIcon", NullValueHandling = NullValueHandling.Ignore)]
         public string MuteIcon { get; set; }
 
-        public Volume(string key, ushort level, bool muted, string label, bool hasMute, string muteIcon)
+        public Volume(string key, int level, bool muted, string label, bool hasMute, string muteIcon)
+            : this(key)
         {
-            Key = key;
             Level = level;
             Muted = muted;
             Label = label;
             HasMute = hasMute;
             MuteIcon = muteIcon;
+        }
+
+        public Volume(string key, int level)
+            : this(key)
+        {
+            Level = level;
+        }
+
+        public Volume(string key, bool muted)
+            :this(key)
+        {
+            Muted = muted;
+        }
+
+        public Volume(string key)
+        {
+            Key = key;
         }
     }
 }
