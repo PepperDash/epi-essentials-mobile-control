@@ -820,12 +820,14 @@ _directServer.ConnectedUiClientsCount);
                     CrestronConsole.ConsoleCommandResponse(
 @"
 Client {0}:
-Token: {1}
-Client URL: {2}
-Connected: {3}
-Duration: {4}
+Room Key: {1}
+Token: {2}
+Client URL: {3}
+Connected: {4}
+Duration: {5}
 ",
 clientNo,
+clientContext.Value.Token.RoomKey,
 clientContext.Key,
 string.Format("{0}{1}", _directServer.UserAppUrlPrefix, clientContext.Key),
 isAlive,
@@ -1214,11 +1216,11 @@ Mobile Control Direct Server Infromation:
             var roomKey = content["roomKey"].Value<string>();
 
 
-                SendMessageObject(new
+                SendMessageObject(new MobileControlResponseMessage()
                 {
-                    type = "/system/roomKey",
-                    clientId,
-                    content = roomKey
+                    Type = "/system/roomKey",
+                    ClientId = clientId,
+                    Content = roomKey
                 });
         }
 

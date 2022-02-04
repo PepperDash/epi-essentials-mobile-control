@@ -167,7 +167,7 @@ namespace PepperDash.Essentials
                 }
             }
 
-            var vtcRoom = Room as EssentialsHuddleVtc1Room;
+            var vtcRoom = Room as IEssentialsHuddleVtc1Room;
             if (vtcRoom != null)
             {
                 if (vtcRoom.ScheduleSource != null)
@@ -181,6 +181,8 @@ namespace PepperDash.Essentials
                         appServerController.AddDeviceMessenger(scheduleMessenger);
                     }
                 }
+
+                vtcRoom.InCallFeedback.OutputChange += InCallFeedback_OutputChange;
             }
 
             var privacyRoom = Room as IPrivacy;
@@ -216,6 +218,14 @@ namespace PepperDash.Essentials
             Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
 
             AddTechRoomActions();
+        }
+
+        private void InCallFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            var state = new RoomStateMessage();
+
+            state.IsInCall = e.BoolValue;
+            PostStatusMessage(state);
         }
 
         private void GetRoom()
@@ -340,17 +350,6 @@ namespace PepperDash.Essentials
             state.Volumes = volumes;
 
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    volumes = new
-            //    {
-            //        master = new
-            //        {
-            //            privacyMuted = e.BoolValue
-            //        }
-            //    }
-            //});
         }
 
         /// <summary>
@@ -489,29 +488,7 @@ namespace PepperDash.Essentials
             state.Share.IsSharing = isSharing;
 
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    share = new
-            //    {
-            //        currentShareText = shareText,
-            //        isSharing
-            //    }
-            //});
         }
-
-        ///// <summary>
-        ///// Helper for posting status message
-        ///// </summary>
-        ///// <param name="contentObject">The contents of the content object</param>
-        //private void PostStatusMessage(object contentObject)
-        //{
-        //    Parent.SendMessageObject(JObject.FromObject(new
-        //    {
-        //        type = String.Format("/room/{0}/status/",Room.Key),
-        //        content = contentObject
-        //    }));
-        //}
 
         /// <summary>
         /// Handler for cancelled shutdown
@@ -566,11 +543,6 @@ namespace PepperDash.Essentials
 
             state.IsWarmingUp = e.BoolValue;
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    isWarmingUp = e.BoolValue
-            //});
         }
 
         /// <summary>
@@ -584,11 +556,6 @@ namespace PepperDash.Essentials
 
             state.IsCoolingDown = e.BoolValue;
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    isCoolingDown = e.BoolValue
-            //});
         }
 
         /// <summary>
@@ -602,11 +569,6 @@ namespace PepperDash.Essentials
 
             state.IsOn = e.BoolValue;
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    isOn = e.BoolValue
-            //});
         }
 
         private void Room_CurrentVolumeDeviceChange(object sender, VolumeDeviceChangeEventArgs e)
@@ -640,17 +602,6 @@ namespace PepperDash.Essentials
             state.Volumes = volumes;
 
             PostStatusMessage(state);
-
-            //PostStatusMessage(new
-            //{
-            //    volumes = new
-            //    {
-            //        master = new
-            //        {
-            //            muted = e.BoolValue
-            //        }
-            //    }
-            //});
         }
 
         /// <summary>
@@ -667,16 +618,6 @@ namespace PepperDash.Essentials
             state.Volumes = volumes;
 
             PostStatusMessage(state);
-            //PostStatusMessage(new
-            //{
-            //    volumes = new
-            //    {
-            //        master = new
-            //        {
-            //            level = e.IntValue
-            //        }
-            //    }
-            //});
         }
 
 
@@ -748,10 +689,6 @@ namespace PepperDash.Essentials
 
                         state.SelectedSourceKey = srcRm.CurrentSourceInfoKey;
                         PostStatusMessage(state);
-                        //PostStatusMessage(new
-                        //{
-                        //    selectedSourceKey = srcRm.CurrentSourceInfoKey
-                        //});
                     }
                 }
             }
@@ -804,17 +741,14 @@ namespace PepperDash.Essentials
             state.IsOn = room.OnFeedback.BoolValue;
             state.SelectedSourceKey = sourceKey;
             state.Volumes = volumes;
+            state.IsWarmingUp = room.IsWarmingUpFeedback.BoolValue;
+            state.IsCoolingDown = room.IsCoolingDownFeedback.BoolValue;
 
-            //var contentObject = new
-            //{
-            //    key = room.Key,
-            //    name = room.Name,
-            //    configuration = GetRoomConfiguration(room),
-            //    activityMode = 1,
-            //    isOn = room.OnFeedback.BoolValue,
-            //    selectedSourceKey = sourceKey, 
-            //    volumes,
-            //};
+            var vtcRoom = room as IEssentialsHuddleVtc1Room;
+            if (vtcRoom != null)
+            {
+                state.IsInCall = vtcRoom.InCallFeedback.BoolValue;
+            }
 
             var messageObject = new MobileControlResponseMessage
             {
@@ -844,6 +778,12 @@ namespace PepperDash.Essentials
             if (vtc1Room != null && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
             {
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
+            }
+
+            var techRoom = room as EssentialsTechRoom;
+            if (techRoom != null && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
+            {
+                configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
             }
 
             var vcRoom = room as IHasVideoCodec;
@@ -920,9 +860,25 @@ namespace PepperDash.Essentials
                 configuration.HasRoutingControls = true;
             }
 
-            // TODO: Add logic to update these based on config
-            configuration.HasCameraControls = true;
-            configuration.HasSetTopBoxControls = true;
+            foreach (var source in sourceList)
+            {
+                if (source.Value.SourceDevice is PepperDash.Essentials.Devices.Common.IRSetTopBoxBase)
+                {
+                    configuration.HasSetTopBoxControls = true;
+                    continue;
+                }
+                else if (source.Value.SourceDevice is CameraBase)
+                {
+                    configuration.HasCameraControls = true;
+                    continue;
+                }
+            }
+
+            //var cameraDevices = DeviceManager.AllDevices.Where((d) => d is CameraBase);
+            //if (cameraDevices != null && cameraDevices.Count() > 0)
+            //{
+            //    configuration.HasCameraControls = true;
+            //}
 
             return configuration;
         }
@@ -953,6 +909,9 @@ namespace PepperDash.Essentials
         public bool? UserCanChangeShareMode { get; set; }
         [JsonProperty("volumes", NullValueHandling = NullValueHandling.Ignore)]
         public Volumes Volumes { get; set; }
+
+        [JsonProperty("isInCall", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsInCall { get; set; }
     }
 
     public class ShareState
