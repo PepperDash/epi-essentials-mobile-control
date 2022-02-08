@@ -17,7 +17,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public class ZoomRoomMessenger : VideoCodecBaseMessenger
     {
 
-        private ZoomRoom _codec;
+        private readonly ZoomRoom _codec;
 
         public ZoomRoomMessenger(string key, ZoomRoom codec, string messagePath)
             : base(key, codec, messagePath)

@@ -858,19 +858,19 @@ namespace PepperDash.Essentials
             {
                 configuration.SourceList = sourceList;
                 configuration.HasRoutingControls = true;
-            }
 
-            foreach (var source in sourceList)
-            {
-                if (source.Value.SourceDevice is PepperDash.Essentials.Devices.Common.IRSetTopBoxBase)
+                foreach (var source in sourceList)
                 {
-                    configuration.HasSetTopBoxControls = true;
-                    continue;
-                }
-                else if (source.Value.SourceDevice is CameraBase)
-                {
-                    configuration.HasCameraControls = true;
-                    continue;
+                    if (source.Value.SourceDevice is PepperDash.Essentials.Devices.Common.IRSetTopBoxBase)
+                    {
+                        configuration.HasSetTopBoxControls = true;
+                        continue;
+                    }
+                    else if (source.Value.SourceDevice is CameraBase)
+                    {
+                        configuration.HasCameraControls = true;
+                        continue;
+                    }
                 }
             }
 
