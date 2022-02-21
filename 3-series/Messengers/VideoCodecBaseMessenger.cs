@@ -192,6 +192,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             state.IsReady = true;
 
             PostStatusMessage(state);
+
+            SendFullStatus();
         }
 
         /// <summary>
