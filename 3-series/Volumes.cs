@@ -16,7 +16,6 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public Volumes()
         {
-            AuxFaders = new Dictionary<string, Volume>();
         }
     }
 
