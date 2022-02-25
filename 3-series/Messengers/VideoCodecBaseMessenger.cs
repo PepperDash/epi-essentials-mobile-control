@@ -119,8 +119,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var dirCodec = Codec as IHasDirectory;
 
             if (dirCodec != null)
-            {      
-                state.CurrentDirectory = PrefixDirectoryFolderItems(directory);
+            {
+                Debug.Console(2, this, "Sending Directory.  Directory Item Count: {0}", directory.CurrentDirectoryResults.Count);
+
+                //state.CurrentDirectory = PrefixDirectoryFolderItems(directory);
+                state.CurrentDirectory = directory;
                 CrestronInvoke.BeginInvoke((o) => PostStatusMessage(state));
 
 /*                var directoryMessage = new
@@ -142,6 +145,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="directory"></param>
         /// <returns></returns>
+        [Obsolete("Deprected in favour of processing in the Angular App")]
         private CodecDirectory PrefixDirectoryFolderItems(CodecDirectory directory)
         {
             var tempCodecDirectory = new CodecDirectory();
@@ -623,7 +627,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 status.HasDirectory = true;
                 status.HasDirectorySearch = true;
-                status.CurrentDirectory = PrefixDirectoryFolderItems(directoryCodec.CurrentDirectoryResult);
+                status.CurrentDirectory = directoryCodec.CurrentDirectoryResult;
             }
 
             status.CameraSelfViewIsOn = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
@@ -660,7 +664,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 return;
             }
 
-            PostStatusMessage(GetStatus());        
+            CrestronInvoke.BeginInvoke((o) => PostStatusMessage(GetStatus()));
         }
 
         private void PostReceivingContent(bool receivingContent)

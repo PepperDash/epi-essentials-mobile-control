@@ -228,6 +228,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             PropertyCopier<VideoCodecBaseStateMessage, ZoomRoomStateMessage>.Copy(baseStatus, zoomStatus);
 
+            // We always want to override the base CurrentDirectory value with DirectoryRoot because the ZoomRoom
+            // has a flat directory that we manually add the Rooms and Contacts folders to to match the Zoom UI
+            zoomStatus.CurrentDirectory = _codec.DirectoryRoot;
+
             zoomStatus.Layouts = new LayoutInfoChangedEventArgs()
                 {
                     AvailableLayouts = _codec.AvailableLayouts,
