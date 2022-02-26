@@ -867,13 +867,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             public class Camera
             {
-                [JsonProperty("Key", NullValueHandling = NullValueHandling.Ignore)]
+                [JsonProperty("key", NullValueHandling = NullValueHandling.Ignore)]
                 public string Key { get; set; }
 
-                [JsonProperty("IsFarEnd", NullValueHandling = NullValueHandling.Ignore)]
+                [JsonProperty("isFarEnd", NullValueHandling = NullValueHandling.Ignore)]
                 public bool? IsFarEnd { get; set; }
 
-                [JsonProperty("Capabilities", NullValueHandling = NullValueHandling.Ignore)]
+                [JsonProperty("capabilities", NullValueHandling = NullValueHandling.Ignore)]
                 public CameraCapabilities Capabilities { get; set; }
 
                 public class CameraCapabilities
