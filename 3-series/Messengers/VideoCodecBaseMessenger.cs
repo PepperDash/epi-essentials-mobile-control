@@ -722,6 +722,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var camera = new VideoCodecBaseStateMessage.CameraStatus.Camera();
 
             camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
+            camera.Name = camerasCodec.SelectedCamera.Name;
             camera.IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue;
             camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
                 {
@@ -869,6 +870,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 [JsonProperty("key", NullValueHandling = NullValueHandling.Ignore)]
                 public string Key { get; set; }
+
+                [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+                public string Name { get; set; }
 
                 [JsonProperty("isFarEnd", NullValueHandling = NullValueHandling.Ignore)]
                 public bool? IsFarEnd { get; set; }
