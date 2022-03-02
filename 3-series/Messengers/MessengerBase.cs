@@ -146,13 +146,25 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 AppServerController.SendMessageObject(message);
             }
         }
-    }
-    
 
-    /// <summary>
-    /// Base class for messages that includes the type of message and the implmeneted interfaces
-    /// </summary>
-    public abstract class DeviceStateMessageBase
+        protected void PostEventMessage(DeviceEventMessageBase message)
+        {
+            if (AppServerController != null)
+            {
+                message.Key = _device.Key;
+
+                message.Name = _device.Name;
+
+                AppServerController.SendMessageObject(new
+                {
+                    type = MessagePath,
+                    content = message,
+                });
+            }
+        }
+    }
+
+    public abstract class DeviceMessageBase
     {
         /// <summary>
         /// The device key
@@ -177,7 +189,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 return this.GetType().Name;
             }
         }
-
+    }
+    
+    /// <summary>
+    /// Base class for state messages that includes the type of message and the implmented interfaces
+    /// </summary>
+    public abstract class DeviceStateMessageBase : DeviceMessageBase
+    {
         /// <summary>
         /// The interfaces implmented by the device sending the messsage
         /// </summary>
@@ -188,5 +206,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             Interfaces = interfaces;
         }
+    }
+
+    /// <summary>
+    /// Base class for event messages that include the type of message and an event type
+    /// </summary>
+    public abstract class DeviceEventMessageBase : DeviceMessageBase
+    {
+        /// <summary>
+        /// The event type
+        /// </summary>
+        [JsonProperty("eventType")]
+        public string EventType { get; set; }
     }
 }

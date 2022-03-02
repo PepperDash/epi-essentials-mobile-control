@@ -55,6 +55,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 _codec.CameraIsMutedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraIsMutedFeedback_OutputChange);
 
+                _codec.VideoUnmuteRequested += codec_VideoUnmuteRequested;
 
                 var presentOnlyMeetingCodec = _codec as IHasPresentationOnlyMeeting;
                 if (presentOnlyMeetingCodec != null)
@@ -175,6 +176,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostMeetingInfo(e.Info);
         }
 
+        void codec_VideoUnmuteRequested(object sender, EventArgs e)
+        {
+            var eventMsg = new ZoomRoomEventMessage();
+
+            eventMsg.EventType = "videoUnmuteRequested";
+
+            PostEventMessage(eventMsg);
+        }
+
         void Participants_ParticipantsListHasChanged(object sender, EventArgs e)
         {
             var status = new ZoomRoomStateMessage();
@@ -272,6 +282,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("cameraIsMuted", NullValueHandling = NullValueHandling.Ignore)]
         public bool? CameraIsMuted { get; set; }
+    }
+
+    public class ZoomRoomEventMessage: DeviceEventMessageBase
+    {
+
     }
 
 }
