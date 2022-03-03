@@ -4,6 +4,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -82,7 +83,45 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Implemented in extending classes. Wire up API calls and feedback here
         /// </summary>
         /// <param name="appServerController"></param>
-        protected abstract void CustomRegisterWithAppServer(MobileControlSystemController appServerController);
+        protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        {
+            var commMonitor = _device as ICommunicationMonitor;
+
+            if (commMonitor != null)
+            {
+                Debug.Console(2, this, "Subscribing to CommunicationMonitor.StatusChange on: ", _device.Key);
+                commMonitor.CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
+
+                GetCommunicationMonitorState();
+            }
+        }
+
+        private void CommunicationMonitor_StatusChange(object sender, MonitorStatusChangeEventArgs e)
+        {            
+            var message = new DeviceStateMessageBase();
+            message.CommMonitor = GetCommunicationMonitorState();
+
+
+            PostStatusMessage(message);
+        }
+
+        protected CommunicationMonitorState GetCommunicationMonitorState()
+        {
+            var commMonitor = _device as ICommunicationMonitor;
+            if (commMonitor != null)
+            {
+                var state = new CommunicationMonitorState();
+                state.IsOnline = commMonitor.CommunicationMonitor.IsOnline;
+                state.Status = commMonitor.CommunicationMonitor.Status;
+                Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
+                return state;           
+            }
+            else
+            {
+                Debug.Console(2, this, "******************Device does not implement ICommunicationMonitor");
+                return null;
+            }
+        }
 
         /// <summary>
         /// Helper for posting status message
@@ -110,7 +149,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (AppServerController != null)
             {
-                message.SetIntefaces(_deviceIntefaces);
+                message.SetInterfaces(_deviceIntefaces);
 
                 message.Key = _device.Key;
 
@@ -132,7 +171,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 if (deviceState != null)
                 {
                     Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-                    deviceState.SetIntefaces(_deviceIntefaces);
+                    deviceState.SetInterfaces(_deviceIntefaces);
 
                     deviceState.Key = _device.Key;
 
@@ -194,15 +233,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// Base class for state messages that includes the type of message and the implmented interfaces
     /// </summary>
-    public abstract class DeviceStateMessageBase : DeviceMessageBase
+    public class DeviceStateMessageBase : DeviceMessageBase
     {
+        /// <summary>
+        /// For devices that implement ICommunicationMonitor, reports the online status of the device
+        /// </summary>
+        [JsonProperty("commMonitor", NullValueHandling = NullValueHandling.Ignore)]
+        public CommunicationMonitorState CommMonitor { get; set; }
+
         /// <summary>
         /// The interfaces implmented by the device sending the messsage
         /// </summary>
         [JsonProperty("interfaces")]
         public List<string> Interfaces { get; private set; }
 
-        public void SetIntefaces(List<string> interfaces)
+        public void SetInterfaces(List<string> interfaces)
         {
             Interfaces = interfaces;
         }
@@ -218,5 +263,25 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         [JsonProperty("eventType")]
         public string EventType { get; set; }
+    }
+
+    /// <summary>
+    /// Represents the state of the communication monitor
+    /// </summary>
+    public class CommunicationMonitorState
+    {
+        /// <summary>
+        /// For devices that implement ICommunicationMonitor, reports the online status of the device
+        /// </summary>
+        [JsonProperty("isOnline", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsOnline { get; set; }
+
+        /// <summary>
+        /// For devices that implement ICommunicationMonitor, reports the online status of the device
+        /// </summary>
+        [JsonProperty("status", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public MonitorStatus Status { get; set; }
+
     }
 }

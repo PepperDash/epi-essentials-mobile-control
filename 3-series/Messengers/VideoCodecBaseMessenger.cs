@@ -206,151 +206,160 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="appServerController"></param>
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
-            appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
-            appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
-            appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
-            appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
+            try
             {
-                var call = GetCallWithId(s);
-                if (call != null)
-                    Codec.EndCall(call);
-            }));
-            appServerController.AddAction(MessagePath + "/endAllCalls", new Action(Codec.EndAllCalls));
-            appServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s => Codec.SendDtmf(s)));
-            appServerController.AddAction(MessagePath + "/rejectById", new Action<string>(s =>
-            {
-                var call = GetCallWithId(s);
-                if (call != null)
-                    Codec.RejectCall(call);
-            }));
-            appServerController.AddAction(MessagePath + "/acceptById", new Action<string>(s =>
-            {
-                var call = GetCallWithId(s);
-                if (call != null)
-                    Codec.AcceptCall(call);
-            }));
+                base.CustomRegisterWithAppServer(appServerController);
 
-            // Directory actions
-            var dirCodec = Codec as IHasDirectory;
-            if (dirCodec != null)
-            {
-                appServerController.AddAction(MessagePath + "/getDirectory", new Action(GetDirectoryRoot));
-                appServerController.AddAction(MessagePath + "/directoryById", new Action<string>(GetDirectory));
-                appServerController.AddAction(MessagePath + "/directorySearch", new Action<string>(DirectorySearch));
-                appServerController.AddAction(MessagePath + "/directoryBack", new Action(GetPreviousDirectory));
-
-                dirCodec.PhonebookSyncState.InitialSyncCompleted += PhonebookSyncState_InitialSyncCompleted;
-            }
-
-            // History actions
-            var recCodec = Codec as IHasCallHistory;
-            if (recCodec != null)
-            {
-                appServerController.AddAction(MessagePath + "/getCallHistory", new Action(PostCallHistory));
-            }
-            var cameraCodec = Codec as IHasCodecCameras;
-            if (cameraCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasCodecCameras Actions");
-
-                cameraCodec.CameraSelected += cameraCodec_CameraSelected;
-
-                appServerController.AddAction(MessagePath + "/cameraSelect",
-                    new Action<string>(cameraCodec.SelectCamera));
-
-                MapCameraActions();
-
-                var presetsCodec = Codec as IHasCodecRoomPresets;
-                if (presetsCodec != null)
+                appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
+                appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
+                appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
+                appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
+                appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
                 {
-                    Debug.Console(2, this, "Adding IHasCodecRoomPresets Actions");
+                    var call = GetCallWithId(s);
+                    if (call != null)
+                        Codec.EndCall(call);
+                }));
+                appServerController.AddAction(MessagePath + "/endAllCalls", new Action(Codec.EndAllCalls));
+                appServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s => Codec.SendDtmf(s)));
+                appServerController.AddAction(MessagePath + "/rejectById", new Action<string>(s =>
+                {
+                    var call = GetCallWithId(s);
+                    if (call != null)
+                        Codec.RejectCall(call);
+                }));
+                appServerController.AddAction(MessagePath + "/acceptById", new Action<string>(s =>
+                {
+                    var call = GetCallWithId(s);
+                    if (call != null)
+                        Codec.AcceptCall(call);
+                }));
 
-                    presetsCodec.CodecRoomPresetsListHasChanged += presetsCodec_CameraPresetsListHasChanged;
+                // Directory actions
+                var dirCodec = Codec as IHasDirectory;
+                if (dirCodec != null)
+                {
+                    appServerController.AddAction(MessagePath + "/getDirectory", new Action(GetDirectoryRoot));
+                    appServerController.AddAction(MessagePath + "/directoryById", new Action<string>(GetDirectory));
+                    appServerController.AddAction(MessagePath + "/directorySearch", new Action<string>(DirectorySearch));
+                    appServerController.AddAction(MessagePath + "/directoryBack", new Action(GetPreviousDirectory));
 
-                    appServerController.AddAction(MessagePath + "/cameraPreset",
-                        new Action<int>(presetsCodec.CodecRoomPresetSelect));
-                    appServerController.AddAction(MessagePath + "/cameraPresetStore",
-                        new Action<CodecRoomPreset>(p => presetsCodec.CodecRoomPresetStore(p.ID, p.Description)));
+                    dirCodec.PhonebookSyncState.InitialSyncCompleted += PhonebookSyncState_InitialSyncCompleted;
                 }
 
-                var speakerTrackCodec = Codec as IHasCameraAutoMode;
-                if (speakerTrackCodec != null)
+                // History actions
+                var recCodec = Codec as IHasCallHistory;
+                if (recCodec != null)
                 {
-                    Debug.Console(2, this, "Adding IHasCameraAutoMode Actions");
+                    appServerController.AddAction(MessagePath + "/getCallHistory", new Action(PostCallHistory));
+                }
+                var cameraCodec = Codec as IHasCodecCameras;
+                if (cameraCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasCodecCameras Actions");
 
-                    speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
+                    cameraCodec.CameraSelected += cameraCodec_CameraSelected;
 
-                    appServerController.AddAction(MessagePath + "/cameraModeAuto",
-                        new Action(speakerTrackCodec.CameraAutoModeOn));
-                    appServerController.AddAction(MessagePath + "/cameraModeManual",
-                        new Action(speakerTrackCodec.CameraAutoModeOff));
+                    appServerController.AddAction(MessagePath + "/cameraSelect",
+                        new Action<string>(cameraCodec.SelectCamera));
+
+                    MapCameraActions();
+
+                    var presetsCodec = Codec as IHasCodecRoomPresets;
+                    if (presetsCodec != null)
+                    {
+                        Debug.Console(2, this, "Adding IHasCodecRoomPresets Actions");
+
+                        presetsCodec.CodecRoomPresetsListHasChanged += presetsCodec_CameraPresetsListHasChanged;
+
+                        appServerController.AddAction(MessagePath + "/cameraPreset",
+                            new Action<int>(presetsCodec.CodecRoomPresetSelect));
+                        appServerController.AddAction(MessagePath + "/cameraPresetStore",
+                            new Action<CodecRoomPreset>(p => presetsCodec.CodecRoomPresetStore(p.ID, p.Description)));
+                    }
+
+                    var speakerTrackCodec = Codec as IHasCameraAutoMode;
+                    if (speakerTrackCodec != null)
+                    {
+                        Debug.Console(2, this, "Adding IHasCameraAutoMode Actions");
+
+                        speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
+
+                        appServerController.AddAction(MessagePath + "/cameraModeAuto",
+                            new Action(speakerTrackCodec.CameraAutoModeOn));
+                        appServerController.AddAction(MessagePath + "/cameraModeManual",
+                            new Action(speakerTrackCodec.CameraAutoModeOff));
+                    }
+
+                    var cameraOffCodec = Codec as IHasCameraOff;
+                    if (cameraOffCodec != null)
+                    {
+                        Debug.Console(2, this, "Adding IHasCameraOff Actions");
+
+                        cameraOffCodec.CameraIsOffFeedback.OutputChange += (CameraIsOffFeedback_OutputChange);
+
+                        appServerController.AddAction(MessagePath + "/cameraModeOff",
+                            new Action(cameraOffCodec.CameraOff));
+                    }
                 }
 
-                var cameraOffCodec = Codec as IHasCameraOff;
-                if (cameraOffCodec != null)
+
+                var selfViewCodec = Codec as IHasCodecSelfView;
+
+                if (selfViewCodec != null)
                 {
-                    Debug.Console(2, this, "Adding IHasCameraOff Actions");
+                    Debug.Console(2, this, "Adding IHasCodecSelfView Actions");
 
-                    cameraOffCodec.CameraIsOffFeedback.OutputChange += (CameraIsOffFeedback_OutputChange);
+                    appServerController.AddAction(MessagePath + "/cameraSelfView",
+                        new Action(selfViewCodec.SelfViewModeToggle));
 
-                    appServerController.AddAction(MessagePath + "/cameraModeOff",
-                        new Action(cameraOffCodec.CameraOff));
+                    selfViewCodec.SelfviewIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(SelfviewIsOnFeedback_OutputChange);
                 }
+
+                var layoutsCodec = Codec as IHasCodecLayouts;
+
+                if (layoutsCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasCodecLayouts Actions");
+
+                    appServerController.AddAction(MessagePath + "/cameraRemoteView",
+                        new Action(layoutsCodec.LocalLayoutToggle));
+
+                    appServerController.AddAction(MessagePath + "/cameraLayout",
+                        new Action(layoutsCodec.LocalLayoutToggle));
+
+                }
+
+                var pwCodec = Codec as IPasswordPrompt;
+                if (pwCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IPasswordPrompt Actions");
+
+                    appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
+                }
+
+                var farEndContentStatus = Codec as IHasFarEndContentStatus;
+
+                if (farEndContentStatus != null)
+                {
+                    farEndContentStatus.ReceivingContent.OutputChange +=
+                        (sender, args) => PostReceivingContent(args.BoolValue);
+                }
+
+                Debug.Console(2, this, "Adding Privacy & Standby Actions");
+
+                appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
+                appServerController.AddAction(MessagePath + "/privacyModeOff", new Action(Codec.PrivacyModeOff));
+                appServerController.AddAction(MessagePath + "/privacyModeToggle", new Action(Codec.PrivacyModeToggle));
+                appServerController.AddAction(MessagePath + "/sharingStart", new Action(Codec.StartSharing));
+                appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
+                appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
+                appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
             }
-
-
-            var selfViewCodec = Codec as IHasCodecSelfView;
-
-            if (selfViewCodec != null)
+            catch (Exception e)
             {
-                Debug.Console(2, this, "Adding IHasCodecSelfView Actions");
-
-                appServerController.AddAction(MessagePath + "/cameraSelfView",
-                    new Action(selfViewCodec.SelfViewModeToggle));
-
-                selfViewCodec.SelfviewIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(SelfviewIsOnFeedback_OutputChange);
+                Debug.Console(2, this, "Error: {0}", e);
             }
-
-            var layoutsCodec = Codec as IHasCodecLayouts;
-
-            if (layoutsCodec != null)
-            {
-                Debug.Console(2, this, "Adding IHasCodecLayouts Actions");
-
-                appServerController.AddAction(MessagePath + "/cameraRemoteView",
-                    new Action(layoutsCodec.LocalLayoutToggle));
-
-                appServerController.AddAction(MessagePath + "/cameraLayout",
-                    new Action(layoutsCodec.LocalLayoutToggle));
-
-            }
-
-            var pwCodec = Codec as IPasswordPrompt;
-            if (pwCodec != null)
-            {
-                Debug.Console(2, this, "Adding IPasswordPrompt Actions");
-
-                appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
-            }
-
-            var farEndContentStatus = Codec as IHasFarEndContentStatus;
-
-            if (farEndContentStatus != null)
-            {
-                farEndContentStatus.ReceivingContent.OutputChange +=
-                    (sender, args) => PostReceivingContent(args.BoolValue);
-            }
-
-            Debug.Console(2, this, "Adding Privacy & Standby Actions");
-
-            appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
-            appServerController.AddAction(MessagePath + "/privacyModeOff", new Action(Codec.PrivacyModeOff));
-            appServerController.AddAction(MessagePath + "/privacyModeToggle", new Action(Codec.PrivacyModeToggle));
-            appServerController.AddAction(MessagePath + "/sharingStart", new Action(Codec.StartSharing));
-            appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
-            appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
-            appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
         }
 
         private void PhonebookSyncState_InitialSyncCompleted(object sender, EventArgs e)
@@ -608,6 +617,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected VideoCodecBaseStateMessage GetStatus()
         {
             var status = new VideoCodecBaseStateMessage();
+
+            status.CommMonitor = GetCommunicationMonitorState();
 
             var camerasCodec = Codec as IHasCodecCameras;
             if (camerasCodec != null)
