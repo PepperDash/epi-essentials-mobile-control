@@ -89,7 +89,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (commMonitor != null)
             {
-                Debug.Console(2, this, "Subscribing to CommunicationMonitor.StatusChange on: ", _device.Key);
+                //Debug.Console(2, this, "Subscribing to CommunicationMonitor.StatusChange on: ", _device.Key);
                 commMonitor.CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
 
                 GetCommunicationMonitorState();
@@ -113,12 +113,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var state = new CommunicationMonitorState();
                 state.IsOnline = commMonitor.CommunicationMonitor.IsOnline;
                 state.Status = commMonitor.CommunicationMonitor.Status;
-                Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
+                //Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
                 return state;           
             }
             else
             {
-                Debug.Console(2, this, "******************Device does not implement ICommunicationMonitor");
+                //Debug.Console(2, this, "******************Device does not implement ICommunicationMonitor");
                 return null;
             }
         }
@@ -165,25 +165,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected void PostStatusMessage(MobileControlResponseMessage message)
         {
-            if (AppServerController != null)
+            if (AppServerController == null)
             {
-                var deviceState = message.Content as DeviceStateMessageBase;
-                if (deviceState != null)
-                {
-                    Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-                    deviceState.SetInterfaces(_deviceIntefaces);
-
-                    deviceState.Key = _device.Key;
-
-                    deviceState.Name = _device.Name;
-                }
-                else
-                {
-                    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
-                }
-
-                AppServerController.SendMessageObject(message);
+                return;
             }
+
+            var deviceState = message.Content as DeviceStateMessageBase;
+            if (deviceState != null)
+            {
+                //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
+                deviceState.SetInterfaces(_deviceIntefaces);
+
+                deviceState.Key = _device.Key;
+
+                deviceState.Name = _device.Name;
+            }
+            //else
+            //{
+            //    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
+            //}
+
+            AppServerController.SendMessageObject(message); 
         }
 
         protected void PostEventMessage(DeviceEventMessageBase message)
