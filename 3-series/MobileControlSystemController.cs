@@ -566,7 +566,7 @@ namespace PepperDash.Essentials
             }
             if (string.IsNullOrEmpty(code))
             {
-                CrestronConsole.ConsoleCommandResponse("Please enter a user code to authorize a system");
+                CrestronConsole.ConsoleCommandResponse("Please enter a grant code to authorize a system");
                 return;
             }
             if (string.IsNullOrEmpty(Config.ServerUrl))
