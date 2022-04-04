@@ -51,6 +51,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
+            base.CustomRegisterWithAppServer(appServerController);
+
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendCameraFullMessageObject));
 
             var ptzCamera = Camera as IHasCameraPtzControl;

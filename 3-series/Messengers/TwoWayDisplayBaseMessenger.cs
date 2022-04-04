@@ -35,6 +35,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
+            base.CustomRegisterWithAppServer(appServerController);
+
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
 
             _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;

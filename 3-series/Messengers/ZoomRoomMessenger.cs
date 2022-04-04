@@ -17,7 +17,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public class ZoomRoomMessenger : VideoCodecBaseMessenger
     {
 
-        private ZoomRoom _codec;
+        private readonly ZoomRoom _codec;
 
         public ZoomRoomMessenger(string key, ZoomRoom codec, string messagePath)
             : base(key, codec, messagePath)
@@ -30,6 +30,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             try
             {
                 base.CustomRegisterWithAppServer(appServerController);
+
+                appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath),
+                    new Action<ushort>((duration) =>
+                    {
+                        _codec.StartMeeting(duration);
+                    }));
 
                 appServerController.AddAction(String.Format("{0}/invite", MessagePath),
                     new Action<InvitableDirectoryContact>((c) =>
@@ -55,6 +61,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 _codec.CameraIsMutedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(CameraIsMutedFeedback_OutputChange);
 
+                _codec.VideoUnmuteRequested += codec_VideoUnmuteRequested;
 
                 var presentOnlyMeetingCodec = _codec as IHasPresentationOnlyMeeting;
                 if (presentOnlyMeetingCodec != null)
@@ -175,6 +182,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostMeetingInfo(e.Info);
         }
 
+        void codec_VideoUnmuteRequested(object sender, EventArgs e)
+        {
+            var eventMsg = new ZoomRoomEventMessage();
+
+            eventMsg.EventType = "videoUnmuteRequested";
+
+            PostEventMessage(eventMsg);
+        }
+
         void Participants_ParticipantsListHasChanged(object sender, EventArgs e)
         {
             var status = new ZoomRoomStateMessage();
@@ -182,7 +198,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
             status.Participants = _codec.Participants.CurrentParticipants;
 
             PostStatusMessage(status);
+        }
 
+        /// <summary>
+        /// For ZoomRoom we simply want to refresh the root directory data whenever this event fires
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void dirCodec_DirectoryResultReturned(object sender, DirectoryEventArgs e)
+        {
+            var dirCodec = Codec as IHasDirectory;
+
+            if (dirCodec != null)
+            {
+                SendDirectory(dirCodec.DirectoryRoot);
+            }
         }
 
         void MeetingIsRecordingFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
@@ -228,6 +258,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             PropertyCopier<VideoCodecBaseStateMessage, ZoomRoomStateMessage>.Copy(baseStatus, zoomStatus);
 
+            // We always want to override the base CurrentDirectory value with DirectoryRoot because the ZoomRoom
+            // has a flat directory that we manually add the Rooms and Contacts folders to to match the Zoom UI
+            zoomStatus.CurrentDirectory = _codec.DirectoryRoot;
+
             zoomStatus.Layouts = new LayoutInfoChangedEventArgs()
                 {
                     AvailableLayouts = _codec.AvailableLayouts,
@@ -251,8 +285,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public uint Duration { get; set; }
         [JsonProperty("invitees")]
         public List<InvitableDirectoryContact> Invitees { get; set; }
-
-
     }
 
     public class ZoomRoomStateMessage : VideoCodecBaseStateMessage
@@ -268,6 +300,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("cameraIsMuted", NullValueHandling = NullValueHandling.Ignore)]
         public bool? CameraIsMuted { get; set; }
+    }
+
+    public class ZoomRoomEventMessage: DeviceEventMessageBase
+    {
+
     }
 
 }

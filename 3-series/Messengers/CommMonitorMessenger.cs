@@ -3,7 +3,8 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class CommMonitorMessenger:MessengerBase
+    [Obsolete("Will be deprecated in favour of build in ICommunicationMonitor tracking id MessengerBase")]
+    public class CommMonitorMessenger : MessengerBase
     {
         private const string OnlineStatusPath = "/onlineStatus";
         private const string PollStatusPath = "/status";
@@ -29,6 +30,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     status = _monitor.CommunicationMonitor.Status.ToString()
                 }
             };
+
+
 
             PostStatusMessage(messageObj);
         }

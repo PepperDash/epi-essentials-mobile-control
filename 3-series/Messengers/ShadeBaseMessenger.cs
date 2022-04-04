@@ -28,6 +28,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
         {
+            base.CustomRegisterWithAppServer(appServerController);
+
             appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
 
             appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new Action<bool>( (b) =>
