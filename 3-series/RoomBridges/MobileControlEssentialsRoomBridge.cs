@@ -484,6 +484,7 @@ namespace PepperDash.Essentials
 
             var state = new RoomStateMessage();
 
+            state.Share = new ShareState();
             state.Share.CurrentShareText = shareText;
             state.Share.IsSharing = isSharing;
 

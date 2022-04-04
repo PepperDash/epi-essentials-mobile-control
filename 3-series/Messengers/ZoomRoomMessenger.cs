@@ -31,6 +31,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 base.CustomRegisterWithAppServer(appServerController);
 
+                appServerController.AddAction(String.Format("{0}/startMeeting", MessagePath),
+                    new Action<ushort>((duration) =>
+                    {
+                        _codec.StartMeeting(duration);
+                    }));
+
                 appServerController.AddAction(String.Format("{0}/invite", MessagePath),
                     new Action<InvitableDirectoryContact>((c) =>
                     {
@@ -192,7 +198,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
             status.Participants = _codec.Participants.CurrentParticipants;
 
             PostStatusMessage(status);
+        }
 
+        /// <summary>
+        /// For ZoomRoom we simply want to refresh the root directory data whenever this event fires
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected override void dirCodec_DirectoryResultReturned(object sender, DirectoryEventArgs e)
+        {
+            var dirCodec = Codec as IHasDirectory;
+
+            if (dirCodec != null)
+            {
+                SendDirectory(dirCodec.DirectoryRoot);
+            }
         }
 
         void MeetingIsRecordingFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
@@ -265,8 +285,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public uint Duration { get; set; }
         [JsonProperty("invitees")]
         public List<InvitableDirectoryContact> Invitees { get; set; }
-
-
     }
 
     public class ZoomRoomStateMessage : VideoCodecBaseStateMessage

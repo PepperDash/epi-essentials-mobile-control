@@ -63,17 +63,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void OnPasswordRequired(object sender, PasswordPromptEventArgs args)
         {
-            AppServerController.SendMessageObject(new
+            var eventMsg = new PasswordPromptEventMessage()
             {
-                type = MessagePath + "/passwordPrompt",
-                content = new
-                {
-                    message = args.Message,
-                    lastAttemptWasIncorrect = args.LastAttemptWasIncorrect,
-                    loginAttemptFailed = args.LoginAttemptFailed,
-                    loginAttemptCancelled = args.LoginAttemptCancelled,
-                }
-            });
+                Message = args.Message,
+                LastAttemptWasIncorrect = args.LastAttemptWasIncorrect,
+                LoginAttemptFailed = args.LoginAttemptFailed,
+                LoginAttemptCancelled = args.LoginAttemptCancelled,
+            };
+
+            eventMsg.EventType = "passwordPrompt";
+
+            PostEventMessage(eventMsg);
         }
 
         /// <summary>
@@ -102,17 +102,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void dirCodec_DirectoryResultReturned(object sender, DirectoryEventArgs e)
+        protected virtual void dirCodec_DirectoryResultReturned(object sender, DirectoryEventArgs e)
         {
             var hasDirectory = Codec as IHasDirectory;
             if (hasDirectory != null)
-                SendDirectory(e.Directory, e.DirectoryIsOnRoot);
+                SendDirectory(e.Directory);
         }
 
         /// <summary>
         /// Posts the current directory
         /// </summary>
-        private void SendDirectory(CodecDirectory directory, bool isRoot)
+        protected void SendDirectory(CodecDirectory directory)
         {
             var state = new VideoCodecBaseStateMessage();
 
@@ -234,6 +234,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     if (call != null)
                         Codec.AcceptCall(call);
                 }));
+
+                Codec.SharingContentIsOnFeedback.OutputChange += SharingContentIsOnFeedback_OutputChange;
+                Codec.SharingSourceFeedback.OutputChange += SharingSourceFeedback_OutputChange;
 
                 // Directory actions
                 var dirCodec = Codec as IHasDirectory;
@@ -360,6 +363,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 Debug.Console(2, this, "Error: {0}", e);
             }
+        }
+
+        private void SharingSourceFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            var state = new VideoCodecBaseStateMessage();
+            state.SharingSource = e.StringValue;
+
+            PostStatusMessage(state);
+        }
+
+        private void SharingContentIsOnFeedback_OutputChange(object sender, FeedbackEventArgs e)
+        {
+            var state = new VideoCodecBaseStateMessage();
+            state.SharingContentIsOn = e.BoolValue;
+
+            PostStatusMessage(state);
         }
 
         private void PhonebookSyncState_InitialSyncCompleted(object sender, EventArgs e)
@@ -910,5 +929,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         }
 
+    }
+
+    public class VideoCodecBaseEventMessage: DeviceEventMessageBase
+    {
+
+    }
+
+    public class PasswordPromptEventMessage : VideoCodecBaseEventMessage
+    {
+        [JsonProperty("message", NullValueHandling = NullValueHandling.Ignore)]
+        public string Message { get; set; }
+        [JsonProperty("lastAttemptWasIncorrect", NullValueHandling = NullValueHandling.Ignore)]
+        public bool LastAttemptWasIncorrect { get; set; }
+
+        [JsonProperty("loginAttemptFailed", NullValueHandling = NullValueHandling.Ignore)]
+        public bool LoginAttemptFailed { get; set; }
+
+        [JsonProperty("loginAttemptCancelled", NullValueHandling = NullValueHandling.Ignore)]
+        public bool LoginAttemptCancelled { get; set; }
     }
 }
