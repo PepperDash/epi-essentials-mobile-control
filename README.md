@@ -18,9 +18,9 @@ This happens via two methods:
 
 ## Direct Connection to 4-Series Processor with or without Edge Server
 
-The steps below detail how to load Mobile Control on a 4-Series processor running a websocket server to be served to local devices like an in-room touchpanel or a dedicated room PC or tablet.
+The steps below detail how to load Mobile Control on a 4-Series processor running a websocket server to be served to local devices like an in-room touchpanel or a dedicated room PC or tablet.  Devices that connect in this manner can only connect to a single room, configured by generating a token via console commands on this plugin.
 
-An Edge Server can still optionally be used for mobile 
+An Edge Server can still optionally be used for mobile devices to connect to any room configured to communicate with the Edge Server.
 
 ## Folder Structure
 
