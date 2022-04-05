@@ -12,9 +12,9 @@ This happens via two methods:
 
 ## Download Links for Dependencies
 
-[PepperDash Essentials - Releases](https://github.com/PepperDash/Essentials/releases) v1.10.0 minimum
+[PepperDash Essentials - Releases](https://github.com/PepperDash/Essentials/releases) (v1.10.0 minimum)
 
-[PepperDash Mobile Control App - Releases](https://github.com/PepperDash-Products/mobile-control-app/releases) v3.0.1 minimum
+[PepperDash Mobile Control App - Releases](https://github.com/PepperDash-Products/mobile-control-app/releases) (v3.0.1 minimum)
 
 ## Direct Connection to 4-Series Processor with or without Edge Server
 
@@ -28,14 +28,14 @@ An Edge Server can still optionally be used for mobile
 Processor
 ├── html
 ├── program[xx] // where xx is the two digit slot number
-│   └── PepperDashEssentials-X.YY.Z.cpz
+│   └── PepperDashEssentials-X.Y.Z.cpz // Essentials application file
 └── user
     └── program[x] // where x is the slot number
-        ├── configurationFile.json
+        ├── configurationFile*.json // Essentials configuration file
         ├── ir
         ├── mcUserApp // optional folder where user app is served from
         │   ├── _local-config
-        │   │   └── _config.local.json
+        │   │   └── _config.local.json // config file for the user app
         │   ├── {Contents of mobile-control-app-directServer-vX.Y.Z.zip file}
         ├── plugins // plugin must be loaded to this folder
         │   └── epi-essentials-mobile-control-4s-X.Y.Z.cplz // the 4s version is for 4-Series and is required for direct websocket commmunications to work.
@@ -101,6 +101,8 @@ mobileadduiclient:1 room1 AOIUYGHG
 
 mobileremoveuiclient(:essentials-slot-#) {token} // removes the ui client matching the specified token
 
+// example
+mobileremoveuiclient:1 81c4eb3c-dbc5-410c-8816-90500f474236
 ```
 
 
