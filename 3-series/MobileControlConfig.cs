@@ -18,6 +18,9 @@ namespace PepperDash.Essentials
         [JsonProperty("directServer")]
         public MobileControlDirectServerPropertiesConfig DirectServer { get; set; }
 
+        [JsonProperty("applicationConfig")]
+        public MobileControlApplicationConfig ApplicationConfig{get; set;}
+
         [JsonProperty("enableApiServer")]
         public bool EnableApiServer { get; set; }
 #endif
@@ -31,6 +34,7 @@ namespace PepperDash.Essentials
 
 #if SERIES4
             EnableApiServer = true; // default to true
+            ApplicationConfig = null;                 
 #endif
         }
     }
@@ -60,5 +64,47 @@ namespace PepperDash.Essentials
     {
         [JsonProperty("eiscId")]
         public string EiscId { get; set; }
+    }
+
+    public class MobileControlApplicationConfig
+    {
+        [JsonProperty("apiPath")]
+        public string ApiPath { get; set; }
+
+        [JsonProperty("gatewayAppPath")]
+        public string GatewayAppPath { get; set; }
+
+        [JsonProperty("enableDev")]
+        public bool? EnableDev { get; set; }
+
+        [JsonProperty("logoPath")]
+        public string LogoPath { get; set; }
+
+        [JsonProperty("iconSet")]
+        public MCIconSet? IconSet { get; set; }
+
+        [JsonProperty("loginMode")]
+        public string LoginMode { get; set; }
+
+        [JsonProperty("modes")]
+        public Dictionary<string, McMode> Modes { get; set; }
+    }
+
+    public class McMode
+    {
+        [JsonProperty("listPageText")]
+        public string ListPageText { get; set; }
+        [JsonProperty("loginHelpText")]
+        public string LoginHelpText { get; set; }
+
+        [JsonProperty("passcodePageText")]
+        public string PasscodePageText { get; set; }
+    }
+
+    public enum MCIconSet
+    {
+        GOOGLE,
+        HABANERO,
+        NEO
     }
 }
