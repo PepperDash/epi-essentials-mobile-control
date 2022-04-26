@@ -308,7 +308,7 @@ namespace PepperDash.Essentials
         /// <param name="s"></param>
         private void GenerateClientToken(string s)
         {
-            if (s == "?")
+            if (s == "?" || string.IsNullOrEmpty(s))
             {
                 CrestronConsole.ConsoleCommandResponse(@"[RoomKey] [GrantCode] Validates the room key against the grant code and returns a token for use in a UI client");
                 return;
@@ -351,7 +351,7 @@ namespace PepperDash.Essentials
                     });
 
 
-                    Debug.Console(0, this, "Added new WebSocket UiClient service at path: {0}", path);
+                    CrestronConsole.ConsoleCommandResponse("Added new WebSocket UiClient service at path: {0}", path);
 
                     Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
 
