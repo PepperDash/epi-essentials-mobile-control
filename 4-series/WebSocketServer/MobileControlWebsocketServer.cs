@@ -473,7 +473,7 @@ namespace PepperDash.Essentials
         /// <param name="s"></param>
         private void RemoveToken(string s)
         {
-            if (s == "?")
+            if (s == "?" || string.IsNullOrEmpty(s))
             {
                 CrestronConsole.ConsoleCommandResponse(@"[token] Removes the client with the specified token value");
                 return;
