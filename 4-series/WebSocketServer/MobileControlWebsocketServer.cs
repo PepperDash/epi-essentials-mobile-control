@@ -13,6 +13,7 @@ using PepperDash.Essentials.Core.Config;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Crestron.SimplSharp.CrestronIO;
 
 namespace PepperDash.Essentials
 {
@@ -20,7 +21,7 @@ namespace PepperDash.Essentials
     /// Represents the behaviour to associate with a UiClient for WebSocket communication
     /// </summary>
     public class UiClient : WebSocketBehavior
-    {
+    {       
         public MobileControlSystemController Controller { get; set; }
 
         public string RoomKey { get; set; }
@@ -120,6 +121,12 @@ namespace PepperDash.Essentials
 
     public class MobileControlWebsocketServer : EssentialsDevice
     {
+        private string userAppPath = Global.FilePathPrefix + "mcUserApp" + Global.DirectorySeparator;
+
+        private string localConfigFolderName = "_local-config";
+
+        private string appConfigFileName = "_config.local.json";
+
         /// <summary>
         /// Where the key is the join token and the value is the room key
         /// </summary>
@@ -235,6 +242,96 @@ namespace PepperDash.Essentials
             }
 
             RetrieveSecret();
+
+            CreateFolderStructure();
+        }
+
+        private void CreateFolderStructure()
+        {
+            if (!Directory.Exists(userAppPath)) {
+                Directory.Create(userAppPath);
+            }
+
+            if (!Directory.Exists($"{userAppPath}{localConfigFolderName}"))
+            {
+                Directory.Create($"{userAppPath}{localConfigFolderName}");
+            }
+
+            using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.OpenOrCreate, FileAccess.ReadWrite)))
+            {
+                var config = GetApplicationConfig();
+
+                var contents = JsonConvert.SerializeObject(config, Formatting.Indented);
+
+                sw.Write(contents);
+            }
+        }
+
+        private MobileControlApplicationConfig GetApplicationConfig()
+        {
+            MobileControlApplicationConfig config = null;
+
+            var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+
+            var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+            try
+            {
+                if (_parent.Config.ApplicationConfig == null)
+                {
+                    config = new MobileControlApplicationConfig
+                    {
+                        ApiPath = string.Format("http://{0}:{1}/mc/api", processorIp, _parent.Config.DirectServer.Port),
+                        GatewayAppPath = "",
+                        LogoPath = "logo/logo.png",
+                        EnableDev = false,
+                        IconSet = MCIconSet.GOOGLE,
+                        LoginMode = "room-list",
+                        Modes = new Dictionary<string, McMode>
+                        {
+                            {
+                                "room-list",
+                                new McMode{
+                                    ListPageText= "Please select your room",
+                                    LoginHelpText = "Please select your room from the list, then enter the code shown on the display.",
+                                    PasscodePageText = "Please enter the code shown on this room's display"
+                                }
+                            }
+                        }
+                    };
+                }
+                else
+                {
+                    config = new MobileControlApplicationConfig
+                    {
+                        ApiPath = string.Format("http://{0}:{1}/mc/api", processorIp, _parent.Config.DirectServer.Port),
+                        GatewayAppPath = "",
+                        LogoPath = _parent.Config.ApplicationConfig.LogoPath ?? "logo/logo.png",
+                        EnableDev = _parent.Config.ApplicationConfig.EnableDev ?? false,
+                        IconSet = _parent.Config.ApplicationConfig.IconSet ?? MCIconSet.GOOGLE,
+                        LoginMode = _parent.Config.ApplicationConfig.LoginMode ?? "room-list",
+                        Modes = _parent.Config.ApplicationConfig.Modes ?? new Dictionary<string, McMode>
+                        {
+                            {
+                                "room-list",
+                                new McMode{
+                                    ListPageText= "Please select your room",
+                                    LoginHelpText = "Please select your room from the list, then enter the code shown on the display.",
+                                    PasscodePageText = "Please enter the code shown on this room's display"
+                                }
+                            }
+                        }
+                    };
+                }
+            } catch(Exception ex)
+            {
+                Debug.Console(0, this, "Error getting application configuration: {0}", ex.Message);
+                Debug.Console(2, this, "Stack Trace: {0}", ex.StackTrace);
+
+                Debug.Console(2, "Config Object: {0} from config: {1}", config, _parent.Config);
+            }
+
+            return config;
         }
 
         /// <summary>
@@ -308,7 +405,7 @@ namespace PepperDash.Essentials
         /// <param name="s"></param>
         private void GenerateClientToken(string s)
         {
-            if (s == "?")
+            if (s == "?" || string.IsNullOrEmpty(s))
             {
                 CrestronConsole.ConsoleCommandResponse(@"[RoomKey] [GrantCode] Validates the room key against the grant code and returns a token for use in a UI client");
                 return;
@@ -351,7 +448,7 @@ namespace PepperDash.Essentials
                     });
 
 
-                    Debug.Console(0, this, "Added new WebSocket UiClient service at path: {0}", path);
+                    CrestronConsole.ConsoleCommandResponse("Added new WebSocket UiClient service at path: {0}", path);
 
                     Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
 
@@ -376,7 +473,7 @@ namespace PepperDash.Essentials
         /// <param name="s"></param>
         private void RemoveToken(string s)
         {
-            if (s == "?")
+            if (s == "?" || string.IsNullOrEmpty(s))
             {
                 CrestronConsole.ConsoleCommandResponse(@"[token] Removes the client with the specified token value");
                 return;
