@@ -295,6 +295,7 @@
     <Compile Include="..\3-series\Volumes.cs">
       <Link>Volumes.cs</Link>
     </Compile>
+    <Compile Include="Messengers\GenericMessenger.cs" />
     <Compile Include="WebSocketServer\MobileControlWebsocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebSocketServer\WebSocketServerSecretProvider.cs" />

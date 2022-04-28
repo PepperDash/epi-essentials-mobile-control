@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace PepperDash.Essentials
 {
@@ -81,6 +82,7 @@ namespace PepperDash.Essentials
         public string LogoPath { get; set; }
 
         [JsonProperty("iconSet")]
+        [JsonConverter(typeof(StringEnumConverter))]
         public MCIconSet? IconSet { get; set; }
 
         [JsonProperty("loginMode")]

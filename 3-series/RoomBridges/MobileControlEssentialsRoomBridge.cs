@@ -454,6 +454,16 @@ namespace PepperDash.Essentials
                         shadeDevice, string.Format("/device/{0}", deviceKey));
                     Parent.AddDeviceMessenger(messenger);
                 }
+
+                var genericDevice = device as EssentialsDevice;
+
+                if(genericDevice == null)
+                {
+                    continue;
+                }
+
+                Debug.Console(2, this, "Adding GenericMessenger for device: {0}", genericDevice.Key);              
+                Parent.AddDeviceMessenger(new GenericMessenger(genericDevice.Key, genericDevice, string.Format("/device/{0}", genericDevice.Key)));                
             }
         }
 
