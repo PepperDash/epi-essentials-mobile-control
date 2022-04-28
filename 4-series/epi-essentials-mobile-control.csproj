@@ -199,6 +199,9 @@
     <Compile Include="..\3-series\Messengers\DeviceVolumeMessenger.cs">
       <Link>Messengers\DeviceVolumeMessenger.cs</Link>
     </Compile>
+    <Compile Include="..\3-series\Messengers\GenericMessenger.cs">
+      <Link>Messengers\GenericMessenger.cs</Link>
+    </Compile>
     <Compile Include="..\3-series\Messengers\IHasScheduleAwarenessMessenger.cs">
       <Link>Messengers\IHasScheduleAwarenessMessenger.cs</Link>
     </Compile>
@@ -295,7 +298,6 @@
     <Compile Include="..\3-series\Volumes.cs">
       <Link>Volumes.cs</Link>
     </Compile>
-    <Compile Include="Messengers\GenericMessenger.cs" />
     <Compile Include="WebSocketServer\MobileControlWebsocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WebSocketServer\WebSocketServerSecretProvider.cs" />

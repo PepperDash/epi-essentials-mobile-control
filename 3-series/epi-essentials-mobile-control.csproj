@@ -172,6 +172,7 @@
     <Compile Include="Messengers\CommMonitorMessenger.cs" />
     <Compile Include="Messengers\DevicePresetsModelMessenger.cs" />
     <Compile Include="Messengers\DeviceVolumeMessenger.cs" />
+    <Compile Include="Messengers\GenericMessenger.cs" />
     <Compile Include="Messengers\IHasScheduleAwarenessMessenger.cs" />
     <Compile Include="Messengers\LightingBaseMessenger.cs" />
     <Compile Include="Messengers\PropertyCopier.cs" />
