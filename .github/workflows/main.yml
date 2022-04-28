@@ -136,7 +136,7 @@ jobs:
       - name: Download Build output
         uses: actions/download-artifact@v1
         with:
-          name: Build
+          name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           path: ./
       - name: Unzip Build file
         run: |
@@ -269,7 +269,7 @@ jobs:
       - name: Download Build output
         uses: actions/download-artifact@v1
         with:
-          name: Build
+          name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
           path: ./
       - name: Unzip Build file
         run: |
