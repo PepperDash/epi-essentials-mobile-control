@@ -97,7 +97,7 @@ jobs:
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
-          name: Build
+          name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       # Upload the Version file as an artifact
       - name: Upload version.txt
@@ -230,7 +230,7 @@ jobs:
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
-          name: Build
+          name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
           path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
       # Upload the Version file as an artifact
       - name: Upload version.txt
