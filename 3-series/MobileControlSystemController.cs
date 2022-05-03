@@ -241,6 +241,11 @@ namespace PepperDash.Essentials
                 return;
             }
 
+            if(_deviceMessengers.Any((kv) => kv.Value.MessagePath.Equals(messenger.MessagePath, StringComparison.InvariantCulture))) {
+                Debug.Console(1, this, "Messenger with path {0} alread added", messenger.MessagePath);
+                return;
+            }
+
             Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
 
             _deviceMessengers.Add(messenger.Key, messenger);

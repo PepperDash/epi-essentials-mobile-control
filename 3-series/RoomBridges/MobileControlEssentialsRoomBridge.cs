@@ -463,7 +463,7 @@ namespace PepperDash.Essentials
                 }
 
                 Debug.Console(2, this, "Adding GenericMessenger for device: {0}", genericDevice.Key);              
-                Parent.AddDeviceMessenger(new GenericMessenger(genericDevice.Key, genericDevice, string.Format("/device/{0}", genericDevice.Key)));                
+                Parent.AddDeviceMessenger(new GenericMessenger(genericDevice.Key + "-" + Parent.Key + "-generic", genericDevice, string.Format("/device/{0}", genericDevice.Key)));                
             }
         }
 
