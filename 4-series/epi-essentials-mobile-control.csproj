@@ -87,9 +87,6 @@
     <Reference Include="Essentials Devices Common, Version=1.10.1.41118, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Essentials Devices Common.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json.Compact, Version=4.0.8.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Newtonsoft.Json.Compact.dll</HintPath>
-    </Reference>
     <Reference Include="PepperDashEssentials, Version=1.10.1.41126, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\PepperDashEssentials.dll</HintPath>
     </Reference>
