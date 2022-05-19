@@ -125,12 +125,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         lockCodec.ToggleMeetingLock));
                 }
 
-                var recordCodec = _codec as IHasMeetingRecording;
+                var recordCodec = _codec as IHasMeetingRecordingWithPrompt;
                 if (recordCodec != null)
                 {
                     Debug.Console(2, this, "Adding IHasMeetingRecording Actions");
 
                     recordCodec.MeetingIsRecordingFeedback.OutputChange += MeetingIsRecordingFeedback_OutputChange;
+
+                    recordCodec.RecordConsentPromptIsVisible.OutputChange += RecordConsentPromptIsVisible_OutputChange;
+
+                    appServerController.AddAction(String.Format("{0}/recordPromptAcknowledge", MessagePath), new Action<bool>((b) => 
+                    {
+                        Debug.Console(2, this, "recordPromptAcknowledge: {0}", b);
+                        recordCodec.RecordingPromptAcknowledgement(b);
+                    }
+                        ));
 
                     appServerController.AddAction(String.Format("{0}/toggleRecording", MessagePath), new Action(
                         recordCodec.ToggleRecording));
@@ -161,11 +170,37 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     meetingInfoCodec.MeetingInfoChanged += new EventHandler<MeetingInfoEventArgs>(meetingInfoCodec_MeetingInfoChanged);
                 }
 
+                var scheduleCodec = Codec as IHasScheduleAwareness;
+                if (scheduleCodec != null)
+                {
+                    Debug.Console(2, this, "Adding IHasScheduleAwareness Subscriptions");
+                    scheduleCodec.CodecSchedule.MeetingsListHasChanged += CodecSchedule_MeetingsListHasChanged;
+                }
+
             }
             catch (Exception e)
             {
                 Debug.Console(2, this, "Error: {0}", e);
             }
+        }
+
+
+        private void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
+        {
+            var status = new ZoomRoomStateMessage();
+
+            status.Meetings = (Codec as IHasScheduleAwareness).CodecSchedule.Meetings;
+
+            PostStatusMessage(status);
+        }
+
+            private void RecordConsentPromptIsVisible_OutputChange(object sender, Core.FeedbackEventArgs e)
+        {
+            var status = new ZoomRoomStateMessage();
+
+            status.RecordConsentPromptIsVisible = e.BoolValue;
+
+            PostStatusMessage(status);
         }
 
         void CameraIsMutedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
@@ -274,6 +309,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             zoomStatus.Meetings = _codec.CodecSchedule.Meetings;
             zoomStatus.Participants = _codec.Participants.CurrentParticipants;
             zoomStatus.CameraIsMuted = _codec.CameraIsMutedFeedback.BoolValue;
+            zoomStatus.RecordConsentPromptIsVisible = _codec.RecordConsentPromptIsVisible.BoolValue;
 
             PostStatusMessage(zoomStatus);
         }
@@ -300,6 +336,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("cameraIsMuted", NullValueHandling = NullValueHandling.Ignore)]
         public bool? CameraIsMuted { get; set; }
+
+        [JsonProperty("recordConsentPromptIsVisible", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? RecordConsentPromptIsVisible { get; set; }
     }
 
     public class ZoomRoomEventMessage: DeviceEventMessageBase

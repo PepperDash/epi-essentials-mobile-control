@@ -666,6 +666,10 @@ namespace PepperDash.Essentials
             var req = new HttpsClientRequest();
             req.Url.Parse(url);
 
+            var JsonHeader = new HttpsHeader("content-type", "application/json");
+
+            req.ContentString = "SOME STUFF HERE";
+
             var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
 
             c.DispatchAsync(req, (r, e) =>
@@ -686,6 +690,19 @@ namespace PepperDash.Essentials
                     }
                 }
             });
+        }
+
+        private void MyCallBackResponseHandler(HttpsClientResponse r, HTTPS_CALLBACK_ERROR e)
+        {
+            if (r.Code != 200)
+            {
+                Debug.Console(2, this, "Print Error {0}", e);
+            }
+            else
+            {
+                Debug.Console(2, this, "Got valid response {0}", r.Code);
+            }
+
         }
 
         /// <summary>
@@ -1416,7 +1433,7 @@ Mobile Control Direct Server Infromation:
 
                                 if (!string.IsNullOrEmpty(stateString))
                                 {
-                                    (action as Action<bool>)(stateString == "true");
+                                    (action as Action<bool>)(stateString.ToLower() == "true");
                                 }
                             }
                             else if (action is Action<ushort>)
