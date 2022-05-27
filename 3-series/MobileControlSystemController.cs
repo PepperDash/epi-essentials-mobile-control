@@ -1114,22 +1114,8 @@ Mobile Control Direct Server Infromation:
         /// <param name="o"></param>
         public void SendMessageObject(object o)
         {
-            var msg = o as MobileControlResponseMessage;
-
-            var sendToApi = true;
-
-            if(msg != null)
-            {
-                var clientId = ((string) msg.ClientId) ?? "";
-
-                // we only want to send to the API if this is a client-specific message and the client is NOT a direct client
-                if(!string.IsNullOrEmpty(clientId) && _directServer.UiClients.ContainsKey(clientId))
-                {
-                    sendToApi = false;
-                };
-            }
 #if SERIES4
-            if (Config.EnableApiServer && sendToApi)
+            if (Config.EnableApiServer)
             {
 #endif
                 _transmitToServerQueue.Enqueue(new TransmitMessage(o, _wsClient2));
