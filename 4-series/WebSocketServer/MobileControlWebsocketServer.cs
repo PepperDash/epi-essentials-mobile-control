@@ -108,12 +108,11 @@ namespace PepperDash.Essentials
 
             var message = new MobileControlResponseMessage
             {
-                Type = "/system/userCodeChanged",
-                ClientId = clientId,
+                Type = "/system/userCodeChanged",                
                 Content = content
             };
 
-            Controller.SendMessageObject(message);
+            Controller.SendMessageObjectToDirectClient(message);
         }
 
         protected override void OnMessage(MessageEventArgs e)
