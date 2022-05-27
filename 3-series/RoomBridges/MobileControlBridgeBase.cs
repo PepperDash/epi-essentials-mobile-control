@@ -100,6 +100,20 @@ namespace PepperDash.Essentials
 
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
 
+            var content = new
+            {
+                userCode = UserCode,
+                qrUrl = qrUrl,
+            };
+
+            var codeChangedMessage = new MobileControlResponseMessage
+            {
+                Type = "/system/userCodeChanged",
+                Content = content,
+            };
+
+            Parent.SendMessageObject(codeChangedMessage);
+
             OnUserCodeChanged();
         }
 
