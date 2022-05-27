@@ -59,27 +59,19 @@ namespace PepperDash.Essentials
 
             if (match.Success)
             {
-                var clientId = match.Groups[1].Value;                
-
-                var content = new
-                {
-                    clientId,
-                    roomKey = RoomKey,
-                };
-
-                var clientJoined = new MobileControlResponseMessage()
-                {
-                    Type = "/system/clientJoined",
-                    ClientId = clientId,
-                    Content = content,
-                };
-
-                var msg = JsonConvert.SerializeObject(clientJoined);
-
+                var clientId = match.Groups[1].Value;                               
+                
                 // Inform controller of client joining
                 if (Controller != null)
                 {
-                    Controller.HandleClientMessage(msg);
+                    var clientJoined = new MobileControlResponseMessage
+                    {
+                        Type = "/system/roomKey",
+                        ClientId = clientId,
+                        Content = RoomKey,
+                    };
+
+                    Controller.SendMessageObjectToDirectClient(clientJoined);
 
                     var bridge = Controller.GetRoomBridge(RoomKey);
 
