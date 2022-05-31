@@ -45,8 +45,8 @@ namespace PepperDash.Essentials
 
         public UiClient()
         {
-
-        }
+            
+        }        
 
         protected override void OnOpen()
         {
@@ -59,27 +59,25 @@ namespace PepperDash.Essentials
 
             if (match.Success)
             {
-                var clientId = match.Groups[1].Value;
-
-                var content = new
-                {
-                    clientId,
-                    roomKey = RoomKey,
-                };
-
-                var clientJoined = new MobileControlResponseMessage()
-                {
-                    Type = "/system/clientJoined",
-                    ClientId = clientId,
-                    Content = content,
-                };
-
-                var msg = JsonConvert.SerializeObject(clientJoined);
-
+                var clientId = match.Groups[1].Value;                               
+                
                 // Inform controller of client joining
                 if (Controller != null)
                 {
-                    Controller.HandleClientMessage(msg);
+                    var clientJoined = new MobileControlResponseMessage
+                    {
+                        Type = "/system/roomKey",
+                        ClientId = clientId,
+                        Content = RoomKey,
+                    };
+
+                    Controller.SendMessageObjectToDirectClient(clientJoined);
+
+                    var bridge = Controller.GetRoomBridge(RoomKey);
+
+                    SendUserCodeToClient(bridge, clientId);
+
+                    bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
                 }
                 else
                 {
@@ -90,6 +88,24 @@ namespace PepperDash.Essentials
             _connectionTime = DateTime.Now;
 
             // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
+        }
+
+        private void SendUserCodeToClient(MobileControlBridgeBase bridge, string clientId)
+        {            
+            var content = new
+            {
+                userCode = bridge.UserCode,
+                qrUrl = bridge.QrCodeUrl,
+            };
+
+            var message = new MobileControlResponseMessage
+            {
+                Type = "/system/userCodeChanged",     
+                ClientId = clientId,
+                Content = content
+            };
+
+            Controller.SendMessageObjectToDirectClient(message);
         }
 
         protected override void OnMessage(MessageEventArgs e)

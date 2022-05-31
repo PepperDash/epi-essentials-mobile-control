@@ -1129,6 +1129,17 @@ Mobile Control Direct Server Infromation:
 #endif
         }
 
+#if SERIES4
+        public void SendMessageObjectToDirectClient(object o)
+        {
+            if(Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
+            {
+                _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
+            }
+        }
+
+#endif
+
         /// <summary>
         /// Disconnects the Websocket Client and stops the heartbeat timer
         /// </summary>
