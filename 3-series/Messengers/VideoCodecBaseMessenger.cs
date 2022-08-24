@@ -751,16 +751,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var camera = new VideoCodecBaseStateMessage.CameraStatus.Camera();
 
-            camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
-            camera.Name = camerasCodec.SelectedCamera.Name;
-            camera.IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue;
-            camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
+            if (camerasCodec.SelectedCameraFeedback != null)
+                camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
+            if (camerasCodec.SelectedCamera != null)
+            {
+                camera.Name = camerasCodec.SelectedCamera.Name;
+
+                camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
                 {
                     CanPan = camerasCodec.SelectedCamera.CanPan,
                     CanTilt = camerasCodec.SelectedCamera.CanTilt,
                     CanZoom = camerasCodec.SelectedCamera.CanZoom,
                     CanFocus = camerasCodec.SelectedCamera.CanFocus,
                 };
+            }
+
+            if (camerasCodec.ControllingFarEndCameraFeedback != null)
+                camera.IsFarEnd = camerasCodec.ControllingFarEndCameraFeedback.BoolValue;
+
            
            return camera; 
         }
