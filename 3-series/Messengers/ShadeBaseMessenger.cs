@@ -32,7 +32,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
 
-            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new Action<bool>( (b) =>
+            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new PressAndHoldAction( (b) =>
                 {
                     if(b)
                     {
@@ -44,7 +44,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     }
                 }));
 
-            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new Action<bool>((b) =>
+            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new PressAndHoldAction((b) =>
             {
                 if (b)
                 {
@@ -59,7 +59,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var stopDevice = Device as IShadesOpenCloseStop;
             if (stopDevice != null)
             {
-                appServerController.AddAction(string.Format("{0}/shadeStopOrPreset", MessagePath), new Action<bool>((b) =>
+                appServerController.AddAction(string.Format("{0}/shadeStopOrPreset", MessagePath), new PressAndHoldAction((b) =>
                 {
                     if (b)
                     {

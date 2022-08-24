@@ -9,11 +9,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PepperDash.Essentials</RootNamespace>
     <AssemblyName>epi-essentials-mobile-control</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>false</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -40,64 +41,64 @@
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.2\lib\net47\Crestron.SimplSharpPro.CrestronConnected.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.DeviceSupport, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.DeviceSupport.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.DeviceSupport.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.DM, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.DM.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.DM.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.EthernetCommunications, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Fusion, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.Fusion.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.Fusion.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Gateways, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.Gateways.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.Gateways.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.GeneralIO, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.GeneralIO.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.GeneralIO.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Keypads, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.2\lib\net47\Crestron.SimplSharpPro.Keypads.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Lighting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.Lighting.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.Lighting.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Media, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.2\lib\net47\Crestron.SimplSharpPro.Media.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Remotes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.Remotes.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.Remotes.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Shades, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.Shades.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.Shades.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.Thermostats, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.2\lib\net47\Crestron.SimplSharpPro.Thermostats.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.ThreeSeriesCards, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.ThreeSeriesCards.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.ThreeSeriesCards.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.UC, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.18.2\lib\net47\Crestron.SimplSharpPro.UC.dll</HintPath>
     </Reference>
     <Reference Include="Crestron.SimplSharpPro.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Crestron.SimplSharpPro.UI.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Crestron.SimplSharpPro.UI.dll</HintPath>
     </Reference>
-    <Reference Include="Essentials Devices Common, Version=1.10.1.41118, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\Essentials Devices Common.dll</HintPath>
+    <Reference Include="Essentials Devices Common, Version=1.10.6.27135, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\Essentials Devices Common.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDashEssentials, Version=1.10.1.41126, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\PepperDashEssentials.dll</HintPath>
+    <Reference Include="PepperDashEssentials, Version=1.10.6.27142, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\PepperDashEssentials.dll</HintPath>
     </Reference>
     <Reference Include="PepperDash_Core, Version=1.1.1.32703, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\PepperDash_Core.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\PepperDash_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_Core, Version=1.10.1.41112, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\PepperDash_Essentials_Core.dll</HintPath>
+    <Reference Include="PepperDash_Essentials_Core, Version=1.10.6.27130, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\PepperDash_Essentials_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_DM, Version=1.10.1.41122, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\PepperDash_Essentials_DM.dll</HintPath>
+    <Reference Include="PepperDash_Essentials_DM, Version=1.10.6.27138, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\PepperDash_Essentials_DM.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpAutoUpdateInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpAutoUpdateInterface.dll</HintPath>
@@ -106,7 +107,7 @@
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpCryptographyInterface.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpCustomAttributesInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpCustomAttributesInterface.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpCustomAttributesInterface.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpCWSHelperInterface, Version=2.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpCWSHelperInterface.dll</HintPath>
@@ -115,10 +116,10 @@
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpExchangeWebServices.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpHelperInterface.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpHelperInterface.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpNewtonsoft, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpNewtonsoft.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpNewtonsoft.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpOnvifInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpOnvifInterface.dll</HintPath>
@@ -130,13 +131,13 @@
       <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.18.2\lib\net47\SimplSharpProgrammingInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpReflectionInterface, Version=1.0.5583.25238, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpReflectionInterface.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpReflectionInterface.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpSQLHelperInterface, Version=1.0.92.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpSQLHelperInterface.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpSQLHelperInterface.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpTimerEventInterface, Version=1.0.6197.20052, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.1-hotfix-1827\lib\net47\SimplSharpTimerEventInterface.dll</HintPath>
+      <HintPath>packages\PepperDashEssentials.1.10.6\lib\net47\SimplSharpTimerEventInterface.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
