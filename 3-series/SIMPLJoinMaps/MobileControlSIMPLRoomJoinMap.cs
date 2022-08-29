@@ -176,7 +176,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Config is local to Essentials",
+                    Description = "Use Essentials Configuration",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -294,7 +294,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 500, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "Config info from SIMPL is ready",
+                Description = "MC Is Online and authorized",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -303,7 +303,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Config info from SIMPL is ready",
+                    Description = "SIPML Configuration is ready",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -313,7 +313,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 501, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "Config info from SIMPL is ready",
+                Description = "MC is ready for SIMPL Config",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
