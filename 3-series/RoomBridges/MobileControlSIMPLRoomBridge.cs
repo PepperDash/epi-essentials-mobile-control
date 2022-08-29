@@ -82,7 +82,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             _sourceBridge = new MobileControlSimplDeviceBridge(key + "-sourceBridge", "SIMPL source bridge", Eisc);
             DeviceManager.AddDevice(_sourceBridge);
 
-            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "mobileprintjoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
 
             AddPostActivationAction(() =>
                 {
@@ -156,7 +156,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 // TODO: Update Source Bridge to use new JoinMap scheme
                 //_sourceBridge.JoinMap.PrintJoinMapInfo();
-            }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
+            }, "mobileprintbridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
 
             return base.CustomActivate();
         }
