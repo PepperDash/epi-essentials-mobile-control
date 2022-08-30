@@ -466,6 +466,12 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
+      
+            if(co.Info == null)
+            {
+                co.Info = new InfoConfig();
+            }
+
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             co.Info.RuntimeInfo.AssemblyVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor,
