@@ -19,6 +19,8 @@ using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Essentials.Devices.Common;
+using PepperDash.Essentials.Devices.Common.VideoCodec;
+using PepperDash.Essentials.Devices.Common.AudioCodec;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
@@ -867,7 +869,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// Iterates device config and adds messengers as neede for each device type
         /// </summary>
         private void SetupDeviceMessengers()
-        {
+        {            
             try
             {
                 foreach (var device in ConfigReader.ConfigObject.Devices)
@@ -929,7 +931,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                             {
                                 var camDevice = dev as CameraBase;
                                 Debug.Console(1, this, "Adding CameraBaseMessenger for device: {0}", dev.Key);
-                                var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
+                                var messenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
                                     "/device/" + device.Key);
                                 Parent.AddDeviceMessenger(messenger);                                
                                 continue;
@@ -942,9 +944,25 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 Debug.Console(1, this, "Adding ZoomRoomMessenger for device: {0}", dev.Key);
 
                                 var zoomMessenger = new ZoomRoomMessenger(device.Key + "-" + Parent.Key, zoomDevice, "/device/" + dev.Key);
-                                Parent.AddDeviceMessenger(zoomMessenger);
-                                DeviceMessengers.Add(device.Key, zoomMessenger);
-                                zoomMessenger.RegisterWithAppServer(Parent);
+                                Parent.AddDeviceMessenger(zoomMessenger);                               
+                                continue;
+                            }
+
+                            if(dev is VideoCodecBase)
+                            {
+                                var vcBase = dev as VideoCodecBase;
+
+                                var messenger = new VideoCodecBaseMessenger(dev.Key + "-" + Parent.Key, vcBase, string.Format("/devices/{0}", dev.Key));
+                                Parent.AddDeviceMessenger(messenger);
+                                continue;
+                            }
+
+                            if(dev is AudioCodecBase)
+                            {
+                                var acBase = dev as AudioCodecBase;
+
+                                var messenger = new AudioCodecBaseMessenger(dev.Key + "-" + Parent.Key, acBase, string.Format("/devices/{0}", dev.Key));
+                                Parent.AddDeviceMessenger(messenger);
                                 continue;
                             }
 
@@ -955,7 +973,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 Debug.Console(1, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
                                 var messenger = new LightingBaseMessenger(deviceKey + "-" + Parent.Key,
                                     lightingDevice, string.Format("/device/{0}", deviceKey));
-                                Parent.AddDeviceMessenger(messenger);
+                                Parent.AddDeviceMessenger(messenger);                               
                                 continue;
                             }
 
@@ -966,7 +984,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 Debug.Console(1, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
                                 var messenger = new ShadeBaseMessenger(deviceKey + "-" + Parent.Key,
                                     shadeDevice, string.Format("/device/{0}", deviceKey));
-                                Parent.AddDeviceMessenger(messenger);
+                                Parent.AddDeviceMessenger(messenger);                               
                                 continue;
                             }
 
