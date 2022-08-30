@@ -36,9 +36,6 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public MobileControlSIMPLRoomJoinMap JoinMap { get; private set; }
 
-        public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -871,8 +868,6 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void SetupDeviceMessengers()
         {
-            DeviceMessengers = new Dictionary<string, MessengerBase>();
-
             try
             {
                 foreach (var device in ConfigReader.ConfigObject.Devices)
@@ -916,9 +911,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                         if (messenger != null)
                         {
-                            DeviceManager.AddDevice(messenger);
-                            DeviceMessengers.Add(device.Key, messenger);
-                            messenger.RegisterWithAppServer(Parent);
+                            Parent.AddDeviceMessenger(messenger);                                                      
                         }
                         else
                         {
@@ -938,9 +931,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 Debug.Console(1, this, "Adding CameraBaseMessenger for device: {0}", dev.Key);
                                 var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
                                     "/device/" + device.Key);
-                                DeviceMessengers.Add(device.Key, cameraMessenger);
-                                DeviceManager.AddDevice(cameraMessenger);
-                                cameraMessenger.RegisterWithAppServer(Parent);
+                                Parent.AddDeviceMessenger(messenger);                                
                                 continue;
                             }
                             
@@ -965,8 +956,6 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 var messenger = new LightingBaseMessenger(deviceKey + "-" + Parent.Key,
                                     lightingDevice, string.Format("/device/{0}", deviceKey));
                                 Parent.AddDeviceMessenger(messenger);
-                                DeviceMessengers.Add(dev.Key, messenger);
-                                messenger.RegisterWithAppServer(Parent);
                                 continue;
                             }
 
@@ -978,8 +967,6 @@ namespace PepperDash.Essentials.Room.MobileControl
                                 var messenger = new ShadeBaseMessenger(deviceKey + "-" + Parent.Key,
                                     shadeDevice, string.Format("/device/{0}", deviceKey));
                                 Parent.AddDeviceMessenger(messenger);
-                                DeviceMessengers.Add(dev.Key, messenger);
-                                messenger.RegisterWithAppServer(Parent);
                                 continue;
                             }
 
