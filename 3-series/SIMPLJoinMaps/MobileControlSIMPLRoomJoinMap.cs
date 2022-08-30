@@ -522,6 +522,36 @@ namespace PepperDash.Essentials.AppServer
             });
         #endregion
 
+        [JoinName("EssentialsVideoCodecKey")]
+        public JoinDataComplete VideoCodecKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 51, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Video Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
+
+        [JoinName("EssentialsAudioCodecKey")]
+        public JoinDataComplete AudioCodecKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 52, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Audio Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
+
+        [JoinName("EnvironmentalDeviceKey")]
+        public JoinDataComplete EnvironmentalDevicesKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 61, JoinSpan = 10 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Video Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
+
         public MobileControlSIMPLRoomJoinMap(uint joinStart)
             : base(joinStart, typeof(MobileControlSIMPLRoomJoinMap))
         {
