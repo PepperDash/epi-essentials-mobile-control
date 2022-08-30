@@ -14,9 +14,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Room.Config;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System.Linq;
-using Independentsoft.Exchange;
 using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
@@ -24,7 +22,7 @@ using PepperDash.Essentials.Devices.Common;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomBridge : MobileControlBridgeBase, IDelayedConfiguration
     {
         private const int SupportedDisplayCount = 10;
