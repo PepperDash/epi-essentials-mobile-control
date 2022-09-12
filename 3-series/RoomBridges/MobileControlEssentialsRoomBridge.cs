@@ -9,6 +9,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
+using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
@@ -779,16 +780,20 @@ namespace PepperDash.Essentials
         {
             var configuration = new RoomConfiguration();
 
+
             var huddleRoom = room as IEssentialsHuddleSpaceRoom;
             if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
             {
                 configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
+                configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
+
             }
 
             var vtc1Room = room as IEssentialsHuddleVtc1Room;
             if (vtc1Room != null && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
             {
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
+                configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
             }
 
             var techRoom = room as EssentialsTechRoom;
@@ -972,8 +977,10 @@ namespace PepperDash.Essentials
         [JsonProperty("helpMessage", NullValueHandling = NullValueHandling.Ignore)]
         public string HelpMessage { get; set; }
 
+        [JsonProperty("uiBehavior", NullValueHandling = NullValueHandling.Ignore)]
+        public EssentialsRoomUiBehaviorConfig UiBehavior { get; set; }
 
-        public RoomConfiguration()
+public RoomConfiguration()
         {
             DisplayKeys = new List<string>();
             EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();
