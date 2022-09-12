@@ -118,7 +118,7 @@ jobs:
         with:
           tag_name: ${{ env.VERSION  }}
           release_name: ${{ env.VERSION }}
-          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Upload the build package to the release
@@ -265,7 +265,7 @@ jobs:
         with:
           tag_name: ${{ env.VERSION  }}-4-Series
           release_name: ${{ env.VERSION }}-4-Series
-          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+          prerelease: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Upload the build package to the release
