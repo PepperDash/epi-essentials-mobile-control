@@ -16,7 +16,7 @@ env:
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
   # Defaults to master as the release branch.  Change as necessary
   RELEASE_BRANCH: main
 jobs:
@@ -202,7 +202,7 @@ jobs:
       - name: Build Solution
         shell: powershell
         run: |
-          msbuild ./4-series/$($Env:SOLUTION_FILE).sln /p:platform="Any CPU" /p:configuration="Debug"
+          msbuild ./4-series/$($Env:SOLUTION_FILE).sln /p:platform="Any CPU" /p:configuration="Release"
       # Zip up the output files as needed
       - name: Zip Build Output
         shell: powershell
