@@ -524,6 +524,13 @@ namespace PepperDash.Essentials.Room.MobileControl
             rmProps.RoomURI = Eisc.StringOutput[JoinMap.ConfigRoomUri.JoinNumber].StringValue;
             rmProps.SpeedDials = new List<SimplSpeedDial>();
 
+            if(rmProps.UiBehavior == null)
+            {
+                rmProps.UiBehavior = new EssentialsRoomUiBehaviorConfig();
+            }
+
+            rmProps.UiBehavior.DisableActivityButtonsWhileWarmingCooling = Eisc.BooleanOutput[JoinMap.ActivityLockoutOnStateChange.JoinNumber].BoolValue;
+
             var essentialsAudioCodecKey = Eisc.StringOutput[JoinMap.AudioCodecKey.JoinNumber].StringValue;
             var essentialsVideoCodecKey = Eisc.StringOutput[JoinMap.VideoCodecKey.JoinNumber].StringValue;
             // This MAY need a check 
@@ -1214,7 +1221,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var vcDev = DeviceManager.GetDeviceForKey(properties.VideoCodecKey);
 
                 roomConfiguration.VideoCodecIsZoomRoom = vcDev != null && vcDev is ZoomRoom;
-            }
+            }            
+
+            roomConfiguration.UiBehavior = properties.UiBehavior;            
 
             if (!string.IsNullOrEmpty(properties.AudioCodecKey))
             {
