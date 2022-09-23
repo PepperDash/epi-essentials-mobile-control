@@ -85,19 +85,19 @@
     <Reference Include="Crestron.SimplSharpPro.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.15\lib\net47\Crestron.SimplSharpPro.UI.dll</HintPath>
     </Reference>
-    <Reference Include="Essentials Devices Common, Version=1.10.11.34723, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Essentials Devices Common, Version=1.10.11.37921, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.11\lib\net47\Essentials Devices Common.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDashEssentials, Version=1.10.11.34731, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDashEssentials, Version=1.10.11.37927, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.11\lib\net47\PepperDashEssentials.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Core, Version=1.1.1.32703, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.10.11\lib\net47\PepperDash_Core.dll</HintPath>
+    <Reference Include="PepperDash_Core, Version=1.1.2.30610, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\PepperDashCore.1.1.2\lib\net47\PepperDash_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_Core, Version=1.10.11.34717, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDash_Essentials_Core, Version=1.10.11.37917, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.11\lib\net47\PepperDash_Essentials_Core.dll</HintPath>
     </Reference>
-    <Reference Include="PepperDash_Essentials_DM, Version=1.10.11.34727, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="PepperDash_Essentials_DM, Version=1.10.11.37924, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\PepperDashEssentials.1.10.11\lib\net47\PepperDash_Essentials_DM.dll</HintPath>
     </Reference>
     <Reference Include="SimplSharpAutoUpdateInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
