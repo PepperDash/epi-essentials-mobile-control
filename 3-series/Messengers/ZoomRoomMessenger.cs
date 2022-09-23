@@ -177,6 +177,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     scheduleCodec.CodecSchedule.MeetingsListHasChanged += CodecSchedule_MeetingsListHasChanged;
                 }
 
+                var sharingInfo = Codec as IZoomWirelessShareInstructions;
+                if (sharingInfo != null)
+                {
+                    Debug.Console(2, this, "Adding IZoomWirelessSharingInstructions Subscriptions");
+                    sharingInfo.ShareInfoChanged += SharingInfo_ShareInfoChanged;
+                }
+
             }
             catch (Exception e)
             {
@@ -184,6 +191,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
+        private void SharingInfo_ShareInfoChanged(object sender, ShareInfoEventArgs e)
+        {
+            var status = new ZoomRoomStateMessage();
+
+            status.ShareInfo = e.SharingStatus;
+        }
 
         private void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
         {
@@ -310,6 +323,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             zoomStatus.Participants = _codec.Participants.CurrentParticipants;
             zoomStatus.CameraIsMuted = _codec.CameraIsMutedFeedback.BoolValue;
             zoomStatus.RecordConsentPromptIsVisible = _codec.RecordConsentPromptIsVisible.BoolValue;
+            zoomStatus.ShareInfo = _codec.SharingState;
 
             PostStatusMessage(zoomStatus);
         }
@@ -339,6 +353,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("recordConsentPromptIsVisible", NullValueHandling = NullValueHandling.Ignore)]
         public bool? RecordConsentPromptIsVisible { get; set; }
+
+        [JsonProperty("shareInfo", NullValueHandling = NullValueHandling.Ignore)]
+        public zStatus.Sharing ShareInfo { get; set; }
     }
 
     public class ZoomRoomEventMessage: DeviceEventMessageBase
