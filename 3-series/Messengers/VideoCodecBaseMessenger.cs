@@ -339,6 +339,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Debug.Console(2, this, "Adding IPasswordPrompt Actions");
 
                     appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
+                    appServerController.AddAction(MessagePath + "/cancelPasswordPrompt", new Action(() => pwCodec.CancelPasswordPrompt()));
                 }
 
                 var farEndContentStatus = Codec as IHasFarEndContentStatus;
