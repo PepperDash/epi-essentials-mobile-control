@@ -786,6 +786,7 @@ namespace PepperDash.Essentials
             {
                 configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
+                configuration.DefaultPresentationSourceKey = huddleRoom.PropertiesConfig.DefaultSourceItem;
 
             }
 
@@ -794,6 +795,8 @@ namespace PepperDash.Essentials
             {
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
+                configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
+
             }
 
             var techRoom = room as EssentialsTechRoom;
@@ -972,6 +975,8 @@ namespace PepperDash.Essentials
         public List<EnvironmentalDeviceConfiguration> EnvironmentalDevices { get; set; }
         [JsonProperty("sourceList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, SourceListItem> SourceList { get; set; }
+        [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string DefaultPresentationSourceKey { get; set; }
 
 
         [JsonProperty("helpMessage", NullValueHandling = NullValueHandling.Ignore)]
