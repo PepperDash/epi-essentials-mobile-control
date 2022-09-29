@@ -796,7 +796,6 @@ namespace PepperDash.Essentials
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
                 configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
-
             }
 
             var techRoom = room as EssentialsTechRoom;
