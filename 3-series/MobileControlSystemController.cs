@@ -1393,6 +1393,7 @@ Mobile Control Direct Server Infromation:
                             {
                                 var stateString = messageObj["content"]["state"].Value<string>();
 
+                                Debug.Console(0, this, "Running PressAndHoldAction for type {1} with value {0}", stateString, type);
                                 // Look for a button press event
                                 if (!string.IsNullOrEmpty(stateString))
                                 {
@@ -1404,9 +1405,11 @@ Mobile Control Direct Server Infromation:
                                                 {
                                                     _pushedActions.Add(type, new CTimer(o =>
                                                     {
+                                                        Debug.Console(0, this, "Timer expired");
                                                         var pressAndHoldAction = action as PressAndHoldAction;
                                                         if (pressAndHoldAction != null)
                                                         {
+                                                            Debug.Console(0, this, "Calling pressAndHoldAction with false");
                                                             pressAndHoldAction(false);
                                                         }
                                                         _pushedActions.Remove(type);
@@ -1419,6 +1422,7 @@ Mobile Control Direct Server Infromation:
                                             {
                                                 if (_pushedActions.ContainsKey(type))
                                                 {
+                                                    Debug.Console(0, this, "Resetting timer for {0}", type);
                                                     _pushedActions[type].Reset(ButtonHeartbeatInterval,
                                                         ButtonHeartbeatInterval);
                                                 }
@@ -1428,6 +1432,7 @@ Mobile Control Direct Server Infromation:
                                             {
                                                 if (_pushedActions.ContainsKey(type))
                                                 {
+                                                    Debug.Console(0, this, "Removing timer for {0}", type);
                                                     _pushedActions[type].Stop();
                                                     _pushedActions.Remove(type);
                                                 }

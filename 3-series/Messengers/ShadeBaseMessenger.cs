@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Shades;
-
-using Newtonsoft.Json;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -32,26 +26,33 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
 
-            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new PressAndHoldAction( (b) =>
+            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new PressAndHoldAction((b) =>
                 {
-                    if(b)
+                    Debug.Console(0, this, "{0}/shadeUp: {1}", MessagePath, b);
+
+                    if (b)
                     {
+                        Debug.Console(0, this, "Calling {0}.Open()", Device.Key);
                         Device.Open();
                     }
                     else
                     {
+                        Debug.Console(0, this, "Calling {0}.StopOrPreset", Device.Key);
                         Device.StopOrPreset();
                     }
                 }));
 
             appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new PressAndHoldAction((b) =>
             {
+                Debug.Console(0, this, "{0}/shadeDown: {1}", MessagePath, b);
                 if (b)
                 {
+                    Debug.Console(0, this, "Calling {0}.Close", Device.Key);
                     Device.Close();
                 }
                 else
                 {
+                    Debug.Console(0, this, "Calling {0}.StopOrPreset", Device.Key);
                     Device.StopOrPreset();
                 }
             }));
