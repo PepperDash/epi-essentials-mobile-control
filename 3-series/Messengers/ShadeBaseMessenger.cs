@@ -32,39 +32,26 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
 
-            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new PressAndHoldAction( (b) =>
+            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new Action( () =>
                 {
-                    if(b)
-                    {
-                        Device.Open();
-                    }
-                    else
-                    {
-                        Device.StopOrPreset();
-                    }
+
+                    Device.Open();
+
                 }));
 
-            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new PressAndHoldAction((b) =>
-            {
-                if (b)
+            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new Action(() =>
                 {
+
                     Device.Close();
-                }
-                else
-                {
-                    Device.StopOrPreset();
-                }
-            }));
+
+                }));
 
             var stopDevice = Device as IShadesOpenCloseStop;
             if (stopDevice != null)
             {
-                appServerController.AddAction(string.Format("{0}/shadeStopOrPreset", MessagePath), new PressAndHoldAction((b) =>
+                appServerController.AddAction(string.Format("{0}/stopOrPreset", MessagePath), new Action(() =>
                 {
-                    if (b)
-                    {
-                        Device.StopOrPreset();
-                    }
+                    stopDevice.Stop();
                 }));
             }
 
@@ -98,12 +85,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private void SendFullStatus()
         {
             var state = new ShadeBaseStateMessage();
-
-            var stopDevice = Device as IShadesOpenCloseStop;
-            if (stopDevice != null)
-            {
-                state.MiddleButtonLabel = stopDevice.StopOrPresetButtonLabel;
-            }
 
             var feedbackDevice = Device as IShadesOpenClosedFeedback;
             if (feedbackDevice != null)
