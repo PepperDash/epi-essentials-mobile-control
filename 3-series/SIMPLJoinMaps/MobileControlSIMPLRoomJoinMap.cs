@@ -153,6 +153,26 @@ namespace PepperDash.Essentials.AppServer
                     JoinType = eJoinType.Digital
                 });
 
+        [JoinName("isWarming")]
+        public JoinDataComplete IsWarming =
+            new JoinDataComplete(new JoinData { JoinNumber = 64, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Room is powering on",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("isCooling")]
+        public JoinDataComplete IsCooling =
+            new JoinDataComplete(new JoinData { JoinNumber = 65, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Room is powering off",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
         [JoinName("EnableActivityLockoutOnPowerStateChange")]
         public JoinDataComplete ActivityLockoutOnStateChange =
             new JoinDataComplete(new JoinData { JoinNumber = 64, JoinSpan = 1 }, new JoinMetadata
@@ -350,6 +370,16 @@ namespace PepperDash.Essentials.AppServer
                 new JoinMetadata
                 {
                     Description = "Use Source Enabled Joins",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("LockoutActivityButtonsOnStateChange")]
+        public JoinDataComplete LockoutActivityButtonsOnStateChange =
+            new JoinDataComplete(new JoinData { JoinNumber = 508, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Lockout Activity buttons when Room power State changes",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });

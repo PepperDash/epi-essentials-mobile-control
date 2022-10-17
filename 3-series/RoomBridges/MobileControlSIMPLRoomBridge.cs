@@ -72,7 +72,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="name"></param>
         /// <param name="ipId"></param>
         public MobileControlSIMPLRoomBridge(string key, string name, uint ipId)
-            : base(key, "/room/room1")
+            : base(key, "/room/room1/status")
         {
             Eisc = new ThreeSeriesTcpIpEthernetIntersystemCommunications(ipId, "127.0.0.2", Global.ControlSystem);
             var reg = Eisc.Register();
@@ -197,7 +197,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             Parent.AddAction(@"/room/room1/clientJoined",
                 new Action(() => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber)));
 
-            Parent.AddAction(@"/room/room1/status", new Action(SendFullStatus));
+            Parent.AddAction(@"/room/room1/status", new ClientSpecificUpdateRequest((id) => SendFullStatus(id)));
 
             Parent.AddAction(@"/room/room1/source", new Action<SourceSelectMessageContent>(c =>
             {
@@ -1008,7 +1008,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <summary>
         /// 
         /// </summary>
-        private void SendFullStatus()
+        private void SendFullStatus(string id)
         {
             if (ConfigIsLoaded)
             {
@@ -1048,18 +1048,32 @@ namespace PepperDash.Essentials.Room.MobileControl
                     },
                     AuxFaders = auxFaderDict,
                     NumberOfAuxFaders = Eisc.UShortInput[JoinMap.NumberOfAuxFaders.JoinNumber].UShortValue
-                };                
+                };
+
+                var roomConfig = GetRoomConfiguration(ConfigReader.ConfigObject);
 
                 var state = new RoomStateMessage
                 {
-                    Configuration = GetRoomConfiguration(ConfigReader.ConfigObject),
+                    Configuration = roomConfig,
                     ActivityMode = GetActivityMode(),
                     IsOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
+                    IsWarmingUp = Eisc.BooleanOutput[JoinMap.IsWarming.JoinNumber].BoolValue,
+                    IsCoolingDown = Eisc.BooleanOutput[JoinMap.IsCooling.JoinNumber].BoolValue,
                     SelectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue,
                     Volumes = volumes,                    
+                    Key = ConfigReader.ConfigObject.Rooms[0].Key,
+                    AdvancedSharingActive = Eisc.BooleanOutput[_directRouteMessenger.JoinMap.AdvancedSharingModeFb.JoinNumber].BoolValue,
+                    SupportsAdvancedSharing = Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue,
+                    UserCanChangeShareMode = Eisc.BooleanOutput[JoinMap.UserCanChangeShareMode.JoinNumber].BoolValue  
                 };
 
-                if (_vtcMessenger != null)
+                var vtcDev = DeviceManager.GetDeviceForKey(roomConfig.VideoCodecKey) as VideoCodecBase;
+
+                if (vtcDev != null)
+                {
+                    state.IsInCall = vtcDev.IsInCall;                    
+                }
+                else if (_vtcMessenger != null) 
                 {
                     state.IsInCall = Eisc.BooleanOutput[_vtcMessenger.JoinMap.HookState.JoinNumber].BoolValue;
                 }
@@ -1067,12 +1081,11 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var messageObject = new MobileControlResponseMessage
                 {
                     Type = MessagePath,
+                    ClientId = id,
                     Content = state,
-                };
+                };                
 
-                // TODO: Add property to status message to indicate if advanced sharing is supported and if users can change share mode
-
-                PostStatus(messageObject);
+                PostStatusMessage(messageObject);
             }
             else
             {
@@ -1101,11 +1114,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatus(object contentObject)
         {
-            Parent.SendMessageObject(new
-            {
-                type = "/room/room1/status/",
-                content = contentObject
-            });
+            Parent.SendMessageObject(contentObject);
         }
 
         /// <summary>
