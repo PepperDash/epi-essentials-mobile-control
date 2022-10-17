@@ -196,6 +196,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var status = new ZoomRoomStateMessage();
 
             status.ShareInfo = e.SharingStatus;
+
+            PostStatusMessage(status);
         }
 
         private void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)

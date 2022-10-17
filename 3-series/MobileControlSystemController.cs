@@ -1410,7 +1410,7 @@ Mobile Control Direct Server Infromation:
                                                             pressAndHoldAction(false);
                                                         }
                                                         _pushedActions.Remove(type);
-                                                    }, null, ButtonHeartbeatInterval, ButtonHeartbeatInterval));
+                                                    }, null, ButtonHeartbeatInterval));
                                                 }
                                                 // Maybe add an else to reset the timer
                                                 break;
@@ -1419,8 +1419,7 @@ Mobile Control Direct Server Infromation:
                                             {
                                                 if (_pushedActions.ContainsKey(type))
                                                 {
-                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval,
-                                                        ButtonHeartbeatInterval);
+                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval);
                                                 }
                                                 return;
                                             }

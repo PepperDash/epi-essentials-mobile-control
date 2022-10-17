@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace PepperDash.Essentials
 {
-    class WebSocketServerSecretProvider : CrestronSecretsProvider
+    class WebSocketServerSecretProvider : CrestronLocalSecretsProvider
     {
         public WebSocketServerSecretProvider(string key)
             :base(key)
