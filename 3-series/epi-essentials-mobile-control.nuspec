@@ -5,7 +5,7 @@
     <version>2.0.2</version>
     <title>Mobile Control Essentials Plugin</title>
     <authors>PepperDash Technologies</authors>
-    <owners>pepperdash</owners>
+    <owners>PepperDash-Engineering</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/PepperDash-Engineering/epi-essentials-mobile-control</projectUrl>
