@@ -1239,7 +1239,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     .Select(k => DeviceManager.GetDeviceForKey(k))
                     .Select(d => 
                     { 
-                        if (d != null && (d is LightingBase || d is ShadeBase))
+                        if (d != null && (d is LightingBase || d is ShadeBase || d is ShadeController))
                         { 
                             return d;
                         } else
@@ -1249,16 +1249,16 @@ namespace PepperDash.Essentials.Room.MobileControl
                     });
 
                 var shadeConfigs = dev
-                    .Cast<ShadeBase>()
-                    .Where(d => d != null)
+                    .Where(d => d is ShadeBase)
+                    .Cast<ShadeBase>()                    
                     .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.Shade));
                 var shadeControllerConfigs = dev
-                    .Cast<ShadeController>()
-                    .Where(d => d != null)
+                    .Where(d => d is ShadeController)
+                    .Cast<ShadeController>()                    
                     .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.ShadeController));
                 var lightingConfigs = dev
-                    .Cast<LightingBase>()
-                    .Where(d => d != null)
+                    .Where(d => d is LightingBase)
+                    .Cast<LightingBase>()                    
                     .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.Lighting));
 
                 roomConfiguration.EnvironmentalDevices = shadeConfigs.Concat(shadeControllerConfigs).Concat(lightingConfigs).ToList();
