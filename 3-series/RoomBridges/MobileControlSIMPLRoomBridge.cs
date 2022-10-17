@@ -14,12 +14,17 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Room.Config;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-
+using System.Linq;
+using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
+using PepperDash.Essentials.Core.Lighting;
+using PepperDash.Essentials.Core.Shades;
+using PepperDash.Essentials.Devices.Common;
+using PepperDash.Essentials.Devices.Common.VideoCodec;
+using PepperDash.Essentials.Devices.Common.AudioCodec;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomBridge : MobileControlBridgeBase, IDelayedConfiguration
     {
         private const int SupportedDisplayCount = 10;
@@ -32,9 +37,6 @@ namespace PepperDash.Essentials.Room.MobileControl
         public ThreeSeriesTcpIpEthernetIntersystemCommunications Eisc { get; private set; }
 
         public MobileControlSIMPLRoomJoinMap JoinMap { get; private set; }
-
-        public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
-
 
         /// <summary>
         /// 
@@ -70,7 +72,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="name"></param>
         /// <param name="ipId"></param>
         public MobileControlSIMPLRoomBridge(string key, string name, uint ipId)
-            : base(key, "/room/room1")
+            : base(key, "/room/room1/status")
         {
             Eisc = new ThreeSeriesTcpIpEthernetIntersystemCommunications(ipId, "127.0.0.2", Global.ControlSystem);
             var reg = Eisc.Register();
@@ -82,7 +84,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             _sourceBridge = new MobileControlSimplDeviceBridge(key + "-sourceBridge", "SIMPL source bridge", Eisc);
             DeviceManager.AddDevice(_sourceBridge);
 
-            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "printmobilejoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand((s) => JoinMap.PrintJoinMapInfo(), "mobileprintjoinmap", "Prints the MobileControlSIMPLRoomBridge JoinMap", ConsoleAccessLevelEnum.AccessOperator);
 
             AddPostActivationAction(() =>
                 {
@@ -156,7 +158,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 // TODO: Update Source Bridge to use new JoinMap scheme
                 //_sourceBridge.JoinMap.PrintJoinMapInfo();
-            }, "printmobilebridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
+            }, "mobileprintbridge", "Prints MC-SIMPL bridge EISC data", ConsoleAccessLevelEnum.AccessOperator);
 
             return base.CustomActivate();
         }
@@ -195,7 +197,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             Parent.AddAction(@"/room/room1/clientJoined",
                 new Action(() => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber)));
 
-            Parent.AddAction(@"/room/room1/status", new Action(SendFullStatus));
+            Parent.AddAction(@"/room/room1/status", new ClientSpecificUpdateRequest((id) => SendFullStatus(id)));
 
             Parent.AddAction(@"/room/room1/source", new Action<SourceSelectMessageContent>(c =>
             {
@@ -466,6 +468,12 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
+      
+            if(co.Info == null)
+            {
+                co.Info = new InfoConfig();
+            }
+
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             co.Info.RuntimeInfo.AssemblyVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor,
@@ -500,21 +508,40 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Message = Eisc.StringOutput[JoinMap.ConfigHelpMessage.JoinNumber].StringValue
             };
 
+            rmProps.HelpMessage = Eisc.StringOutput[JoinMap.ConfigHelpMessage.JoinNumber].StringValue;
+
             rmProps.Environment = new EssentialsEnvironmentPropertiesConfig(); // enabled defaults to false
+
+            var environmentKeySigs = Eisc.StringOutput.Where(s => s.Number >= JoinMap.EnvironmentalDevicesKey.JoinNumber && s.Number < JoinMap.EnvironmentalDevicesKey.JoinNumber + JoinMap.EnvironmentalDevicesKey.JoinSpan);
+
+            if (environmentKeySigs.Any(s => !string.IsNullOrEmpty(s.StringValue)))
+            {
+                rmProps.Environment.Enabled = true;
+                rmProps.Environment.DeviceKeys = environmentKeySigs.Where(s => !string.IsNullOrEmpty(s.StringValue)).Select(s => s.StringValue).ToList();
+            }
 
             rmProps.RoomPhoneNumber = Eisc.StringOutput[JoinMap.ConfigRoomPhoneNumber.JoinNumber].StringValue;
             rmProps.RoomURI = Eisc.StringOutput[JoinMap.ConfigRoomUri.JoinNumber].StringValue;
             rmProps.SpeedDials = new List<SimplSpeedDial>();
 
+            if(rmProps.UiBehavior == null)
+            {
+                rmProps.UiBehavior = new EssentialsRoomUiBehaviorConfig();
+            }
+
+            rmProps.UiBehavior.DisableActivityButtonsWhileWarmingCooling = Eisc.BooleanOutput[JoinMap.ActivityLockoutOnStateChange.JoinNumber].BoolValue;
+
+            var essentialsAudioCodecKey = Eisc.StringOutput[JoinMap.AudioCodecKey.JoinNumber].StringValue;
+            var essentialsVideoCodecKey = Eisc.StringOutput[JoinMap.VideoCodecKey.JoinNumber].StringValue;
             // This MAY need a check 
             if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
-            {
-                rmProps.AudioCodecKey = "audioCodec"; 
+            {                
+                rmProps.AudioCodecKey = string.IsNullOrEmpty(essentialsAudioCodecKey) ? "audioCodec" : essentialsAudioCodecKey; 
             }
 
             if (Eisc.BooleanOutput[JoinMap.ActivityVideoCallEnable.JoinNumber].BoolValue)
-            {
-                rmProps.VideoCodecKey = "videoCodec";
+            {                
+                rmProps.VideoCodecKey = string.IsNullOrEmpty(essentialsVideoCodecKey) ? "videoCodec" : essentialsVideoCodecKey;
             }
 
             // volume control names
@@ -530,7 +557,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             if (co.Devices == null)
                 co.Devices = new List<DeviceConfig>();
 
-            // clear out previous SIMPL devices
+      // clear out previous SIMPL devices
             co.Devices.RemoveAll(d =>
                 d.Key.StartsWith("source-", StringComparison.OrdinalIgnoreCase)
                 || d.Key.Equals("audioCodec", StringComparison.OrdinalIgnoreCase)
@@ -636,7 +663,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             // Build "audioCodec" config if we need
             if (!string.IsNullOrEmpty(rmProps.AudioCodecKey))
-            {
+            { 
                 var acFavs = new List<CodecActiveCallItem>();
                 for (uint i = 0; i < 4; i++)
                 {
@@ -849,9 +876,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// Iterates device config and adds messengers as neede for each device type
         /// </summary>
         private void SetupDeviceMessengers()
-        {
-            DeviceMessengers = new Dictionary<string, MessengerBase>();
-
+        {            
             try
             {
                 foreach (var device in ConfigReader.ConfigObject.Devices)
@@ -895,9 +920,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                         if (messenger != null)
                         {
-                            DeviceManager.AddDevice(messenger);
-                            DeviceMessengers.Add(device.Key, messenger);
-                            messenger.RegisterWithAppServer(Parent);
+                            Parent.AddDeviceMessenger(messenger);                                                      
                         }
                         else
                         {
@@ -915,13 +938,63 @@ namespace PepperDash.Essentials.Room.MobileControl
                             {
                                 var camDevice = dev as CameraBase;
                                 Debug.Console(1, this, "Adding CameraBaseMessenger for device: {0}", dev.Key);
-                                var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
+                                var messenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
                                     "/device/" + device.Key);
-                                DeviceMessengers.Add(device.Key, cameraMessenger);
-                                DeviceManager.AddDevice(cameraMessenger);
-                                cameraMessenger.RegisterWithAppServer(Parent);
+                                Parent.AddDeviceMessenger(messenger);                                
                                 continue;
                             }
+                            
+                            if (dev is ZoomRoom)
+                            {
+                                var zoomDevice = dev as ZoomRoom;
+
+                                Debug.Console(1, this, "Adding ZoomRoomMessenger for device: {0}", dev.Key);
+
+                                var zoomMessenger = new ZoomRoomMessenger(device.Key + "-" + Parent.Key, zoomDevice, "/device/" + dev.Key);
+                                Parent.AddDeviceMessenger(zoomMessenger);                               
+                                continue;
+                            }
+
+                            if(dev is VideoCodecBase)
+                            {
+                                var vcBase = dev as VideoCodecBase;
+
+                                var messenger = new VideoCodecBaseMessenger(dev.Key + "-" + Parent.Key, vcBase, string.Format("/devices/{0}", dev.Key));
+                                Parent.AddDeviceMessenger(messenger);
+                                continue;
+                            }
+
+                            if(dev is AudioCodecBase)
+                            {
+                                var acBase = dev as AudioCodecBase;
+
+                                var messenger = new AudioCodecBaseMessenger(dev.Key + "-" + Parent.Key, acBase, string.Format("/devices/{0}", dev.Key));
+                                Parent.AddDeviceMessenger(messenger);
+                                continue;
+                            }
+
+                            if (dev is LightingBase)
+                            {
+                                var deviceKey = device.Key;
+                                var lightingDevice = dev as LightingBase;
+                                Debug.Console(1, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
+                                var messenger = new LightingBaseMessenger(deviceKey + "-" + Parent.Key,
+                                    lightingDevice, string.Format("/device/{0}", deviceKey));
+                                Parent.AddDeviceMessenger(messenger);                               
+                                continue;
+                            }
+
+                            if (dev is ShadeBase)
+                            {
+                                var deviceKey = device.Key;
+                                var shadeDevice = dev as ShadeBase;
+                                Debug.Console(1, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
+                                var messenger = new ShadeBaseMessenger(deviceKey + "-" + Parent.Key,
+                                    shadeDevice, string.Format("/device/{0}", deviceKey));
+                                Parent.AddDeviceMessenger(messenger);                               
+                                continue;
+                            }
+
                         }
                     }
                 }
@@ -935,7 +1008,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <summary>
         /// 
         /// </summary>
-        private void SendFullStatus()
+        private void SendFullStatus(string id)
         {
             if (ConfigIsLoaded)
             {
@@ -977,17 +1050,42 @@ namespace PepperDash.Essentials.Room.MobileControl
                     NumberOfAuxFaders = Eisc.UShortInput[JoinMap.NumberOfAuxFaders.JoinNumber].UShortValue
                 };
 
-                // TODO: Add property to status message to indicate if advanced sharing is supported and if users can change share mode
+                var roomConfig = GetRoomConfiguration(ConfigReader.ConfigObject);
 
-                PostStatus(new
+                var state = new RoomStateMessage
                 {
-                    activityMode = GetActivityMode(),
-                    isOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
-                    selectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue,
-                    volumes,
-                    supportsAdvancedSharing = Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue,
-                    userCanChangeShareMode = Eisc.BooleanOutput[JoinMap.UserCanChangeShareMode.JoinNumber].BoolValue,
-                });
+                    Configuration = roomConfig,
+                    ActivityMode = GetActivityMode(),
+                    IsOn = Eisc.BooleanOutput[JoinMap.RoomIsOn.JoinNumber].BoolValue,
+                    IsWarmingUp = Eisc.BooleanOutput[JoinMap.IsWarming.JoinNumber].BoolValue,
+                    IsCoolingDown = Eisc.BooleanOutput[JoinMap.IsCooling.JoinNumber].BoolValue,
+                    SelectedSourceKey = Eisc.StringOutput[JoinMap.CurrentSourceKey.JoinNumber].StringValue,
+                    Volumes = volumes,                    
+                    Key = ConfigReader.ConfigObject.Rooms[0].Key,
+                    AdvancedSharingActive = Eisc.BooleanOutput[_directRouteMessenger.JoinMap.AdvancedSharingModeFb.JoinNumber].BoolValue,
+                    SupportsAdvancedSharing = Eisc.BooleanOutput[JoinMap.SupportsAdvancedSharing.JoinNumber].BoolValue,
+                    UserCanChangeShareMode = Eisc.BooleanOutput[JoinMap.UserCanChangeShareMode.JoinNumber].BoolValue  
+                };
+
+                var vtcDev = DeviceManager.GetDeviceForKey(roomConfig.VideoCodecKey) as VideoCodecBase;
+
+                if (vtcDev != null)
+                {
+                    state.IsInCall = vtcDev.IsInCall;                    
+                }
+                else if (_vtcMessenger != null) 
+                {
+                    state.IsInCall = Eisc.BooleanOutput[_vtcMessenger.JoinMap.HookState.JoinNumber].BoolValue;
+                }
+
+                var messageObject = new MobileControlResponseMessage
+                {
+                    Type = MessagePath,
+                    ClientId = id,
+                    Content = state,
+                };                
+
+                PostStatusMessage(messageObject);
             }
             else
             {
@@ -1016,11 +1114,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatus(object contentObject)
         {
-            Parent.SendMessageObject(new
-            {
-                type = "/room/room1/status/",
-                content = contentObject
-            });
+            Parent.SendMessageObject(contentObject);
         }
 
         /// <summary>
@@ -1099,6 +1193,115 @@ namespace PepperDash.Essentials.Room.MobileControl
             Eisc.StringInput[JoinMap.ServerUrl.JoinNumber].StringValue = McServerUrl;
             Eisc.StringInput[JoinMap.QrCodeUrl.JoinNumber].StringValue = QrCodeUrl;
 
+        }
+
+        private RoomConfiguration GetRoomConfiguration(EssentialsConfig config)
+        {
+            var roomConfiguration = new RoomConfiguration();
+
+            if(config.Rooms.Count ==0 )
+            {
+                Debug.Console(0, this, "No SIMPL Rooms configured");
+
+                return roomConfiguration;
+            }
+
+            if (config.Rooms[0].Properties == null)
+            {
+                Debug.Console(0, this, "Room Properties Missing.");
+                return roomConfiguration;
+            }
+
+            var properties = config.Rooms[0].Properties.ToObject<SimplRoomPropertiesConfig>();
+
+            if(properties == null)
+            {
+                Debug.Console(0, this, "Unable to convert properties");
+                return roomConfiguration;
+            }
+
+            roomConfiguration.HelpMessage = properties.HelpMessage;
+
+            if (!string.IsNullOrEmpty(properties.VideoCodecKey)) //has video codec
+            {
+                roomConfiguration.HasVideoConferencing = true;
+                roomConfiguration.VideoCodecKey = properties.VideoCodecKey;
+
+                var vcDev = DeviceManager.GetDeviceForKey(properties.VideoCodecKey);
+
+                roomConfiguration.VideoCodecIsZoomRoom = vcDev != null && vcDev is ZoomRoom;
+            }            
+
+            roomConfiguration.UiBehavior = properties.UiBehavior;            
+
+            if (!string.IsNullOrEmpty(properties.AudioCodecKey))
+            {
+                roomConfiguration.HasAudioConferencing = true;
+                roomConfiguration.AudioCodecKey = properties.AudioCodecKey;
+            }
+
+            if (properties.Environment.Enabled)
+            {
+                roomConfiguration.HasEnvironmentalControls = true;
+
+                var dev = properties.Environment.DeviceKeys
+                    .Select(k => DeviceManager.GetDeviceForKey(k))
+                    .Select(d => 
+                    { 
+                        if (d != null && (d is LightingBase || d is ShadeBase || d is ShadeController))
+                        { 
+                            return d;
+                        } else
+                        {
+                            return null;
+                        }
+                    });
+
+                var shadeConfigs = dev
+                    .Where(d => d is ShadeBase)
+                    .Cast<ShadeBase>()                    
+                    .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.Shade));
+                var shadeControllerConfigs = dev
+                    .Where(d => d is ShadeController)
+                    .Cast<ShadeController>()                    
+                    .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.ShadeController));
+                var lightingConfigs = dev
+                    .Where(d => d is LightingBase)
+                    .Cast<LightingBase>()                    
+                    .Select(d => new EnvironmentalDeviceConfiguration(d.Key, eEnvironmentalDeviceTypes.Lighting));
+
+                roomConfiguration.EnvironmentalDevices = shadeConfigs.Concat(shadeControllerConfigs).Concat(lightingConfigs).ToList();
+            }
+
+            if (!string.IsNullOrEmpty(properties.DefaultDisplayKey))
+            {
+                roomConfiguration.DefaultDisplayKey = properties.DefaultDisplayKey;
+            }
+
+            if (!string.IsNullOrEmpty(properties.DestinationListKey)) //assuming having a destination list means having multiple destinations
+            {
+                Dictionary<string, DestinationListItem> destList;
+
+                if(config.DestinationLists.TryGetValue(properties.DestinationListKey, out destList))
+                {
+                    roomConfiguration.DisplayKeys = destList.Values.Select(dl => dl.SinkKey).ToList();
+                }                
+            }
+
+            var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(properties.SourceListKey);
+
+            if (sourceList != null)
+            {
+                roomConfiguration.SourceList = sourceList;
+                roomConfiguration.HasRoutingControls = true;
+
+                roomConfiguration.HasSetTopBoxControls = sourceList.Values.Any(sl => sl.SourceDevice is IRSetTopBoxBase);
+
+                roomConfiguration.HasCameraControls = sourceList.Values.Any(sl => sl.SourceDevice is CameraBase);
+            }
+
+
+            return roomConfiguration;
         }
     }
 }

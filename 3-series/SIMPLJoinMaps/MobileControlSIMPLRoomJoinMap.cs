@@ -3,11 +3,11 @@
 
 namespace PepperDash.Essentials.AppServer
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomJoinMap : JoinMapBaseAdvanced
     {
         [JoinName("QrCodeUrl")] public JoinDataComplete QrCodeUrl =
-            new JoinDataComplete(new JoinData {JoinNumber = 403, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 403, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "QR Code URL",
@@ -26,7 +26,7 @@ namespace PepperDash.Essentials.AppServer
             });
 
         [JoinName("MasterVolume")] public JoinDataComplete MasterVolume =
-            new JoinDataComplete(new JoinData {JoinNumber = 1, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 1, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Master Volume Mute Toggle/FB/Level/Label",
@@ -35,7 +35,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("VolumeJoinStart")] public JoinDataComplete VolumeJoinStart =
-            new JoinDataComplete(new JoinData {JoinNumber = 2, JoinSpan = 8},
+            new JoinDataComplete(new JoinData { JoinNumber = 2, JoinSpan = 8 },
                 new JoinMetadata
                 {
                     Description = "Volume Mute Toggle/FB/Level/Label",
@@ -44,7 +44,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("PrivacyMute")] public JoinDataComplete PrivacyMute =
-            new JoinDataComplete(new JoinData {JoinNumber = 12, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 12, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Privacy Mute Toggle/FB",
@@ -53,7 +53,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("PromptForCode")] public JoinDataComplete PromptForCode =
-            new JoinDataComplete(new JoinData {JoinNumber = 41, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 41, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Prompt User for Code",
@@ -62,7 +62,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ClientJoined")] public JoinDataComplete ClientJoined =
-            new JoinDataComplete(new JoinData {JoinNumber = 42, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 42, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Client Joined",
@@ -91,7 +91,7 @@ namespace PepperDash.Essentials.AppServer
             });
 
         [JoinName("ActivityShare")] public JoinDataComplete ActivityShare =
-            new JoinDataComplete(new JoinData {JoinNumber = 51, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 51, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Activity Share",
@@ -100,7 +100,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ActivityPhoneCall")] public JoinDataComplete ActivityPhoneCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 52, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 52, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Activity Phone Call",
@@ -109,7 +109,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ActivityVideoCall")] public JoinDataComplete ActivityVideoCall =
-            new JoinDataComplete(new JoinData {JoinNumber = 53, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 53, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Activity Video Call",
@@ -118,7 +118,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ShutdownPromptDuration")] public JoinDataComplete ShutdownPromptDuration =
-            new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 61, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Shutdown Cancel",
@@ -127,7 +127,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ShutdownCancel")] public JoinDataComplete ShutdownCancel =
-            new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 61, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Shutdown Cancel",
@@ -136,7 +136,7 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ShutdownEnd")] public JoinDataComplete ShutdownEnd =
-            new JoinDataComplete(new JoinData {JoinNumber = 62, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 62, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Shutdown End",
@@ -145,13 +145,42 @@ namespace PepperDash.Essentials.AppServer
                 });
 
         [JoinName("ShutdownStart")] public JoinDataComplete ShutdownStart =
-            new JoinDataComplete(new JoinData {JoinNumber = 63, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 63, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Shutdown Start",
                     JoinCapabilities = eJoinCapabilities.ToFromSIMPL,
                     JoinType = eJoinType.Digital
                 });
+
+        [JoinName("isWarming")]
+        public JoinDataComplete IsWarming =
+            new JoinDataComplete(new JoinData { JoinNumber = 64, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Room is powering on",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("isCooling")]
+        public JoinDataComplete IsCooling =
+            new JoinDataComplete(new JoinData { JoinNumber = 65, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Room is powering off",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("EnableActivityLockoutOnPowerStateChange")]
+        public JoinDataComplete ActivityLockoutOnStateChange =
+            new JoinDataComplete(new JoinData { JoinNumber = 64, JoinSpan = 1 }, new JoinMetadata
+            {
+                Description = "Disable Activity Buttons on Power On/Off. High = disable buttons",
+                JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                JoinType = eJoinType.Digital
+            });
 
         [JoinName("SourceHasChanged")] public JoinDataComplete SourceHasChanged =
             new JoinDataComplete(new JoinData {JoinNumber = 71, JoinSpan = 1},
@@ -176,7 +205,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 100, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Config is local to Essentials",
+                    Description = "Use Essentials Configuration",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -294,7 +323,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 500, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "Config info from SIMPL is ready",
+                Description = "MC Is Online and authorized",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -303,7 +332,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData {JoinNumber = 501, JoinSpan = 1},
                 new JoinMetadata
                 {
-                    Description = "Config info from SIMPL is ready",
+                    Description = "SIPML Configuration is ready",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -313,7 +342,7 @@ namespace PepperDash.Essentials.AppServer
             new JoinDataComplete(new JoinData { JoinNumber = 501, JoinSpan = 1 },
             new JoinMetadata
             {
-                Description = "Config info from SIMPL is ready",
+                Description = "MC is ready for SIMPL Config",
                 JoinCapabilities = eJoinCapabilities.ToSIMPL,
                 JoinType = eJoinType.Digital
             });
@@ -341,6 +370,16 @@ namespace PepperDash.Essentials.AppServer
                 new JoinMetadata
                 {
                     Description = "Use Source Enabled Joins",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Digital
+                });
+
+        [JoinName("LockoutActivityButtonsOnStateChange")]
+        public JoinDataComplete LockoutActivityButtonsOnStateChange =
+            new JoinDataComplete(new JoinData { JoinNumber = 508, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Lockout Activity buttons when Room power State changes",
                     JoinCapabilities = eJoinCapabilities.FromSIMPL,
                     JoinType = eJoinType.Digital
                 });
@@ -521,6 +560,36 @@ namespace PepperDash.Essentials.AppServer
                 JoinType = eJoinType.Digital
             });
         #endregion
+
+        [JoinName("EssentialsVideoCodecKey")]
+        public JoinDataComplete VideoCodecKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 51, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Video Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
+
+        [JoinName("EssentialsAudioCodecKey")]
+        public JoinDataComplete AudioCodecKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 52, JoinSpan = 1 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Audio Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
+
+        [JoinName("EnvironmentalDeviceKey")]
+        public JoinDataComplete EnvironmentalDevicesKey =
+            new JoinDataComplete(new JoinData { JoinNumber = 61, JoinSpan = 10 },
+                new JoinMetadata
+                {
+                    Description = "Essentials Video Codec Device Name",
+                    JoinCapabilities = eJoinCapabilities.FromSIMPL,
+                    JoinType = eJoinType.Serial,
+                });
 
         public MobileControlSIMPLRoomJoinMap(uint joinStart)
             : base(joinStart, typeof(MobileControlSIMPLRoomJoinMap))
