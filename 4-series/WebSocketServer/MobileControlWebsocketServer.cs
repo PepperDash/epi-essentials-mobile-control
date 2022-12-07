@@ -131,7 +131,7 @@ namespace PepperDash.Essentials
         {
             base.OnError(e);
 
-            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);'-'
+            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);
         }
     }
 
