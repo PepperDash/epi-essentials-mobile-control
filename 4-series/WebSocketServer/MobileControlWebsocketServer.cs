@@ -53,7 +53,7 @@ namespace PepperDash.Essentials
             base.OnOpen();
 
             var url = Context.WebSocket.Url;
-            Debug.Console(2, "New WebSocket Connection from: {0}", url);
+            Debug.Console(2, Debug.ErrorLogLevel.Notice, "New WebSocket Connection from: {0}", url);
 
             var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
 
@@ -123,7 +123,7 @@ namespace PepperDash.Essentials
         {
             base.OnClose(e);
 
-            Debug.Console(2, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
+            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
 
         }
 
@@ -131,7 +131,7 @@ namespace PepperDash.Essentials
         {
             base.OnError(e);
 
-            Debug.Console(2, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);
+            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);'-'
         }
     }
 
