@@ -14,6 +14,11 @@ using PepperDash.Essentials.Core.Config;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Crestron.SimplSharp.CrestronIO;
+using Crestron.SimplSharp.Net;
+using System.Net.Http;
+using Newtonsoft.Json.Linq;
+using Independentsoft.Email.Mime;
+using System.Linq;
 
 namespace PepperDash.Essentials
 {
@@ -158,6 +163,8 @@ namespace PepperDash.Essentials
 
         private ServerTokenSecrets _secret;
 
+        private static HttpClient LogClient = new HttpClient();
+
         private string _secretProviderKey
         {
             get
@@ -215,7 +222,7 @@ namespace PepperDash.Essentials
                 return count;
             }
         }
-
+        
         public MobileControlWebsocketServer(string key, int customPort, MobileControlSystemController parent)
             : base(key)
         {
@@ -245,8 +252,14 @@ namespace PepperDash.Essentials
 
             _server = new HttpServer(Port, false);
 
+            _server.OnGet += Server_OnGet;
 
-            _server.OnGet += _server_OnGet;
+            _server.OnOptions += Server_OnOptions;
+
+            if (_parent.Config.DirectServer.Logging.EnableRemoteLogging)
+            {
+                _server.OnPost += Server_OnPost;                
+            }
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
@@ -261,6 +274,8 @@ namespace PepperDash.Essentials
 
             CreateFolderStructure();
         }
+
+        
 
         private void CreateFolderStructure()
         {
@@ -313,7 +328,8 @@ namespace PepperDash.Essentials
                                     PasscodePageText = "Please enter the code shown on this room's display"
                                 }
                             }
-                        }
+                        },
+                        Logging = _parent.Config.DirectServer.Logging.EnableRemoteLogging,                        
                     };
                 }
                 else
@@ -330,13 +346,14 @@ namespace PepperDash.Essentials
                         {
                             {
                                 "room-list",
-                                new McMode{
-                                    ListPageText= "Please select your room",
+                                new McMode {
+                                    ListPageText = "Please select your room",
                                     LoginHelpText = "Please select your room from the list, then enter the code shown on the display.",
                                     PasscodePageText = "Please enter the code shown on this room's display"
                                 }
                             }
-                        }
+                        },
+                        Logging = _parent.Config.ApplicationConfig.Logging
                     };
                 }
             } catch(Exception ex)
@@ -562,7 +579,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void _server_OnGet(object sender, HttpRequestEventArgs e)
+        private void Server_OnGet(object sender, HttpRequestEventArgs e)
         {
             try
             {
@@ -574,7 +591,7 @@ namespace PepperDash.Essentials
 
                 var path = req.RawUrl;
 
-                Debug.Console(2, this, "Request received at path: {0}", path);
+                Debug.Console(2, this, "GET Request received at path: {0}", path);
 
                 // Call for user app to join the room with a token
                 if (path.StartsWith("/mc/api/ui/joinroom"))
@@ -601,6 +618,78 @@ namespace PepperDash.Essentials
             catch (Exception ex)
             {
                 Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+            }
+        }
+
+        private async void Server_OnPost(object sender, HttpRequestEventArgs e)
+        {
+            try
+            {
+                var req = e.Request;
+                var res = e.Response;
+
+                res.AddHeader("Access-Control-Allow-Origin", "*");
+
+                var path = req.RawUrl;
+
+                Debug.Console(2, this, "POST Request received at path: {0}", path);
+
+                var body = new System.IO.StreamReader(req.InputStream).ReadToEnd();
+
+                if(path.StartsWith("/mc/api/log"))
+                {
+                    res.StatusCode = 200;
+                    res.Close();                    
+
+                    await LogClient.PostAsync($"http://{_parent.Config.DirectServer.Logging.Host}:{_parent.Config.DirectServer.Logging.Port}", new StringContent(body, Encoding.UTF8, "application/json"));
+
+                    Debug.Console(2, this, "Log data sent to {0}:{1}", _parent.Config.DirectServer.Logging.Host, _parent.Config.DirectServer.Logging.Port);
+
+                    
+                } else
+                {
+                    res.StatusCode = 404;
+                    res.Close();                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
+                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
+
+                if(ex.InnerException != null)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
+                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
+                }
+
+            }
+        }
+
+        private void Server_OnOptions(object sender, HttpRequestEventArgs e)
+        {
+            try
+            {                
+                var res = e.Response;
+
+                res.AddHeader("Access-Control-Allow-Origin", "*");
+                res.AddHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                res.AddHeader("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, remember-me");
+
+                res.StatusCode = 200;
+                res.Close();              
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
+                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
+                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
+                }
+
             }
         }
 
