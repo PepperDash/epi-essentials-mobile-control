@@ -631,21 +631,27 @@ namespace PepperDash.Essentials
                 res.AddHeader("Access-Control-Allow-Origin", "*");
 
                 var path = req.RawUrl;
+                var ip = req.RemoteEndPoint.Address.ToString();                
 
-                Debug.Console(2, this, "POST Request received at path: {0}", path);
+                Debug.Console(2, this, "POST Request received at path: {0} from host {1}", path, ip);                
 
                 var body = new System.IO.StreamReader(req.InputStream).ReadToEnd();
 
                 if(path.StartsWith("/mc/api/log"))
                 {
                     res.StatusCode = 200;
-                    res.Close();                    
+                    res.Close();
 
-                    await LogClient.PostAsync($"http://{_parent.Config.DirectServer.Logging.Host}:{_parent.Config.DirectServer.Logging.Port}/logs", new StringContent(body, Encoding.UTF8, "application/json"));
+                    var logRequest = new HttpRequestMessage(HttpMethod.Post, $"http://{_parent.Config.DirectServer.Logging.Host}:{_parent.Config.DirectServer.Logging.Port}/logs")
+                    {
+                        Content = new StringContent(body, Encoding.UTF8, "application/json"),
+                    };
+
+                    logRequest.Headers.Add("x-pepperdash-host", ip);
+
+                    await LogClient.SendAsync(logRequest);
 
                     Debug.Console(2, this, "Log data sent to {0}:{1}", _parent.Config.DirectServer.Logging.Host, _parent.Config.DirectServer.Logging.Port);
-
-                    
                 } else
                 {
                     res.StatusCode = 404;
@@ -662,7 +668,6 @@ namespace PepperDash.Essentials
                     Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
                     Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
                 }
-
             }
         }
 
