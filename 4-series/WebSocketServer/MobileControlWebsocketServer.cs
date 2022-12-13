@@ -641,7 +641,7 @@ namespace PepperDash.Essentials
                     res.StatusCode = 200;
                     res.Close();                    
 
-                    await LogClient.PostAsync($"http://{_parent.Config.DirectServer.Logging.Host}:{_parent.Config.DirectServer.Logging.Port}", new StringContent(body, Encoding.UTF8, "application/json"));
+                    await LogClient.PostAsync($"http://{_parent.Config.DirectServer.Logging.Host}:{_parent.Config.DirectServer.Logging.Port}/logs", new StringContent(body, Encoding.UTF8, "application/json"));
 
                     Debug.Console(2, this, "Log data sent to {0}:{1}", _parent.Config.DirectServer.Logging.Host, _parent.Config.DirectServer.Logging.Port);
 
