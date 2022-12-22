@@ -285,7 +285,7 @@ namespace PepperDash.Essentials
                 Directory.Create($"{userAppPath}{localConfigFolderName}");
             }
 
-            using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.OpenOrCreate, FileAccess.ReadWrite)))
+            using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.Truncate, FileAccess.ReadWrite)))
             {
                 var config = GetApplicationConfig();
 
