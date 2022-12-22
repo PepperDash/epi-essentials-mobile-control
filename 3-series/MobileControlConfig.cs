@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Security.Policy;
+using Crestron.SimplSharp.Ssh.Security;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
@@ -47,6 +49,27 @@ namespace PepperDash.Essentials
 
         [JsonProperty("port")]
         public int Port { get; set; }
+
+        [JsonProperty("logging")]
+        public MobileControlLoggingConfig Logging { get; set; }
+
+        public MobileControlDirectServerPropertiesConfig()
+        {
+            Logging = new MobileControlLoggingConfig();
+        }
+    }
+
+    public class MobileControlLoggingConfig
+    {
+        [JsonProperty("enableRemoteLogging")]
+        public bool EnableRemoteLogging { get; set; }
+
+        [JsonProperty("host")]
+        public string Host { get; set; }
+
+        [JsonProperty("port")]
+        public int Port { get; set; }
+        
     }
 
     public class MobileControlRoomBridgePropertiesConfig
@@ -90,6 +113,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("modes")]
         public Dictionary<string, McMode> Modes { get; set; }
+
+        [JsonProperty("enableRemoteLogging")]
+        public bool Logging { get; set; }
     }
 
     public class McMode

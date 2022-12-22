@@ -62,7 +62,14 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.ConsoleWithLog(0,  "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Inner Exception: {0}", ex.InnerException.Message);
+                    Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace);
+                }
             }
 
 
@@ -94,13 +101,13 @@ namespace PepperDash.Essentials
         public void Dispatch()
         {
             try
-            {
-                //Debug.Console(2, "Dispatching message type: {0}", msgToSend.GetType());
-
+            {               
                 //Debug.Console(2, "Message: {0}", msgToSend.ToString());
 
                 if (_server != null)
                 {
+                    Debug.Console(2, _server, Debug.ErrorLogLevel.Notice, "Dispatching message type: {0}", msgToSend.GetType());
+                    
                     var message = JsonConvert.SerializeObject(msgToSend, Formatting.None,
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
@@ -109,7 +116,7 @@ namespace PepperDash.Essentials
                     {
                         var clientId = clientSpecificMessage.ClientId;
 
-                        Debug.Console(2, "Message TX To Client ID: {0} Message: {1}", clientId,  message);
+                        Debug.Console(2, _server, "Message TX To Client ID: {0} Message: {1}", clientId,  message);
 
                         _server.SendMessageToClient(clientId, message);
                     }
@@ -127,7 +134,14 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}", ex.Message);
+                Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
+
+                if (ex.InnerException != null)
+                {
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Inner Exception: {0}", ex.InnerException.Message);
+                    Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace);
+                }
             }
 
 
