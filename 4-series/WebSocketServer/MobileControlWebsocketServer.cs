@@ -270,12 +270,22 @@ namespace PepperDash.Essentials
                 Debug.Console(0, this, "Mobile Control WebSocket Server lisening on port: {0}", _server.Port);
             }
 
+            CrestronEnvironment.ProgramStatusEventHandler += OnProgramStop;
+
             RetrieveSecret();
 
             CreateFolderStructure();
         }
 
-        
+        private void OnProgramStop(eProgramStatusEventType programEventType)
+        {
+            switch (programEventType)
+            {
+                case eProgramStatusEventType.Stopping:
+                    _server.Stop();
+                    break;               
+            }
+        }
 
         private void CreateFolderStructure()
         {
@@ -288,7 +298,7 @@ namespace PepperDash.Essentials
                 Directory.Create($"{userAppPath}{localConfigFolderName}");
             }
 
-            using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.OpenOrCreate, FileAccess.ReadWrite)))
+            using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.Truncate, FileAccess.ReadWrite)))
             {
                 var config = GetApplicationConfig();
 
@@ -885,7 +895,7 @@ namespace PepperDash.Essentials
         public void SendMessageToAllClients(string message)
         {
             foreach (var clientContext in UiClients.Values)
-            {
+            {                
                 if (clientContext.Client != null && clientContext.Client.Context.WebSocket.IsAlive)
                 {
                     clientContext.Client.Context.WebSocket.Send(message);

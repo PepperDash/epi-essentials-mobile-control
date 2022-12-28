@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using PepperDash.Core;
-using PepperDash.Essentials;
-using PepperDash.Essentials.Core.Queues;
-using WebSocketSharp;
 using PepperDash.Essentials.AppServer.Messengers;
-
-using WebSocketSharp.Net.WebSockets;
+using PepperDash.Essentials.Core.Queues;
+using System;
+using System.Threading;
+using WebSocketSharp;
 
 namespace PepperDash.Essentials
 {
@@ -132,14 +125,18 @@ namespace PepperDash.Essentials
                     Debug.Console(1, "Cannot send. No server.");
                 }
             }
+            catch(ThreadAbortException)
+            {
+                //Swallowing this exception, as it occurs on shutdown and there's no need to print out a scary stack trace
+            }
             catch (Exception ex)
             {
                 Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}", ex.Message);
                 Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
 
-                if (ex.InnerException != null)
+                if(ex.InnerException != null)
                 {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Inner Exception: {0}", ex.InnerException.Message);
+                    Debug.Console(0, Debug.ErrorLogLevel.Error, "----\r\n{0}", ex.InnerException.Message);
                     Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace);
                 }
             }

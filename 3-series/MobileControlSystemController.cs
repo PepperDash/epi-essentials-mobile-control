@@ -811,7 +811,7 @@ Mobile Control Edge Server API Information:
             if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
             {
                 CrestronConsole.ConsoleCommandResponse(@"
-Mobile Control Direct Server Infromation:
+Mobile Control Direct Server Information:
     User App URL: {0}
     Server port: {1}
 ",
