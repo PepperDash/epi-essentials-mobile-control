@@ -23,7 +23,14 @@ using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
 using WebSocketSharp.Net;
 using WebSocketSharp.Net.WebSockets;
+
+#if SERIES4
 using System.Security.Authentication;
+#endif
+
+#if SERIES3
+using Crestron.SimplSharp.Security.Authentication;
+#endif
 
 namespace PepperDash.Essentials
 {
@@ -326,7 +333,7 @@ namespace PepperDash.Essentials
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
-            _wsClient2.OnClose += HandleClose;
+            _wsClient2.OnClose += HandleClose;            
 
             _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls | SslProtocols.Tls11 ;
 
