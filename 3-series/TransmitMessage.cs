@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿extern alias Old;
+using Old.Newtonsoft.Json;
+using Old.Newtonsoft.Json.Converters;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core.Queues;
@@ -55,13 +56,13 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
-                Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}\r\n{1}\r\n{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace.Replace(Environment.NewLine, "\r\n"));
 
                 if (ex.InnerException != null)
                 {
                     Debug.Console(0, Debug.ErrorLogLevel.Error, "Inner Exception: {0}", ex.InnerException.Message);
-                    Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace);
+                    Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace.Replace(Environment.NewLine, "\r\n"));
                 }
             }
 
