@@ -1,11 +1,12 @@
-﻿using System;
+﻿extern alias Old;
+using System;
 using System.Collections.Generic;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.EthernetCommunication;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Old.Newtonsoft.Json;
+using Old.Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -427,9 +428,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Key = key,
                 Name = name,
                 Type = type,
-                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+                Properties = new Old.Newtonsoft.Json.Linq.JObject(new JProperty(_syntheticDeviceKey, true)),
             };
-
+            
             if (group.ToLower().StartsWith("settopbox")) // Add others here as needed
             {
                 SetupSourceFunctions(key);
@@ -444,7 +445,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     props.JoinMapKey = "";
                     var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
                     props.JoinStart = joinStart;
-                    devConf.Properties = JToken.FromObject(props);
+                    devConf.Properties = Old.Newtonsoft.Json.Linq.JToken.FromObject(props);
                 }
             }
 
@@ -538,7 +539,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             || d.Key.StartsWith("destination-", StringComparison.OrdinalIgnoreCase));
 
             rmProps.SourceListKey = "default";
-            rm.Properties = JToken.FromObject(rmProps);
+            rm.Properties = Old.Newtonsoft.Json.Linq.JToken.FromObject(rmProps);
 
             // Source list! This might be brutal!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -664,7 +665,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     Key = acStr,
                     Name = acStr,
                     Type = acStr,
-                    Properties = JToken.FromObject(acProps)
+                    Properties = Old.Newtonsoft.Json.Linq.JToken.FromObject(acProps)
                 };
                 co.Devices.Add(acConf);
             }
@@ -711,7 +712,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     Key = str,
                     Name = str,
                     Type = str,
-                    Properties = JToken.FromObject(props)
+                    Properties = Old.Newtonsoft.Json.Linq.JToken.FromObject(props)
                 };
                 co.Devices.Add(conf);
             }
@@ -739,7 +740,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Key = key,
                 Name = name,
                 Type = "genericdestination",
-                Properties = new JObject(new JProperty(_syntheticDeviceKey, true)),
+                Properties = new Old.Newtonsoft.Json.Linq.JObject(new JProperty(_syntheticDeviceKey, true)),
             };
 
             return devConf;
