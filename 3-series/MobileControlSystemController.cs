@@ -21,7 +21,9 @@ using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
+using WebSocketSharp.Net;
 using WebSocketSharp.Net.WebSockets;
+using System.Security.Authentication;
 
 namespace PepperDash.Essentials
 {
@@ -325,6 +327,8 @@ namespace PepperDash.Essentials
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;
             _wsClient2.OnClose += HandleClose;
+
+            _wsClient2.SslConfiguration.EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls | SslProtocols.Tls11 ;
 
             return true;
         }
