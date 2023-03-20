@@ -1,6 +1,5 @@
-﻿extern alias Old;
-using Old.Newtonsoft.Json;
-using Old.Newtonsoft.Json.Converters;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core.Queues;
