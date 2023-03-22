@@ -23,7 +23,7 @@ jobs:
     steps:
       # First we checkout the source repo
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       # Generate the appropriate version number
@@ -95,13 +95,13 @@ jobs:
       - name: Write Version
         run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
       - name: Upload Build Output
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       # Upload the Version file as an artifact
       - name: Upload version.txt
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: Version
           path: ${{env.GITHUB_HOME}}\output\version.txt
@@ -121,7 +121,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download Build Version Info
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: Version
       - name: Set Version Number
@@ -134,7 +134,7 @@ jobs:
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
       - name: Download Build output
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           path: ./
@@ -150,17 +150,21 @@ jobs:
       - name: Add nuget.exe
         uses: nuget/setup-nuget@v1
       - name: Add Github Packages source
-        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash-engineering/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Create nuget package
         run: nuget pack "./epi-essentials-mobile-control.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
+      - name: Add nuget.org API Key
+        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+      - name: Publish nuget package to nuget.org
+        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
   Build_Project_4-Series:
     runs-on: windows-latest
     steps:
       # First we checkout the source repo
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       # Generate the appropriate version number
@@ -228,13 +232,13 @@ jobs:
       - name: Write Version
         run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
       - name: Upload Build Output
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
           path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
       # Upload the Version file as an artifact
       - name: Upload version.txt
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: Version
           path: ${{env.GITHUB_HOME}}\output\version.txt
@@ -254,7 +258,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download Build Version Info
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: Version
       - name: Set Version Number
@@ -267,7 +271,7 @@ jobs:
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
       - name: Download Build output
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
           path: ./
@@ -283,8 +287,12 @@ jobs:
       - name: Add nuget.exe
         uses: nuget/setup-nuget@v1
       - name: Add Github Packages source
-        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash-engineering/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Create nuget package
         run: nuget pack "./epi-essentials-mobile-control.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
         run: nuget push **/*.nupkg -source github
+      - name: Add nuget.org API Key
+        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+      - name: Publish nuget package to nuget.org
+        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
