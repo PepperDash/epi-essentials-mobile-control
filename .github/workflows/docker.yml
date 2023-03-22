@@ -140,6 +140,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: Version
+          path: Version
       - name: Set Version Number
         shell: powershell
         run: |
@@ -291,6 +292,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: Version
+          path: Version
       - name: Set Version Number
         shell: powershell
         run: |
