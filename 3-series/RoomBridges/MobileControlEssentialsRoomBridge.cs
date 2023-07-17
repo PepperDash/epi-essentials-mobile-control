@@ -780,33 +780,40 @@ namespace PepperDash.Essentials
         {
             var configuration = new RoomConfiguration();
 
-
+			Debug.Console(1, this, "Checking if {0} is Huddle space room", room.Key);
             var huddleRoom = room as IEssentialsHuddleSpaceRoom;
             if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
             {
+				Debug.Console(1, this, "Getting properties for Huddle space room");
                 configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
                 configuration.DefaultPresentationSourceKey = huddleRoom.PropertiesConfig.DefaultSourceItem;
 
             }
 
+			Debug.Console(1, this, "Checking if {0} is VTC1 space room", room.Key);
             var vtc1Room = room as IEssentialsHuddleVtc1Room;
             if (vtc1Room != null && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
             {
+				Debug.Console(1, this, "Getting properties for VTC space room");
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
                 configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
             }
 
+			Debug.Console(1, this, "Checking if {0} is Tech room", room.Key);
             var techRoom = room as EssentialsTechRoom;
             if (techRoom != null && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
             {
+				Debug.Console(1, this, "Getting properties for VTC space room");
                 configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
             }
 
+			Debug.Console(1, this, "Checking if room has Video Codec");
             var vcRoom = room as IHasVideoCodec;
             if (vcRoom != null)
             {
+				Debug.Console(1, this, "Getting properties for Video Codec");
                 if (vcRoom.VideoCodec != null)
                 {
                     configuration.HasVideoConferencing = true;
@@ -815,9 +822,11 @@ namespace PepperDash.Essentials
                 }
             };
 
+			Debug.Console(1, this, "Checking if room has Audio Codec");
             var acRoom = room as IHasAudioCodec;
             if (acRoom != null)
             {
+				Debug.Console(1, this, "Getting properties for Video Codec");
                 if (acRoom.AudioCodec != null)
                 {
                     configuration.HasAudioConferencing = true;
@@ -825,12 +834,14 @@ namespace PepperDash.Essentials
                 }
             }
 
+			Debug.Console(1, this, "Checking if room has Environmental Controls");
             var envRoom = room as IEnvironmentalControls;
             {
                 configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
 
                 if(envRoom.HasEnvironmentalControlDevices)
                 {
+					Debug.Console(1, this, "Getting properties for Environmental controls");
                     foreach (var dev in envRoom.EnvironmentalControlDevices)
                     {
                         eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
@@ -855,25 +866,31 @@ namespace PepperDash.Essentials
                 }
             }
 
+			Debug.Console(1, this, "Checking if room has Default Display");
             var defDisplayRoom = room as IHasDefaultDisplay;
             if (defDisplayRoom != null)
             {
+				Debug.Console(1, this, "Getting properties for Default Display");
                 configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
                 configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
             }
 
+			Debug.Console(1, this, "Checking if room has multiple Displays");
             var multiDisplayRoom = room as IHasMultipleDisplays;
             if (multiDisplayRoom != null)
             {
+				Debug.Console(1, this, "Getting properties for Multiple Displays");
                 foreach(var display in multiDisplayRoom.Displays)
                 {
                     configuration.DisplayKeys.Add(display.Value.Key);
                 }
             }
 
+			Debug.Console(1, this, "Getting source list for room");
             var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
             if (sourceList != null)
             {
+				Debug.Console(1, this, "Getting source list properties for room");
                 configuration.SourceList = sourceList;
                 configuration.HasRoutingControls = true;
 
