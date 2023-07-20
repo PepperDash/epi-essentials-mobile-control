@@ -869,10 +869,14 @@ namespace PepperDash.Essentials
 			Debug.Console(1, this, "Checking if room has Default Display");
             var defDisplayRoom = room as IHasDefaultDisplay;
             if (defDisplayRoom != null)
-            {
+            {				
 				Debug.Console(1, this, "Getting properties for Default Display");
-                configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
-                configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
+				Debug.Console(1, this, "Default Display key is {0}", defDisplayRoom.DefaultDisplay);
+				if (defDisplayRoom.DefaultDisplay != null)
+				{
+					configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
+					configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
+				}
             }
 
 			Debug.Console(1, this, "Checking if room has multiple Displays");
