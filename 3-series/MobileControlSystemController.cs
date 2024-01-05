@@ -64,7 +64,7 @@ namespace PepperDash.Essentials
 
                 Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "No system_url value defined in config.  Checking for value from SIMPL Bridge.");
 
-                if (!string.IsNullOrEmpty(SystemUrl))
+                if (string.IsNullOrEmpty(SystemUrl))
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config or SIMPL Bridge.  Unable to connect to Mobile Control.");
                     return String.Empty;
