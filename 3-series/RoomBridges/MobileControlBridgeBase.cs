@@ -87,7 +87,7 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, "Server user code changed: {0}", UserCode);
 
-            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
+            var qrUrl = string.Format("{0}/api/system/{1}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
             QrCodeUrl = qrUrl;
 
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
