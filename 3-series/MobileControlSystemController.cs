@@ -22,6 +22,8 @@ using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
 using WebSocketSharp.Net.WebSockets;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+
 
 namespace PepperDash.Essentials
 {
@@ -1611,7 +1613,7 @@ Mobile Control Direct Server Infromation:
         }
     }
 
-    public class MobileControlResponseMessage
+    public class MobileControlResponseMessage: IMobileControlResponseMessage
     {
         [JsonProperty("type")]
         public string Type { get; set; }

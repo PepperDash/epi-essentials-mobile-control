@@ -1,322 +1,75 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6F0E1C17-5660-4A37-A755-2B5D54AFEB78}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PepperDash.Essentials</RootNamespace>
-    <AssemblyName>epi-essentials-mobile-control</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFramework>net48</TargetFramework>
     <Deterministic>false</Deterministic>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <TargetFrameworkProfile />
+    <AssemblyTitle>epi-essentials-mobile-control</AssemblyTitle>
+    <Company>PepperDash Technologies</Company>
+    <Product>epi-essentials-mobile-control</Product>
+    <Description>This software is a plugin designed to work as a part of PepperDash Essentials for Crestron control processors. This plugin allows for connection to a PepperDash Mobile Control server.</Description>
+    <Copyright>Copyright 2020</Copyright>
+    <Version>2.0.2</Version>
+    <AssemblyVersion>0.0.0.0</AssemblyVersion>
+    <FileVersion>0.0.0.0</FileVersion>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <Authors>PepperDash Technologies</Authors>
+    <PackageId>PepperDash.Essentials.4Series.Plugin.MobileControl</PackageId>
+    <PackageProjectUrl>https://github.com/PepperDash/epi-essentials-mobile-control</PackageProjectUrl>
+    <PackageTags>crestron 4series</PackageTags>
+    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
+    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
+    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>portable</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE;DEBUG;SERIES4</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE;SERIES4</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="Crestron.SimplSharpPro.AudioDistribution, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.AudioDistribution.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.CrestronConnected, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.CrestronConnected.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.DeviceSupport, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.DeviceSupport.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.DM, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.DM.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.EthernetCommunications, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.EthernetCommunications.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Fusion, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Fusion.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Gateways, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Gateways.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.GeneralIO, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.GeneralIO.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Keypads, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Keypads.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Lighting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Lighting.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Media, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Media.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Remotes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Remotes.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Shades, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Shades.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.Thermostats, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.Thermostats.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.ThreeSeriesCards, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.ThreeSeriesCards.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.UC, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.UC.dll</HintPath>
-    </Reference>
-    <Reference Include="Crestron.SimplSharpPro.UI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\Crestron.SimplSharpPro.UI.dll</HintPath>
-    </Reference>
-    <Reference Include="Essentials Devices Common, Version=1.12.5.34933, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.12.5\lib\net47\Essentials Devices Common.dll</HintPath>
-    </Reference>
-    <Reference Include="PepperDashEssentials, Version=1.12.5.34941, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.12.5\lib\net47\PepperDashEssentials.dll</HintPath>
-    </Reference>
-    <Reference Include="PepperDash_Core, Version=1.1.4.32942, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashCore.1.1.4\lib\net47\PepperDash_Core.dll</HintPath>
-    </Reference>
-    <Reference Include="PepperDash_Essentials_Core, Version=1.12.5.34929, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.12.5\lib\net47\PepperDash_Essentials_Core.dll</HintPath>
-    </Reference>
-    <Reference Include="PepperDash_Essentials_DM, Version=1.12.5.34937, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\PepperDashEssentials.1.12.5\lib\net47\PepperDash_Essentials_DM.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpAutoUpdateInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpAutoUpdateInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpCryptographyInterface, Version=1.0.6197.21123, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpCryptographyInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpCustomAttributesInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpCustomAttributesInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpCWSHelperInterface, Version=2.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpCWSHelperInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpExchangeWebServices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpExchangeWebServices.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpHelperInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpNewtonsoft, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpNewtonsoft.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpOnvifInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpOnvifInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpPro, Version=1.5.3.17, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\lib\net47\SimplSharpPro.exe</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpProgrammingInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpProgrammingInterfaces.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpReflectionInterface, Version=1.0.5583.25238, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpReflectionInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpSQLHelperInterface, Version=1.0.92.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpSQLHelperInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="SimplSharpTimerEventInterface, Version=1.0.6197.20052, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
-      <HintPath>packages\Crestron.SimplSharp.SDK.Library.2.19.33\lib\net47\SimplSharpTimerEventInterface.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
-    <Reference Include="websocket-sharp, Version=1.0.1.0, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
-      <HintPath>packages\WebSocketSharp-netstandard.1.0.1\lib\net45\websocket-sharp.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\DisplayBaseExtensions.cs">
-      <Link>DeviceTypeInterfaces\DisplayBaseExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\IChannelExtensions.cs">
-      <Link>DeviceTypeInterfaces\IChannelExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\IColorExtensions.cs">
-      <Link>DeviceTypeInterfaces\IColorExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\IDPadExtensions.cs">
-      <Link>DeviceTypeInterfaces\IDPadExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\IDvrExtensions.cs">
-      <Link>DeviceTypeInterfaces\IDvrExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\IHasPowerExtensions.cs">
-      <Link>DeviceTypeInterfaces\IHasPowerExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\INumericExtensions.cs">
-      <Link>DeviceTypeInterfaces\INumericExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs">
-      <Link>DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\DeviceTypeInterfaces\ITransportExtensions.cs">
-      <Link>DeviceTypeInterfaces\ITransportExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Interfaces.cs">
-      <Link>Interfaces.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\AudioCodecBaseMessenger.cs">
-      <Link>Messengers\AudioCodecBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\CameraBaseMessenger.cs">
-      <Link>Messengers\CameraBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\CommMonitorMessenger.cs">
-      <Link>Messengers\CommMonitorMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\ConfigMessenger.cs">
-      <Link>Messengers\ConfigMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\DevicePresetsModelMessenger.cs">
-      <Link>Messengers\DevicePresetsModelMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\DeviceVolumeMessenger.cs">
-      <Link>Messengers\DeviceVolumeMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\GenericMessenger.cs">
-      <Link>Messengers\GenericMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\IHasScheduleAwarenessMessenger.cs">
-      <Link>Messengers\IHasScheduleAwarenessMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\IRunRouteActionMessenger.cs">
-      <Link>Messengers\IRunRouteActionMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\LightingBaseMessenger.cs">
-      <Link>Messengers\LightingBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\MessengerBase.cs">
-      <Link>Messengers\MessengerBase.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\PropertyCopier.cs">
-      <Link>Messengers\PropertyCopier.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\RoomEventScheduleMessenger.cs">
-      <Link>Messengers\RoomEventScheduleMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\ShadeBaseMessenger.cs">
-      <Link>Messengers\ShadeBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SIMPLAtcMessenger.cs">
-      <Link>Messengers\SIMPLAtcMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SIMPLCameraMessenger.cs">
-      <Link>Messengers\SIMPLCameraMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SIMPLDirectRouteMessenger.cs">
-      <Link>Messengers\SIMPLDirectRouteMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SimplMessengerPropertiesConfig.cs">
-      <Link>Messengers\SimplMessengerPropertiesConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SIMPLRouteMessenger.cs">
-      <Link>Messengers\SIMPLRouteMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SIMPLVtcMessenger.cs">
-      <Link>Messengers\SIMPLVtcMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\SystemMonitorMessenger.cs">
-      <Link>Messengers\SystemMonitorMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\TwoWayDisplayBaseMessenger.cs">
-      <Link>Messengers\TwoWayDisplayBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\VideoCodecBaseMessenger.cs">
-      <Link>Messengers\VideoCodecBaseMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Messengers\ZoomRoomMessenger.cs">
-      <Link>Messengers\ZoomRoomMessenger.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\MobileControlConfig.cs">
-      <Link>MobileControlConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\MobileControlEssentialsConfig.cs">
-      <Link>MobileControlEssentialsConfig.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\MobileControlFactory.cs">
-      <Link>MobileControlFactory.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\MobileControlSimplDeviceBridge.cs">
-      <Link>MobileControlSimplDeviceBridge.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\MobileControlSystemController.cs">
-      <Link>MobileControlSystemController.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\RoomBridges\MobileControlBridgeBase.cs">
-      <Link>RoomBridges\MobileControlBridgeBase.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\RoomBridges\MobileControlEssentialsRoomBridge.cs">
-      <Link>RoomBridges\MobileControlEssentialsRoomBridge.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\RoomBridges\MobileControlSIMPLRoomBridge.cs">
-      <Link>RoomBridges\MobileControlSIMPLRoomBridge.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\RoomBridges\SourceDeviceMapDictionary.cs">
-      <Link>RoomBridges\SourceDeviceMapDictionary.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs">
-      <Link>SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs">
-      <Link>SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\SIMPLJoinMaps\SIMPLAtcJoinMap.cs">
-      <Link>SIMPLJoinMaps\SIMPLAtcJoinMap.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\SIMPLJoinMaps\SIMPLVtcJoinMap.cs">
-      <Link>SIMPLJoinMaps\SIMPLVtcJoinMap.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\TransmitMessage.cs">
-      <Link>TransmitMessage.cs</Link>
-    </Compile>
-    <Compile Include="..\3-series\Volumes.cs">
-      <Link>Volumes.cs</Link>
-    </Compile>
-    <Compile Include="WebSocketServer\MobileControlWebsocketServer.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="WebSocketServer\WebSocketServerSecretProvider.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
   </PropertyGroup>
-  <Import Project="packages\Crestron.SimplSharp.SDK.Library.2.19.33\build\Crestron.SimplSharp.SDK.Library.targets" Condition="Exists('packages\Crestron.SimplSharp.SDK.Library.2.19.33\build\Crestron.SimplSharp.SDK.Library.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('packages\Crestron.SimplSharp.SDK.Library.2.19.33\build\Crestron.SimplSharp.SDK.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Crestron.SimplSharp.SDK.Library.2.19.33\build\Crestron.SimplSharp.SDK.Library.targets'))" />
-    <Error Condition="!Exists('packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets'))" />
-  </Target>
-  <Import Project="packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets" Condition="Exists('packages\Crestron.SimplSharp.SDK.ProgramLibrary.2.19.33\build\Crestron.SimplSharp.SDK.ProgramLibrary.targets')" />
+  <ItemGroup>
+    <PackageReference Include="Crestron.SimplSharp.SDK.Library" Version="2.19.33" />
+    <PackageReference Include="Crestron.SimplSharp.SDK.ProgramLibrary" Version="2.19.33" />
+    <PackageReference Include="PepperDashCore" Version="1.1.4" />
+    <PackageReference Include="PepperDashEssentials" Version="1.15.5-alpha-2338" />
+    <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\3-series\DeviceTypeInterfaces\DisplayBaseExtensions.cs" Link="DeviceTypeInterfaces\DisplayBaseExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\IChannelExtensions.cs" Link="DeviceTypeInterfaces\IChannelExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\IColorExtensions.cs" Link="DeviceTypeInterfaces\IColorExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\IDPadExtensions.cs" Link="DeviceTypeInterfaces\IDPadExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\IDvrExtensions.cs" Link="DeviceTypeInterfaces\IDvrExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\IHasPowerExtensions.cs" Link="DeviceTypeInterfaces\IHasPowerExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\INumericExtensions.cs" Link="DeviceTypeInterfaces\INumericExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs" Link="DeviceTypeInterfaces\ISetTopBoxControlsExtensions.cs" />
+    <Compile Include="..\3-series\DeviceTypeInterfaces\ITransportExtensions.cs" Link="DeviceTypeInterfaces\ITransportExtensions.cs" />
+    <Compile Include="..\3-series\Interfaces.cs" Link="Interfaces.cs" />
+    <Compile Include="..\3-series\MobileControlConfig.cs" Link="MobileControlConfig.cs" />
+    <Compile Include="..\3-series\MobileControlEssentialsConfig.cs" Link="MobileControlEssentialsConfig.cs" />
+    <Compile Include="..\3-series\MobileControlFactory.cs" Link="MobileControlFactory.cs" />
+    <Compile Include="..\3-series\MobileControlSimplDeviceBridge.cs" Link="MobileControlSimplDeviceBridge.cs" />
+    <Compile Include="..\3-series\MobileControlSystemController.cs" Link="MobileControlSystemController.cs" />
+    <Compile Include="..\3-series\RoomBridges\MobileControlBridgeBase.cs" Link="RoomBridges\MobileControlBridgeBase.cs" />
+    <Compile Include="..\3-series\RoomBridges\MobileControlEssentialsRoomBridge.cs" Link="RoomBridges\MobileControlEssentialsRoomBridge.cs" />
+    <Compile Include="..\3-series\RoomBridges\MobileControlSIMPLRoomBridge.cs" Link="RoomBridges\MobileControlSIMPLRoomBridge.cs" />
+    <Compile Include="..\3-series\RoomBridges\SourceDeviceMapDictionary.cs" Link="RoomBridges\SourceDeviceMapDictionary.cs" />
+    <Compile Include="..\3-series\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
+    <Compile Include="..\3-series\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
+    <Compile Include="..\3-series\SIMPLJoinMaps\SIMPLAtcJoinMap.cs" Link="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
+    <Compile Include="..\3-series\SIMPLJoinMaps\SIMPLVtcJoinMap.cs" Link="SIMPLJoinMaps\SIMPLVtcJoinMap.cs" />
+    <Compile Include="..\3-series\TransmitMessage.cs" Link="TransmitMessage.cs" />
+    <Compile Include="..\3-series\Volumes.cs" Link="Volumes.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mobile-control-messengers\mobile-control-messengers.csproj" />
+  </ItemGroup>
 </Project>

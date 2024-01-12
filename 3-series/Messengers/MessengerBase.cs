@@ -5,6 +5,7 @@ using PepperDash.Essentials.Core;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -20,7 +21,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// 
         /// </summary>
-        public MobileControlSystemController AppServerController { get; private set; }
+        public IMobileControl3 AppServerController { get; private set; }
 
         public string MessagePath { get; private set; }
 
@@ -70,7 +71,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Registers this messenger with appserver controller
         /// </summary>
         /// <param name="appServerController"></param>
-        public void RegisterWithAppServer(MobileControlSystemController appServerController)
+        public void RegisterWithAppServer(IMobileControl3 appServerController)
         {
             if (appServerController == null)
                 throw new ArgumentNullException("appServerController");
@@ -83,7 +84,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Implemented in extending classes. Wire up API calls and feedback here
         /// </summary>
         /// <param name="appServerController"></param>
-        protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected virtual void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             var commMonitor = _device as ICommunicationMonitor;
 
@@ -163,7 +164,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-        protected void PostStatusMessage(MobileControlResponseMessage message)
+        protected void PostStatusMessage(IMobileControlResponseMessage message)
         {
             if (AppServerController == null)
             {

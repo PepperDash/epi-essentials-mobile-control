@@ -41,7 +41,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// 
         /// </summary>
         /// <param name="appServerController"></param>
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             var asc = appServerController;
             _eisc.SetStringSigAction(JoinMap.HookState.JoinNumber, s =>

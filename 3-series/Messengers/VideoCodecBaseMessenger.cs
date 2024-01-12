@@ -204,7 +204,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Called from base's RegisterWithAppServer method
         /// </summary>
         /// <param name="appServerController"></param>
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             try
             {

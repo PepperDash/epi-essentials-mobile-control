@@ -29,7 +29,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _eisc.SetStringSigAction(_joinStart + StringJoin.CurrentSource, SendRoutingFullMessageObject);
         }
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             appServerController.AddAction(MessagePath + "/fullStatus",
                 new Action(() => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource))));
@@ -39,7 +39,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     c => _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem)));
         }
 
-        public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
+        public void CustomUnregsiterWithAppServer(IMobileControl3 appServerController)
         {
             appServerController.RemoveAction(MessagePath + "/fullStatus");
             appServerController.RemoveAction(MessagePath + "/source");

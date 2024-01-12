@@ -3,6 +3,8 @@ using System.Linq;
 using PepperDash.Essentials.Devices.Common.Codec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     /// <summary>
@@ -31,7 +33,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             codec.CallStatusChange += codec_CallStatusChange;
         }
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             base.CustomRegisterWithAppServer(appServerController);
 

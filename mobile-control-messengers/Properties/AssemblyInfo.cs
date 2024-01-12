@@ -8,5 +8,4 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("6f0e1c17-5660-4a37-a755-2b5d54afeb78")]
-[assembly: Crestron.SimplSharp.Reflection.AssemblyInformationalVersion("0.0.0-buildType-buildNumber")]
+[assembly: Guid("9b26d2a2-00a4-466a-af32-9c12c8174cec")]

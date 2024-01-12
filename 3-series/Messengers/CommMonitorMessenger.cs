@@ -38,7 +38,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         #region Overrides of MessengerBase
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendStatus));
             

@@ -54,7 +54,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// 
         /// </summary>
         /// <param name="appServerController"></param>
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             //EISC.SetStringSigAction(SCurrentDialString, s => PostStatusMessage(new { currentDialString = s }));
 

@@ -38,7 +38,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(state);
         }
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             base.CustomRegisterWithAppServer(appServerController);
 

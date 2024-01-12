@@ -25,7 +25,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         #region Overrides of MessengerBase
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController controller)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 controller)
         {
             Debug.Console(2, "********** Direct Route Messenger CustomRegisterWithAppServer **********");
             
