@@ -21,9 +21,9 @@ using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
-using WebSocketSharp.Net.WebSockets;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-
+#if SERIES4
+using PepperDash.Essentials.AppServer;
+#endif
 
 namespace PepperDash.Essentials
 {
@@ -42,7 +42,7 @@ namespace PepperDash.Essentials
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
-        private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>(); 
+        private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>(); 
 
         private readonly GenericQueue _transmitToServerQueue;
 
@@ -207,9 +207,9 @@ namespace PepperDash.Essentials
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
             // Config Messenger
-            var cmKey = Key + "-config";
-            ConfigMessenger = new ConfigMessenger(cmKey, "/config");
-            ConfigMessenger.RegisterWithAppServer(this);
+            //var cmKey = Key + "-config";
+            //ConfigMessenger = new ConfigMessenger(cmKey, "/config");
+            //ConfigMessenger.RegisterWithAppServer(this);
 
             ApiOnlineAndAuthorized = new BoolFeedback(() => {
                 if(_wsClient2 == null)
@@ -222,7 +222,7 @@ namespace PepperDash.Essentials
         public MobileControlConfig Config { get; private set; }
 
         public string Host { get; private set; }
-        public ConfigMessenger ConfigMessenger { get; private set; }
+        //public ConfigMessenger ConfigMessenger { get; private set; }
         
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
@@ -235,7 +235,7 @@ namespace PepperDash.Essentials
             return _deviceMessengers.ContainsKey(key);
         }
 
-        public void AddDeviceMessenger(MessengerBase messenger)
+        public void AddDeviceMessenger(IMobileControlMessenger messenger)
         {
             if (_deviceMessengers.ContainsKey(messenger.Key))
             {

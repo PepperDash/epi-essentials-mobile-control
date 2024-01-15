@@ -12,7 +12,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// Provides a messaging bridge
     /// </summary>
-    public abstract class MessengerBase : EssentialsDevice
+    public abstract class MessengerBase : EssentialsDevice, IMobileControlMessenger
     {
         private Device _device;
 
@@ -42,7 +42,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         protected MessengerBase(string key, string messagePath, Device device)
-            :this(key, messagePath) 
+            : this(key, messagePath)
         {
             _device = device;
 
@@ -98,7 +98,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         private void CommunicationMonitor_StatusChange(object sender, MonitorStatusChangeEventArgs e)
-        {            
+        {
             var message = new DeviceStateMessageBase();
             message.CommMonitor = GetCommunicationMonitorState();
 
@@ -115,7 +115,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 state.IsOnline = commMonitor.CommunicationMonitor.IsOnline;
                 state.Status = commMonitor.CommunicationMonitor.Status;
                 //Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
-                return state;           
+                return state;
             }
             else
             {
@@ -186,7 +186,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             //    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
             //}
 
-            AppServerController.SendMessageObject(message); 
+            AppServerController.SendMessageObject(message);
         }
 
         protected void PostEventMessage(DeviceEventMessageBase message)

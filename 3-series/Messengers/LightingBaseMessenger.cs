@@ -8,6 +8,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core.Lighting;
 
 using Newtonsoft.Json;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {

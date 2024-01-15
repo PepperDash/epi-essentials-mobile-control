@@ -1,6 +1,7 @@
 ﻿using System;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers

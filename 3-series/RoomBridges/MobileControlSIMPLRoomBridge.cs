@@ -179,7 +179,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             ConfigIsLoaded = true;
         }
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             SetupFunctions();
             SetupFeedbacks();

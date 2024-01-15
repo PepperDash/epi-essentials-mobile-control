@@ -10,6 +10,7 @@ using PepperDash.Essentials.Devices.Common.VideoCodec.Interfaces;
 using PepperDash.Core;
 
 using Newtonsoft.Json;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers

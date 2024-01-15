@@ -19,6 +19,9 @@ using PepperDash.Essentials.Core.Shades;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+#if SERIES4
+using PepperDash.Essentials.AppServer;
+#endif
 
 namespace PepperDash.Essentials
 {
@@ -65,7 +68,7 @@ namespace PepperDash.Essentials
             AddPreActivationAction(GetRoom);
         }
 
-        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
         {
             // we add actions to the messaging system with a path, and a related action. Custom action
             // content objects can be handled in the controller's LineReceived method - and perhaps other
@@ -1017,6 +1020,7 @@ public RoomConfiguration()
         ShadeController,
     }
 
+#if SERIES3
     public class SourceSelectMessageContent
     {
         public string SourceListItem { get; set; }
@@ -1034,4 +1038,5 @@ public RoomConfiguration()
     /// </summary>
     /// <param name="b"></param>
     public delegate void PressAndHoldAction(bool b);
+#endif
 }

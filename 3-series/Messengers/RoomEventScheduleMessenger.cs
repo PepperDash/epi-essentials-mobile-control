@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using PepperDash.Core;
 using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {

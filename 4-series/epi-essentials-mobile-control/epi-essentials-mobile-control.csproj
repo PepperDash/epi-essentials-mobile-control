@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>PepperDash.Essentials</RootNamespace>
+    <TargetFramework>net48</TargetFramework>
+    <Deterministic>false</Deterministic>
+    <AssemblyTitle>epi-essentials-mobile-control</AssemblyTitle>
+    <Company>PepperDash Technologies</Company>
+    <Product>epi-essentials-mobile-control</Product>
+    <Description>This software is a plugin designed to work as a part of PepperDash Essentials for Crestron control processors. This plugin allows for connection to a PepperDash Mobile Control server.</Description>
+    <Copyright>Copyright 2020</Copyright>
+    <Version>3.0.0-local</Version>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <Authors>PepperDash Technologies</Authors>
+    <PackageId>PepperDash.Essentials.4Series.Plugin.MobileControl</PackageId>
+    <PackageProjectUrl>https://github.com/PepperDash/epi-essentials-mobile-control</PackageProjectUrl>
+    <PackageTags>crestron 4series</PackageTags>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DefineConstants>TRACE;DEBUG;SERIES4</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineConstants>TRACE;SERIES4</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2341" />
+    <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\3-series\Interfaces.cs" Link="Interfaces.cs" />
+    <Compile Include="..\..\3-series\MobileControlConfig.cs" Link="MobileControlConfig.cs" />
+    <Compile Include="..\..\3-series\MobileControlEssentialsConfig.cs" Link="MobileControlEssentialsConfig.cs" />
+    <Compile Include="..\..\3-series\MobileControlFactory.cs" Link="MobileControlFactory.cs" />
+    <Compile Include="..\..\3-series\MobileControlSimplDeviceBridge.cs" Link="MobileControlSimplDeviceBridge.cs" />
+    <Compile Include="..\..\3-series\MobileControlSystemController.cs" Link="MobileControlSystemController.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\MobileControlBridgeBase.cs" Link="RoomBridges\MobileControlBridgeBase.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\MobileControlEssentialsRoomBridge.cs" Link="RoomBridges\MobileControlEssentialsRoomBridge.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\MobileControlSIMPLRoomBridge.cs" Link="RoomBridges\MobileControlSIMPLRoomBridge.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\SourceDeviceMapDictionary.cs" Link="RoomBridges\SourceDeviceMapDictionary.cs" />
+    <Compile Include="..\..\3-series\TransmitMessage.cs" Link="TransmitMessage.cs" />
+    <Compile Include="..\..\3-series\Volumes.cs" Link="Volumes.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mobile-control-messengers\mobile-control-messengers.csproj" />
+  </ItemGroup>
+</Project>
