@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <ProjectType>ProgramLibrary</ProjectType>
+  </PropertyGroup>
+  <PropertyGroup>
     <RootNamespace>PepperDash.Essentials</RootNamespace>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <Deterministic>false</Deterministic>
     <AssemblyTitle>epi-essentials-mobile-control</AssemblyTitle>
     <Company>PepperDash Technologies</Company>
