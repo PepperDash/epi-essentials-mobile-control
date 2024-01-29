@@ -31,7 +31,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 
+#if SERIES4
         protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
+        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             var asc = appServerController;
 
@@ -66,7 +70,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
+#if SERIES4
         public void CustomUnregsiterWithAppServer(IMobileControl3 appServerController)
+#else   
+        public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             appServerController.RemoveAction(MessagePath + "/fullStatus");
 

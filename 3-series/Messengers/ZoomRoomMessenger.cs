@@ -26,7 +26,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _codec = codec;
         }
 
+#if SERIES4
         protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
+        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             try
             {

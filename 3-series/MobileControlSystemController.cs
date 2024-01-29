@@ -42,7 +42,11 @@ namespace PepperDash.Essentials
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
+#if SERIES4
         private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>(); 
+#else
+        private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>();
+#endif
 
         private readonly GenericQueue _transmitToServerQueue;
 
@@ -235,7 +239,11 @@ namespace PepperDash.Essentials
             return _deviceMessengers.ContainsKey(key);
         }
 
+#if SERIES4
         public void AddDeviceMessenger(IMobileControlMessenger messenger)
+#else
+        public void AddDeviceMessenger(MessengerBase messenger)
+#endif
         {
             if (_deviceMessengers.ContainsKey(messenger.Key))
             {
@@ -1613,7 +1621,11 @@ Mobile Control Direct Server Infromation:
         }
     }
 
+#if SERIES4
     public class MobileControlResponseMessage: IMobileControlResponseMessage
+#else
+    public class MobileControlResponseMessage
+#endif
     {
         [JsonProperty("type")]
         public string Type { get; set; }

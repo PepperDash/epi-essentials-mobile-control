@@ -68,7 +68,11 @@ namespace PepperDash.Essentials
             AddPreActivationAction(GetRoom);
         }
 
+#if SERIES4
         protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
+        protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             // we add actions to the messaging system with a path, and a related action. Custom action
             // content objects can be handled in the controller's LineReceived method - and perhaps other

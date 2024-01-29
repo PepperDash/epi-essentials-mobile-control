@@ -12,7 +12,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// Provides a messaging bridge
     /// </summary>
+#if SERIES4
     public abstract class MessengerBase : EssentialsDevice, IMobileControlMessenger
+#else
+    public abstract class MessengerBase: EssentialsDevice
+#endif
     {
         private Device _device;
 
@@ -21,7 +25,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// 
         /// </summary>
+#if SERIES4
         public IMobileControl3 AppServerController { get; private set; }
+#else
+        public MobileControlSystemController AppServerController { get; private set; }
+#endif
 
         public string MessagePath { get; private set; }
 
@@ -71,7 +79,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Registers this messenger with appserver controller
         /// </summary>
         /// <param name="appServerController"></param>
+#if SERIES4
         public void RegisterWithAppServer(IMobileControl3 appServerController)
+#else
+        public void RegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             if (appServerController == null)
                 throw new ArgumentNullException("appServerController");
@@ -84,7 +96,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// Implemented in extending classes. Wire up API calls and feedback here
         /// </summary>
         /// <param name="appServerController"></param>
+#if SERIES4
         protected virtual void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
+        protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             var commMonitor = _device as ICommunicationMonitor;
 
@@ -164,7 +180,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
+#if SERIES4
         protected void PostStatusMessage(IMobileControlResponseMessage message)
+
         {
             if (AppServerController == null)
             {
@@ -188,6 +206,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AppServerController.SendMessageObject(message);
         }
+#endif
 
         protected void PostEventMessage(DeviceEventMessageBase message)
         {
