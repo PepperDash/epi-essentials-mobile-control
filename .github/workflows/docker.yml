@@ -251,9 +251,9 @@ jobs:
       - name: Setup MS Build
         uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
-        run: nuget restore .\src\${{ steps.get_sln_info.outputs.SOLUTION_FILE }}.sln
+        run: nuget restore .\4-series\${{ steps.get_sln_info.outputs.SOLUTION_FILE }}.sln
       - name: Build Solution        
-        run: msbuild .\src\${{ steps.get_sln_info.outputs.SOLUTION_FILE }}.sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ needs.GetVersionNumber.outputs.version }}" -m   
+        run: msbuild .\4-series\${{ steps.get_sln_info.outputs.SOLUTION_FILE }}.sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ needs.GetVersionNumber.outputs.version }}" -m   
       - name: Get release notes
         uses: actions/download-artifact@v3
         with:
