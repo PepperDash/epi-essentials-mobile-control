@@ -9,6 +9,10 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
+    <Authors>PepperDash Technologies</Authors>
+    <PackageId>PepperDash.Essentials.Plugin.MobileControl.Messengers</PackageId>
+    <PackageProjectUrl>https://github.com/PepperDash/epi-essentials-mobile-control</PackageProjectUrl>
+    <PackageTags>crestron 4series</PackageTags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

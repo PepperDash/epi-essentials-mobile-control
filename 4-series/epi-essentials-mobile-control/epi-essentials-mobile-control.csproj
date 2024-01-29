@@ -23,10 +23,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <DefineConstants>TRACE;SERIES4</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>powershell.exe  if(Test-Path -Path '$(TargetDir)$(ProjectName).cplz'){Remove-Item '$(TargetDir)$(ProjectName).cplz'}; Compress-Archive -Path '$(TargetDir)*' -DestinationPath '$(TargetDir)$(ProjectName).zip' -Force;  Rename-Item '$(TargetDir)$(ProjectName).zip' '$(TargetDir)$(ProjectName).cplz' -Force</PostBuildEvent>
-  </PropertyGroup>
+  </PropertyGroup>  
   <ItemGroup>
     <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2341" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
