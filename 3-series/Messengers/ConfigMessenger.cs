@@ -1,6 +1,7 @@
 ﻿using System;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -21,7 +22,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostUpdateStatus(e.UpdateStatus.ToString());
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             appServerController.AddAction(MessagePath + "/updateConfig", new Action<string>(GetConfigFile));
         }

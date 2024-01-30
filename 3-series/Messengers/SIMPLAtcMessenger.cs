@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Devices.Common.Codec;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -54,7 +55,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// 
         /// </summary>
         /// <param name="appServerController"></param>
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             //EISC.SetStringSigAction(SCurrentDialString, s => PostStatusMessage(new { currentDialString = s }));
 

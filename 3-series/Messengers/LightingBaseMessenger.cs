@@ -8,6 +8,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.Core.Lighting;
 
 using Newtonsoft.Json;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -38,7 +39,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(state);
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             base.CustomRegisterWithAppServer(appServerController);
 

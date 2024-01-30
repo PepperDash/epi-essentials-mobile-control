@@ -2,6 +2,7 @@
 using Crestron.SimplSharp;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.Monitoring;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -78,7 +79,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }));
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             AppServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatusMessage));
         }

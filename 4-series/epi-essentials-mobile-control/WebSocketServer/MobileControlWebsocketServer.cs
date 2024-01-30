@@ -1,24 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using WebSocketSharp;
-using WebSocketSharp.Server;
-using WebSocketSharp.Net;
-using Crestron.SimplSharp;
-using System.Text.RegularExpressions;
-
+﻿using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronIO;
+using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Core.Config;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Crestron.SimplSharp.CrestronIO;
-using Crestron.SimplSharp.Net;
+using System;
+using System.Collections.Generic;
 using System.Net.Http;
-using Newtonsoft.Json.Linq;
-using Independentsoft.Email.Mime;
-using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using WebSocketSharp;
+using WebSocketSharp.Net;
+using WebSocketSharp.Server;
 
 namespace PepperDash.Essentials
 {
@@ -407,13 +399,24 @@ namespace PepperDash.Essentials
                     var path = _wsPath + key;
                     var roomKey = client.Value.Token.RoomKey;
 
-                    _server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                    _server.AddWebSocketService(path, () =>
                     {
+                        var c = new UiClient();
                         Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
                         UiClients[key].SetClient(c);
+                        return c;
                     });
+
+
+                    //_server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                    //{
+                    //    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                    //    c.Controller = _parent;
+                    //    c.RoomKey = roomKey;
+                    //    UiClients[key].SetClient(c);
+                    //});
                 }
             }
             else
@@ -482,12 +485,14 @@ namespace PepperDash.Essentials
 
                     var path = _wsPath + key;
 
-                    _server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                    _server.AddWebSocketService(path, () =>
                     {
+                        var c = new UiClient();
                         Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
                         UiClients[key].SetClient(c);
+                        return c;
                     });
 
 

@@ -1,5 +1,6 @@
 ﻿using PepperDash.Essentials.Core;
 using PepperDash.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -7,7 +8,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 {
     public static class ChannelExtensions
     {
-        public static void LinkActions(this IChannel dev, MobileControlSystemController controller)
+        public static void LinkActions(this IChannel dev, IMobileControl3 controller)
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
@@ -19,7 +20,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.AddAction(prefix + "exit", new PressAndHoldAction(dev.Exit));
         }
 
-        public static void UnlinkActions(this IChannel dev, MobileControlSystemController controller)
+        public static void UnlinkActions(this IChannel dev, IMobileControl3 controller)
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 

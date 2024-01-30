@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Devices.Common.Cameras;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -49,7 +50,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             });
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             base.CustomRegisterWithAppServer(appServerController);
 

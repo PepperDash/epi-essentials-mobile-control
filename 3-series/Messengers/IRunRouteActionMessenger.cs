@@ -1,6 +1,7 @@
 ﻿using System;
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -33,7 +34,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             SendRoutingFullMessageObject();
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
 

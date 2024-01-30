@@ -1,14 +1,14 @@
 ﻿using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
-
 namespace PepperDash.Essentials.Room.MobileControl
 {
     public static class IdPadExtensions
     {
-        public static void LinkActions(this IDPad dev, MobileControlSystemController controller)
+        public static void LinkActions(this IDPad dev, IMobileControl3 controller)
         {
             var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
 
@@ -21,7 +21,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.AddAction(prefix + "exit", new PressAndHoldAction(dev.Exit));
         }
 
-        public static void UnlinkActions(this IDPad dev, MobileControlSystemController controller)
+        public static void UnlinkActions(this IDPad dev, IMobileControl3 controller)
         {
             var prefix = string.Format(@"/device/{0}/", (dev as IKeyed).Key);
 

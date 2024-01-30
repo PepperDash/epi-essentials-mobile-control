@@ -359,3 +359,6 @@ MigrationBackup/
 
 # VS Code settings folders
 .vscode/
+
+# Build Outputs
+output/

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using PepperDash.Core;
 using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -20,7 +21,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         #region Overrides of MessengerBase
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             appServerController.AddAction(MessagePath + "/save", new Action<List<ScheduledEventConfig>>(SaveScheduledEvents));
             appServerController.AddAction(MessagePath + "/fullStatus", new Action(() =>

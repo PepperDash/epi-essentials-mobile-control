@@ -1,5 +1,6 @@
 ﻿using PepperDash.Essentials.Core;
 using System;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -17,7 +18,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _device = device;
         }
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
+#endif
         {
             base.CustomRegisterWithAppServer(appServerController);
 

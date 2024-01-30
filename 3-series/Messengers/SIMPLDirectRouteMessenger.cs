@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Crestron.SimplSharpPro.DeviceSupport;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -25,7 +26,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         #region Overrides of MessengerBase
 
+#if SERIES4
+        protected override void CustomRegisterWithAppServer(IMobileControl3 controller)
+#else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController controller)
+#endif
         {
             Debug.Console(2, "********** Direct Route Messenger CustomRegisterWithAppServer **********");
             
