@@ -3,17 +3,18 @@ using System.Collections.Generic;
 using PepperDash.Core;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class RoomEventScheduleMessenger:MessengerBase
     {
-        private readonly EssentialsTechRoom _room;
+        private readonly IRoomEventSchedule _room;
         public RoomEventScheduleMessenger(string key, string messagePath) : base(key, messagePath)
         {
         }
 
-        public RoomEventScheduleMessenger(string key, string messagePath, EssentialsTechRoom room)
+        public RoomEventScheduleMessenger(string key, string messagePath, IRoomEventSchedule room)
             : this(key, messagePath)
         {
             _room = room;
@@ -27,13 +28,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/save", new Action<List<ScheduledEventConfig>>(SaveScheduledEvents));
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(() =>
+            appServerController.AddAction(MessagePath + "/save", (id, content) => SaveScheduledEvents(content.ToObject<List<ScheduledEventConfig>>()));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) =>
             {
                 var events = _room.GetScheduledEvents();
 
                 SendFullStatus(events);
-            }));
+            });
 
             _room.ScheduledEventsChanged += (sender, args) =>  SendFullStatus(args.ScheduledEvents);
         }

@@ -11,9 +11,9 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
-            controller.AddAction(prefix + "powerOn", new Action(dev.PowerOn));
-            controller.AddAction(prefix + "powerOff", new Action(dev.PowerOff));
-            controller.AddAction(prefix + "powerToggle", new Action(dev.PowerToggle));
+            controller.AddAction(prefix + "powerOn", (id, content) => dev.PowerOn());
+            controller.AddAction(prefix + "powerOff", (id, content) => dev.PowerOff());
+            controller.AddAction(prefix + "powerToggle", (id, content) => dev.PowerToggle());
         }
 
         public static void UnlinkActions(this IHasPowerControl dev, IMobileControl3 controller)

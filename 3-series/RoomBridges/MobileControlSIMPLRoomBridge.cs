@@ -195,31 +195,35 @@ namespace PepperDash.Essentials.Room.MobileControl
         private void SetupFunctions()
         {
             Parent.AddAction(@"/room/room1/promptForCode",
-                new Action(() => Eisc.PulseBool(JoinMap.PromptForCode.JoinNumber)));
-            Parent.AddAction(@"/room/room1/clientJoined",
-                new Action(() => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber)));
+                (id, content) => Eisc.PulseBool(JoinMap.PromptForCode.JoinNumber));
+            Parent.AddAction(@"/room/room1/clientJoined", (id, content) => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber));                
 
-            Parent.AddAction(@"/room/room1/status", new Action(SendFullStatus));
+            Parent.AddAction(@"/room/room1/status", (id, content) => SendFullStatus());
 
-            Parent.AddAction(@"/room/room1/source", new Action<SourceSelectMessageContent>(c =>
-            {
-                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, c.SourceListItem);
+            Parent.AddAction(@"/room/room1/source", (id, content) => {
+                var msg = content.ToObject<SourceSelectMessageContent>();
+
+                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, msg.SourceListItem);
                 Eisc.PulseBool(JoinMap.SourceHasChanged.JoinNumber);
-            }));
+            });
 
-            Parent.AddAction(@"/room/room1/defaultsource", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityShare.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityPhone", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityPhoneCall.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityVideo", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityVideoCall.JoinNumber)));
+            Parent.AddAction(@"/room/room1/defaultsource", (id,content) =>
+                Eisc.PulseBool(JoinMap.ActivityShare.JoinNumber));
+            Parent.AddAction(@"/room/room1/activityPhone", (id, content) =>
+                Eisc.PulseBool(JoinMap.ActivityPhoneCall.JoinNumber));
+            Parent.AddAction(@"/room/room1/activityVideo", (id, content) =>
+                Eisc.PulseBool(JoinMap.ActivityVideoCall.JoinNumber));
 
-            Parent.AddAction(@"/room/room1/volumes/master/level", new Action<ushort>(u =>
-                Eisc.SetUshort(JoinMap.MasterVolume.JoinNumber, u)));
-            Parent.AddAction(@"/room/room1/volumes/master/muteToggle", new Action(() =>
-                Eisc.PulseBool(JoinMap.MasterVolume.JoinNumber)));
-            Parent.AddAction(@"/room/room1/volumes/master/privacyMuteToggle", new Action(() =>
-                Eisc.PulseBool(JoinMap.PrivacyMute.JoinNumber)));
+            Parent.AddAction(@"/room/room1/volumes/master/level", (id, content) => {
+                var value = content["value"].Value<ushort>();
+
+                Eisc.SetUshort(JoinMap.MasterVolume.JoinNumber, value);
+            }); 
+
+            Parent.AddAction(@"/room/room1/volumes/master/muteToggle", (id, content) =>
+                Eisc.PulseBool(JoinMap.MasterVolume.JoinNumber));
+            Parent.AddAction(@"/room/room1/volumes/master/privacyMuteToggle", (id, content) =>
+                Eisc.PulseBool(JoinMap.PrivacyMute.JoinNumber));
 
 
             // /xyzxyz/volumes/master/muteToggle ---> BoolInput[1]
@@ -230,18 +234,21 @@ namespace PepperDash.Essentials.Room.MobileControl
             for (uint i = volumeStart; i <= volumeEnd; i++)
             {
                 var index = i;
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/level", index), new Action<ushort>(u =>
-                    Eisc.SetUshort(index, u)));
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/muteToggle", index), new Action(() =>
-                    Eisc.PulseBool(index)));
+                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/level", index), (id, content) => {
+                    var value = content["value"].Value<ushort>();
+                    Eisc.SetUshort(index, value);
+                });
+
+                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/muteToggle", index), (id, content) =>
+                    Eisc.PulseBool(index));
             }
 
-            Parent.AddAction(@"/room/room1/shutdownStart", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownStart.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownEnd", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownEnd.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownCancel", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownCancel.JoinNumber)));
+            Parent.AddAction(@"/room/room1/shutdownStart", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownStart.JoinNumber));
+            Parent.AddAction(@"/room/room1/shutdownEnd", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownEnd.JoinNumber));
+            Parent.AddAction(@"/room/room1/shutdownCancel", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownCancel.JoinNumber));
         }
 
 
@@ -258,9 +265,25 @@ namespace PepperDash.Essentials.Room.MobileControl
             foreach (var item in sourceJoinMap)
             {
                 var join = item.Value;
-                Parent.AddAction(string.Format("{0}{1}", prefix, item.Key),
-                    new PressAndHoldAction(b => Eisc.SetBool(join, b)));
+                Parent.AddAction(string.Format("{0}{1}", prefix, item.Key), (id, content) => {
+                    HandlePressAndHoldEisc(content, b => Eisc.SetBool(join, b));
+                });                    
             }
+        }
+
+        private void HandlePressAndHoldEisc(JToken content, Action<bool> action)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, action);
+
+            action(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
         }
 
 
@@ -1020,10 +1043,10 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatus(object contentObject)
         {
-            Parent.SendMessageObject(new
+            Parent.SendMessageObject(new MobileControlMessage
             {
-                type = "/room/room1/status/",
-                content = contentObject
+                Type = "/room/room1/status/",
+                Content = JToken.FromObject(contentObject)
             });
         }
 
@@ -1034,10 +1057,10 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject"></param>
         private void PostMessage(string messageType, object contentObject)
         {
-            Parent.SendMessageObject(new
+            Parent.SendMessageObject(new MobileControlMessage
             {
-                type = messageType,
-                content = contentObject
+                Type = messageType,
+                Content = JToken.FromObject(contentObject)
             });
         }
 

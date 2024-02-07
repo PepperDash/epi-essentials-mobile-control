@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -45,7 +46,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendStatus));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
             
             _monitor.CommunicationMonitor.IsOnlineFeedback.OutputChange += IsOnlineFeedbackOnOutputChange;
             _monitor.CommunicationMonitor.StatusChange += CommunicationMonitorOnStatusChange;
@@ -53,15 +54,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CommunicationMonitorOnStatusChange(object sender, MonitorStatusChangeEventArgs monitorStatusChangeEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath + PollStatusPath,
-                content = new
+                Type = MessagePath + PollStatusPath,
+                Content = JToken.FromObject(new
                 {
                     commMonitor = new {
                         status = monitorStatusChangeEventArgs.Status.ToString()
                     }
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);
@@ -69,15 +70,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void IsOnlineFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath + OnlineStatusPath,
-                content = new
+                Type = MessagePath + OnlineStatusPath,
+                Content = JToken.FromObject(new
                 {
                     commMonitor = new {
                         online = feedbackEventArgs.BoolValue
                     }
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);

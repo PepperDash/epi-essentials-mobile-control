@@ -40,11 +40,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendRoutingFullMessageObject());
 
-            appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(c =>
+            appServerController.AddAction(MessagePath + "/source", (id, content) => 
                 {
+                    var c = content.ToObject<SourceSelectMessageContent>();
                     // assume no sourceListKey
                     var sourceListKey = string.Empty;
                     
@@ -56,7 +56,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     }
 
                     RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
-                }));
+                });
 
             var sinkDevice = RoutingDevice as IRoutingSink;
             if (sinkDevice != null)

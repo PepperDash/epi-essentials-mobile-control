@@ -10,15 +10,22 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Devices.Common.Displays;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.SoftCodec;
 using PepperDash.Essentials.Core.Lighting;
-using PepperDash.Essentials.Core.Shades;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using PepperDash.Essentials.Devices.Common.Room;
+using IShades = PepperDash.Essentials.Core.Shades.IShades;
+using ShadeBase = PepperDash.Essentials.Devices.Common.Shades.ShadeBase;
+using PepperDash.Essentials.Core.Shades;
+using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
+
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -81,49 +88,60 @@ namespace PepperDash.Essentials
 
             Debug.Console(0, this, "Registering Actions with AppServer");
 
-            appServerController.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), new Action(OnUserPromptedForCode));
-            appServerController.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), new Action(OnClientJoined));
+            appServerController.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), (id, content) => OnUserPromptedForCode());
+            appServerController.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), (id, content) => OnClientJoined());
 
-            appServerController.AddAction(string.Format(@"/room/{0}/userCode", Room.Key),
-                new UserCodeChanged(SetUserCode));
+            appServerController.AddAction(string.Format(@"/room/{0}/userCode", Room.Key), (id,content) => {
+                var msg = content.ToObject<UserCodeChangedContent>();
+
+                SetUserCode(msg.UserCode, msg.QrChecksum == null ? string.Empty : msg.QrChecksum);
+            });
+
 
             // Source Changes and room off
-            appServerController.AddAction(string.Format(@"/room/{0}/status", Room.Key), new ClientSpecificUpdateRequest((id) => SendFullStatusForClientId(id, Room)));
+            appServerController.AddAction(string.Format(@"/room/{0}/status", Room.Key), (id, content) =>
+            {
+                SendFullStatusForClientId(id, Room);
+
+            });
 
             var routeRoom = Room as IRunRouteAction;
             if (routeRoom != null)
-                appServerController.AddAction(string.Format(@"/room/{0}/source", Room.Key),
-                    new Action<SourceSelectMessageContent>(c =>
-                    {
-                        var sourceListKey = string.Empty;
+                appServerController.AddAction(string.Format(@"/room/{0}/source", Room.Key), (id, content) => {
+                    var msg = content.ToObject<SourceSelectMessageContent>();
 
-                        routeRoom.RunRouteAction(c.SourceListItem, sourceListKey);
-
-                    }));
+                    routeRoom.RunRouteAction(msg.SourceListItem, string.Empty);
+                });
 
             var directRouteRoom = Room as IRunDirectRouteAction;
             if (directRouteRoom != null)
             {
-                appServerController.AddAction(String.Format("/room/{0}/directRoute", Room.Key), new Action<DirectRoute>((d) => directRouteRoom.RunDirectRoute(d.SourceKey, d.DestinationKey)));
+                appServerController.AddAction(String.Format("/room/{0}/directRoute", Room.Key), (id, content) => {
+                    var msg = content.ToObject<DirectRoute>();
+
+                    directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey);
+                });
             }
 
 
             var defaultRoom = Room as IRunDefaultPresentRoute;
             if (defaultRoom != null)
-                appServerController.AddAction(string.Format(@"/room/{0}/defaultsource", Room.Key),
-                    new Action(() => defaultRoom.RunDefaultPresentRoute()));
+                appServerController.AddAction(string.Format(@"/room/{0}/defaultsource", Room.Key), (id, content) => defaultRoom.RunDefaultPresentRoute());                    
 
             var volumeRoom = Room as IHasCurrentVolumeControls;
             if (volumeRoom != null)
             {
-                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/level", Room.Key), new Action<ushort>(u =>
-                {
+                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/level", Room.Key), (id, content) => {
+                    var msg = content.ToObject<MobileControlSimpleContent<ushort>>();
+
                     var basicVolumeWithFeedback = volumeRoom.CurrentVolumeControls as IBasicVolumeWithFeedback;
+
                     if (basicVolumeWithFeedback != null)
-                        basicVolumeWithFeedback.SetVolume(u);
-                }));
-                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/muteToggle", Room.Key), new Action(() =>
-                    volumeRoom.CurrentVolumeControls.MuteToggle()));
+                        basicVolumeWithFeedback.SetVolume(msg.Value);
+                });
+
+                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/muteToggle", Room.Key), (id, content) => volumeRoom.CurrentVolumeControls.MuteToggle());
+
                 volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
 
                 // Registers for initial volume events, if possible
@@ -146,13 +164,6 @@ namespace PepperDash.Essentials
 
                 if (!appServerController.CheckForDeviceMessenger(key))
                 {
-                    var zr = vcRoom.VideoCodec as PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom.ZoomRoom;
-                    if (zr != null)
-                    {
-                        var zrMessenger = new ZoomRoomMessenger(key, zr, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
-                        appServerController.AddDeviceMessenger(zrMessenger);
-                    }
-                    else
                     {
                         var vcMessenger = new VideoCodecBaseMessenger(key, vcRoom.VideoCodec, String.Format("/device/{0}", vcRoom.VideoCodec.Key));
                         appServerController.AddDeviceMessenger(vcMessenger);
@@ -196,7 +207,7 @@ namespace PepperDash.Essentials
             var privacyRoom = Room as IPrivacy;
             if (privacyRoom != null)
             {
-                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), new Action(privacyRoom.PrivacyModeToggle));
+                appServerController.AddAction(string.Format(@"/room/{0}/volumes/master/privacyMuteToggle", Room.Key), (id, content) => privacyRoom.PrivacyModeToggle());
 
                 privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
@@ -206,16 +217,14 @@ namespace PepperDash.Essentials
             var defCallRm = Room as IRunDefaultCallRoute;
             if (defCallRm != null)
             {
-                appServerController.AddAction(string.Format(@"/room/{0}/activityVideo", Room.Key),
-                    new Action(() => defCallRm.RunDefaultCallRoute()));
+                appServerController.AddAction(string.Format(@"/room/{0}/activityVideo", Room.Key), (id, content) => defCallRm.RunDefaultCallRoute());                    
             }
 
-            appServerController.AddAction(string.Format(@"/room/{0}/shutdownStart", Room.Key),
-                new Action(() => Room.StartShutdown(eShutdownType.Manual)));
-            appServerController.AddAction(string.Format(@"/room/{0}/shutdownEnd", Room.Key),
-                new Action(() => Room.ShutdownPromptTimer.Finish()));
-            appServerController.AddAction(string.Format(@"/room/{0}/shutdownCancel", Room.Key),
-                new Action(() => Room.ShutdownPromptTimer.Cancel()));
+            appServerController.AddAction(string.Format(@"/room/{0}/shutdownStart", Room.Key), (id, content) => Room.StartShutdown(eShutdownType.Manual));
+
+            appServerController.AddAction(string.Format(@"/room/{0}/shutdownEnd", Room.Key), (id, content) => Room.ShutdownPromptTimer.Finish());
+
+            appServerController.AddAction(string.Format(@"/room/{0}/shutdownCancel", Room.Key), (id, content) => Room.ShutdownPromptTimer.Cancel());                
 
             Room.OnFeedback.OutputChange += OnFeedback_OutputChange;
             Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
@@ -279,7 +288,7 @@ namespace PepperDash.Essentials
 
         private void AddTechRoomActions()
         {
-            var techRoom = Room as EssentialsTechRoom;
+            var techRoom = Room as IEssentialsTechRoom;
 
             if (techRoom == null)
             {
@@ -287,21 +296,21 @@ namespace PepperDash.Essentials
             }
 
             SetTunerActions(techRoom);
+            
+            CreateScheduleMessenger(techRoom.Key, techRoom as IRoomEventSchedule);
 
-            CreateScheduleMessenger(techRoom);
-
-            Parent.AddAction(String.Format("/room/{0}/roomPowerOn",techRoom.Key), new Action(techRoom.RoomPowerOn));
-            Parent.AddAction(String.Format("/room/{0}/roomPowerOff", techRoom.Key), new Action(techRoom.RoomPowerOff));
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOn", techRoom.Key), (id, content) => techRoom.RoomPowerOn());
+            Parent.AddAction(String.Format("/room/{0}/roomPowerOff", techRoom.Key), (id, content) => techRoom.RoomPowerOff());
         }
 
-        private void CreateScheduleMessenger(EssentialsTechRoom techRoom)
+        private void CreateScheduleMessenger(string roomKey, IRoomEventSchedule techRoom)
         {
-            var scheduleMessenger = new RoomEventScheduleMessenger(techRoom.Key + "-schedule",
-                String.Format("/room/{0}/schedule", techRoom.Key), techRoom);
+            var scheduleMessenger = new RoomEventScheduleMessenger(roomKey + "-schedule",
+                String.Format("/room/{0}/schedule", roomKey), techRoom);
             Parent.AddDeviceMessenger(scheduleMessenger);
         }
 
-        private void SetTunerActions(EssentialsTechRoom techRoom)
+        private void SetTunerActions(IEssentialsTechRoom techRoom)
         {
             foreach (var tuner in techRoom.Tuners.Select(t => t.Value).Cast<ISetTopBoxControls>())
             {
@@ -443,22 +452,22 @@ namespace PepperDash.Essentials
                     Parent.AddDeviceMessenger(messenger);
                 }
 
-                if (device is LightingBase)
+                if (device is ILightingScenes)
                 {
                     var deviceKey = device.Key;
-                    var lightingDevice = device as LightingBase;
+                    var lightingDevice = device as ILightingScenes;
                     Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new LightingBaseMessenger(deviceKey + "-" + Parent.Key,
+                    var messenger = new ILightingScenesMessenger(deviceKey + "-" + Parent.Key,
                         lightingDevice, string.Format("/device/{0}", deviceKey));
                     Parent.AddDeviceMessenger(messenger);
                 }
 
-                if (device is ShadeBase)
+                if (device is IShadesOpenCloseStop)
                 {
                     var deviceKey = device.Key;
-                    var shadeDevice = device as ShadeBase;
+                    var shadeDevice = device as IShadesOpenCloseStop;
                     Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new ShadeBaseMessenger(deviceKey + "-" + Parent.Key,
+                    var messenger = new IShadesOpenCloseStopMessenger(deviceKey + "-" + Parent.Key,
                         shadeDevice, string.Format("/device/{0}", deviceKey));
                     Parent.AddDeviceMessenger(messenger);
                 }
@@ -517,7 +526,8 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "wasCancelled"}};
-            var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
+            var message = new MobileControlMessage {
+                Type=String.Format("/room/{0}/shutdown/", Room.Key), Content = JToken.FromObject(roomStatus) };
             Parent.SendMessageObject(message);
         }
 
@@ -529,7 +539,12 @@ namespace PepperDash.Essentials
         private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
         {
             var roomStatus = new JObject {{"state", "hasFinished"}};
-            var message = new JObject { { "type", String.Format("/room/{0}/shutdown/", Room.Key) }, { "content", roomStatus } };
+            var message = new MobileControlMessage
+            {
+                Type = String.Format("/room/{0}/shutdown/", Room.Key),
+                Content = JToken.FromObject(roomStatus)
+            };
+
             Parent.SendMessageObject(message);
         }
 
@@ -545,7 +560,12 @@ namespace PepperDash.Essentials
                 {"state", "hasStarted"},
                 {"duration", Room.ShutdownPromptTimer.SecondsToCount}
             };
-            var message = new JObject {{"type", String.Format("/room/{0}/shutdown/", Room.Key)}, {"content", roomStatus}};
+
+            var message = new MobileControlMessage
+            {
+                Type = String.Format("/room/{0}/shutdown/", Room.Key),
+                Content = JToken.FromObject(roomStatus)
+            };
             Parent.SendMessageObject(message);
             // equivalent JS message:
             //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
@@ -729,7 +749,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room">The room to get status of</param>
         /// <returns>The status response message</returns>
-        MobileControlResponseMessage GetFullStatusForClientId(string id, IEssentialsRoom room)
+        MobileControlMessage GetFullStatusForClientId(string id, IEssentialsRoom room)
         {
             Debug.Console(2, this, "GetFullStatus");
 
@@ -769,11 +789,11 @@ namespace PepperDash.Essentials
                 state.IsInCall = vtcRoom.InCallFeedback.BoolValue;
             }
 
-            var messageObject = new MobileControlResponseMessage
+            var messageObject = new MobileControlMessage
             {
                 Type = MessagePath,
                 ClientId = id,
-                Content = state
+                Content = JToken.FromObject(state)
             };
 
             return messageObject;
@@ -805,7 +825,7 @@ namespace PepperDash.Essentials
                 configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
             }
 
-            var techRoom = room as EssentialsTechRoom;
+            var techRoom = room as IEssentialsTechRoom;
             if (techRoom != null && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
             {
                 configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
@@ -816,9 +836,11 @@ namespace PepperDash.Essentials
             {
                 if (vcRoom.VideoCodec != null)
                 {
+                    var type = vcRoom.VideoCodec.GetType();
+
                     configuration.HasVideoConferencing = true;
                     configuration.VideoCodecKey = vcRoom.VideoCodec.Key;
-                    configuration.VideoCodecIsZoomRoom = vcRoom.VideoCodec is Essentials.Devices.Common.VideoCodec.ZoomRoom.ZoomRoom;
+                    configuration.VideoCodecIsZoomRoom = type.Name.Equals("ZoomRoom", StringComparison.InvariantCultureIgnoreCase);
                 }
             };
 
@@ -842,15 +864,15 @@ namespace PepperDash.Essentials
                     {
                         eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
 
-                        if(dev is Essentials.Core.Lighting.LightingBase)
+                        if(dev is LightingBase)
                         {
                             type = eEnvironmentalDeviceTypes.Lighting;
                         }
-                        else if (dev is Essentials.Core.Shades.ShadeBase)
+                        else if (dev is ShadeBase)
                         {
                             type = eEnvironmentalDeviceTypes.Shade;
                         }
-                        else if (dev is Essentials.Core.Shades.ShadeController)
+                        else if (dev is IShades)
                         {
                             type = eEnvironmentalDeviceTypes.ShadeController;
                         }
@@ -886,7 +908,7 @@ namespace PepperDash.Essentials
 
                 foreach (var source in sourceList)
                 {
-                    if (source.Value.SourceDevice is PepperDash.Essentials.Devices.Common.IRSetTopBoxBase)
+                    if (source.Value.SourceDevice is Devices.Common.IRSetTopBoxBase)
                     {
                         configuration.HasSetTopBoxControls = true;
                         continue;
@@ -928,10 +950,7 @@ namespace PepperDash.Essentials
         public string SelectedSourceKey { get; set; }
         [JsonProperty("share", NullValueHandling = NullValueHandling.Ignore)]
         public ShareState Share { get; set; }
-        [JsonProperty("supportsAdvancedSharing", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? SupportsAdvancedSharing { get; set; }
-        [JsonProperty("userCanChangeShareMode", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? UserCanChangeShareMode { get; set; }
+
         [JsonProperty("volumes", NullValueHandling = NullValueHandling.Ignore)]
         public Volumes Volumes { get; set; }
 
@@ -991,7 +1010,12 @@ namespace PepperDash.Essentials
         [JsonProperty("uiBehavior", NullValueHandling = NullValueHandling.Ignore)]
         public EssentialsRoomUiBehaviorConfig UiBehavior { get; set; }
 
-public RoomConfiguration()
+        [JsonProperty("supportsAdvancedSharing", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? SupportsAdvancedSharing { get; set; }
+        [JsonProperty("userCanChangeShareMode", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? UserCanChangeShareMode { get; set; }
+
+        public RoomConfiguration()
         {
             DisplayKeys = new List<string>();
             EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();

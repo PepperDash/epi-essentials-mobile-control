@@ -20,8 +20,11 @@ namespace PepperDash.Essentials
 
         public event EventHandler<EventArgs> ClientJoined;
 
+        public event EventHandler<EventArgs> AppUrlChanged;
+
         public MobileControlSystemController Parent { get; private set; }
 
+        public string AppUrl { get; private set; }
         public string UserCode { get; private set; }
 
         public string QrCodeUrl { get; protected set; }

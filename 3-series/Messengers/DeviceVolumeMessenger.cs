@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Mime;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -42,14 +43,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendStatus));
-            appServerController.AddAction(MessagePath + "/level", new Action<ushort>(_device.SetVolume));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
 
-            appServerController.AddAction(MessagePath + "/muteToggle", new Action<bool>(
-                (b) => {
-                    if(b){
-                        _device.MuteToggle();
-                    }}));
+            appServerController.AddAction(MessagePath + "/level", (id, content) => {
+                var volume = content.ToObject<MobileControlSimpleContent<ushort>>();
+
+                _device.SetVolume(volume.Value);
+            });
+
+            appServerController.AddAction(MessagePath + "/muteToggle", (id, content) => {
+                var state = content.ToObject<MobileControlSimpleContent<bool>>();
+
+                if (!state.Value) return;
+
+                _device.MuteToggle();
+            });
 
             _device.MuteFeedback.OutputChange += (sender, args) =>
             {

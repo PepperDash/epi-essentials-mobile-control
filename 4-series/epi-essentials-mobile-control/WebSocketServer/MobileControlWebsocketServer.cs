@@ -1,7 +1,9 @@
 ﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using System;
 using System.Collections.Generic;
@@ -61,7 +63,7 @@ namespace PepperDash.Essentials
                 // Inform controller of client joining
                 if (Controller != null)
                 {
-                    var clientJoined = new MobileControlResponseMessage
+                    var clientJoined = new MobileControlMessage
                     {
                         Type = "/system/roomKey",
                         ClientId = clientId,
@@ -95,11 +97,11 @@ namespace PepperDash.Essentials
                 qrUrl = bridge.QrCodeUrl,
             };
 
-            var message = new MobileControlResponseMessage
+            var message = new MobileControlMessage
             {
                 Type = "/system/userCodeChanged",     
                 ClientId = clientId,
-                Content = content
+                Content = JToken.FromObject(content)
             };
 
             Controller.SendMessageObjectToDirectClient(message);

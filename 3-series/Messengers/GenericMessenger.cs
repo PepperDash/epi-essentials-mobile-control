@@ -26,7 +26,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.CustomRegisterWithAppServer(appServerController);
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
+            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
         }
 
         private void SendFullStatus()

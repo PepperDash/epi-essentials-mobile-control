@@ -5,6 +5,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -39,11 +40,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var asc = appServerController;
 
-            asc.AddAction(MessagePath + "/fullStatus", new Action(SendCameraFullMessageObject));
+            asc.AddAction(MessagePath + "/fullStatus", (id, content) => SendCameraFullMessageObject());
 
             // Add press and holds using helper action
             Action<string, uint> addPhAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new PressAndHoldAction(b => _eisc.SetBool(u, b)));
+                asc.AddAction(MessagePath + s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
             addPhAction("/cameraUp", _joinMap.TiltUp.JoinNumber);
             addPhAction("/cameraDown", _joinMap.TiltDown.JoinNumber);
             addPhAction("/cameraLeft", _joinMap.PanLeft.JoinNumber);
@@ -52,7 +53,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addPhAction("/cameraZoomOut", _joinMap.ZoomOut.JoinNumber);
 
             Action<string, uint> addAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
+                asc.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
 
             addAction("/cameraModeAuto", _joinMap.CameraModeAuto.JoinNumber);
             addAction("/cameraModeManual", _joinMap.CameraModeManual.JoinNumber);
@@ -68,6 +69,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 addAction("/cameraPreset" + (presetId), i);
                 presetId++;
             }
+        }
+
+        private void HandleCameraPressAndHold(JToken content, Action<bool> cameraAction)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, cameraAction);
+
+            cameraAction(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
         }
 
 #if SERIES4

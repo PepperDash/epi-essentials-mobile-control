@@ -94,7 +94,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             // Add straight pulse calls
             Action<string, uint> addAction = (s, u) =>
-                AppServerController.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
+                AppServerController.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
             addAction("/endCallById", JoinMap.EndCall.JoinNumber);
             addAction("/endAllCalls", JoinMap.EndCall.JoinNumber);
             addAction("/acceptById", JoinMap.IncomingAnswer.JoinNumber);
@@ -111,14 +111,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
 
             // Get status
-            AppServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
+            AppServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullStatus());
             // Dial on string
             AppServerController.AddAction(MessagePath + "/dial",
-                new Action<string>(s => _eisc.SetString(JoinMap.CurrentDialString.JoinNumber, s)));
+                (id, content) => {
+                    var msg = content.ToObject<MobileControlSimpleContent<string>>();
+                    _eisc.SetString(JoinMap.CurrentDialString.JoinNumber, msg.Value);
+                });
             // Pulse DTMF
-            AppServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s =>
+            AppServerController.AddAction(MessagePath + "/dtmf", (id, content)=>
             {
-                var join = JoinMap.Joins[s];
+                var s = content.ToObject<MobileControlSimpleContent<string>>();
+
+                var join = JoinMap.Joins[s.Value];
                 if (join != null)
                 {
                     if (join.JoinNumber > 0)
@@ -126,7 +131,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         _eisc.PulseBool(join.JoinNumber, 100);
                     }
                 }
-            }));
+            });
         }
 
         /// <summary>

@@ -1,5 +1,8 @@
 ﻿using System;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
+using Feedback = PepperDash.Essentials.Core.Feedback;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -42,7 +45,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.CustomRegisterWithAppServer(appServerController);
 
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullStatus());
 
             _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
             _display.CurrentInputFeedback.OutputChange += CurrentInputFeedbackOnOutputChange;
@@ -52,13 +55,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath,
-                content = new
+                Type = MessagePath,
+                Content = JToken.FromObject(new
                 {
                     currentInput = feedbackEventArgs.StringValue
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);
@@ -67,13 +70,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PowerIsOnFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath,
-                content = new
+                Type = MessagePath,
+                Content = JToken.FromObject(new
                 {
                     powerState = feedbackEventArgs.BoolValue
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);
@@ -81,13 +84,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath,
-                content = new
+                Type = MessagePath,
+                Content = JToken.FromObject(new
                 {
                     isWarming = feedbackEventArgs.BoolValue
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);
@@ -95,13 +98,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath,
-                content = new
+                Type = MessagePath,
+                Content = JToken.FromObject(new
                 {
                     isCooling = feedbackEventArgs.BoolValue
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);

@@ -21,6 +21,8 @@ using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Devices.Common.Codec;
 using WebSocketSharp;
+using PepperDash.Essentials.AppServer.Messengers;
+using Independentsoft.Email.Mime;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -35,8 +37,8 @@ namespace PepperDash.Essentials
         private const long PingInterval = 25000;
         private const long ButtonHeartbeatInterval = 1000;
 
-        private readonly Dictionary<string, Object> _actionDictionary =
-            new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, Action<string, JToken>> _actionDictionary =
+            new Dictionary<string, Action<string, JToken>>(StringComparer.InvariantCultureIgnoreCase);
 
         private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
         private readonly GenericQueue _receiveQueue;
@@ -231,7 +233,7 @@ namespace PepperDash.Essentials
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
-            SendMessageObject(new {type = "/system/roomCombinationChanged"});
+            SendMessageObject(new MobileControlMessage{Type = "/system/roomCombinationChanged"});
         }
 
         public bool CheckForDeviceMessenger(string key)
@@ -479,7 +481,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="key">The path of the API command</param>
         /// <param name="action">The action to be triggered by the commmand</param>
-        public void AddAction(string key, object action)
+        public void AddAction(string key, Action<string, JToken> action)
         {
             if (!_actionDictionary.ContainsKey(key))
             {
@@ -1007,9 +1009,9 @@ Mobile Control Direct Server Infromation:
             StopServerReconnectTimer();
             StartPingTimer();
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
-            SendMessageObject(new
+            SendMessageObject(new MobileControlMessage
             {
-                type = "hello"
+                Type = "hello"
             });
         }
 
@@ -1074,13 +1076,13 @@ Mobile Control Direct Server Infromation:
             Debug.Console(1, this, "Sending initial join message");
 
 
-            var msg = new
+            var msg = new MobileControlMessage
             {
-                type = "join",
-                content = new
+                Type = "join",
+                Content = JToken.FromObject(new
                 {
                     config = GetConfigWithPluginVersion(),
-                }
+                })
             };
 
             SendMessageObject(msg);
@@ -1122,7 +1124,7 @@ Mobile Control Direct Server Infromation:
         /// Sends any object type to server
         /// </summary>
         /// <param name="o"></param>
-        public void SendMessageObject(object o)
+        public void SendMessageObject(IMobileControlMessage o)
         {
 #if SERIES4
             if (Config.EnableApiServer)
@@ -1236,9 +1238,9 @@ Mobile Control Direct Server Infromation:
         /// <param name="content"></param>
         private void HandleHeartBeat(JToken content)
         {
-            SendMessageObject(new
+            SendMessageObject(new MobileControlMessage
             {
-                type = "/system/heartbeatAck"
+                Type = "/system/heartbeatAck"
             });
 
             var code = content["userCode"];
@@ -1259,12 +1261,12 @@ Mobile Control Direct Server Infromation:
             var roomKey = content["roomKey"].Value<string>();
 
 
-                SendMessageObject(new MobileControlResponseMessage()
-                {
-                    Type = "/system/roomKey",
-                    ClientId = clientId,
-                    Content = roomKey
-                });
+            SendMessageObject(new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = roomKey
+            });
         }
 
         private void HandleUserCode(JToken content)
@@ -1349,41 +1351,43 @@ Mobile Control Direct Server Infromation:
         /// <summary>
         /// 
         /// </summary>
-        private void ParseStreamRx(string message)
+        private void ParseStreamRx(string messageText)
         {
-            if (string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(messageText))
             {
                 return;
             }
 
-            if (!message.Contains("/system/heartbeat"))
+            if (!messageText.Contains("/system/heartbeat"))
             {
-                Debug.Console(2, this, "Message RX: {0}", message);
+                Debug.Console(2, this, "Message RX: {0}", messageText);
             }
 
             try
             {
-                var messageObj = JObject.Parse(message);
+                /*var messageObj = JObject.Parse(message);
 
-                var type = messageObj["type"].Value<string>();
+                var type = messageObj["type"].Value<string>();*/
 
-                switch (type)
+                var message = JsonConvert.DeserializeObject<MobileControlMessage>(messageText);
+
+                switch (message.Type)
                 {
                     case "hello":
                         SendInitialMessage();
                         break;
                     case "/system/heartbeat":
-                        HandleHeartBeat(messageObj["content"]);
+                        HandleHeartBeat(message.Content);
                         break;
                     case "/system/userCode":
-                        HandleUserCode(messageObj["content"]);
+                        HandleUserCode(message.Content);
                         break;
                     case "/system/clientJoined":
-                        HandleClientJoined(messageObj["content"]);
+                        HandleClientJoined(message.Content);
                         break;
                     case "raw":
                     {
-                        var wrapper = messageObj["content"].ToObject<DeviceActionWrapper>();
+                        var wrapper = message.Content.ToObject<DeviceActionWrapper>();
                         DeviceJsonApi.DoDeviceAction(wrapper);
                     }
                         break;
@@ -1391,146 +1395,16 @@ Mobile Control Direct Server Infromation:
                         Debug.Console(1, this, "Received close message from server.");
                         break;
                     default:
-                        if (_actionDictionary.ContainsKey(type))
-                        {
-                            var action = _actionDictionary[type];
+                        Action<string, JToken> handler;
 
-                            if (action is Action)
-                            {
-                                (action as Action)();
-                            }
-                            else if (action is PressAndHoldAction)
-                            {
-                                var stateString = messageObj["content"]["state"].Value<string>();
-
-                                // Look for a button press event
-                                if (!string.IsNullOrEmpty(stateString))
-                                {
-                                    switch (stateString)
-                                    {
-                                        case "true":
-                                            {
-                                                if (!_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions.Add(type, new CTimer(o =>
-                                                    {
-                                                        var pressAndHoldAction = action as PressAndHoldAction;
-                                                        if (pressAndHoldAction != null)
-                                                        {
-                                                            pressAndHoldAction(false);
-                                                        }
-                                                        _pushedActions.Remove(type);
-                                                    }, null, ButtonHeartbeatInterval));
-                                                }
-                                                // Maybe add an else to reset the timer
-                                                break;
-                                            }
-                                        case "held":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval);
-                                                }
-                                                return;
-                                            }
-                                        case "false":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Stop();
-                                                    _pushedActions.Remove(type);
-                                                }
-                                                break;
-                                            }
-                                    }
-
-                                    (action as PressAndHoldAction)(stateString == "true");
-                                }
-                            }
-                            else if (action is Action<bool>)
-                            {
-                                var stateString = messageObj["content"]["state"].Value<string>();
-
-                                if (!string.IsNullOrEmpty(stateString))
-                                {
-                                    (action as Action<bool>)(stateString.ToLower() == "true");
-                                }
-                            }
-                            else if (action is Action<ushort>)
-                            {
-                                (action as Action<ushort>)(messageObj["content"]["value"].Value<ushort>());
-                            }
-                            else if (action is Action<int>)
-                            {
-                                (action as Action<int>)(messageObj["content"]["value"].Value<int>());
-                            }
-                            else if (action is Action<string>)
-                            {
-                                (action as Action<string>)(messageObj["content"]["value"].Value<string>());
-                            }
-                            else if (action is Action<SourceSelectMessageContent>)
-                            {
-                                (action as Action<SourceSelectMessageContent>)(messageObj["content"]
-                                    .ToObject<SourceSelectMessageContent>());
-                            }
-                            else if (action is ClientSpecificUpdateRequest)
-                            {
-                                var clientId = messageObj["clientId"].ToString();
-
-                                
-                                (action as ClientSpecificUpdateRequest).ResponseMethod(clientId);
-
-                                //if (respObj != null)
-                                //{
-                                //    respObj.ClientId = clientId;
-
-                                //    SendMessageObject(respObj);
-                                //}
-                            }
-                            else if (action is Action<PresetChannelMessage>)
-                            {
-                                (action as Action<PresetChannelMessage>)(
-                                    messageObj["content"].ToObject<PresetChannelMessage>());
-                            }
-                            else if (action is Action<List<PresetChannel>>)
-                            {
-                                (action as Action<List<PresetChannel>>)(
-                                    messageObj["content"].ToObject<List<PresetChannel>>());
-                            }
-                            else if (action is Action<List<ScheduledEventConfig>>)
-                            {
-                                (action as Action<List<ScheduledEventConfig>>)(
-                                    messageObj["content"].ToObject<List<ScheduledEventConfig>>());
-                            }
-                            else if (action is Action<DirectRoute>)
-                            {
-                                (action as Action<DirectRoute>)(messageObj["content"].ToObject<DirectRoute>());
-                            }
-                            else if (action is Action<PepperDash.Essentials.Devices.Common.Codec.Meeting>)
-                            {
-                                (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
-                            }
-                            else if (action is Action<InvitableDirectoryContact>)
-                            {
-                                (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
-                            }
-                            else if (action is Action<Invitation>)
-                            {
-                                (action as Action<Invitation>)(messageObj["content"].ToObject<Invitation>());
-                            }
-                            else if (action is Action<Essentials.Core.Lighting.LightingScene>)
-                            {
-                                (action as Action<Essentials.Core.Lighting.LightingScene>)(messageObj["content"].ToObject<Essentials.Core.Lighting.LightingScene>());
-                            }
-                            else if (action is UserCodeChanged)
-                            {
-                                this.HandleUserCode(messageObj["content"], (action as UserCodeChanged).UpdateUserCode);
-                            }
-                        }
-                        else
+                        if(!_actionDictionary.TryGetValue(message.Type, out handler))
                         {
                             Debug.Console(1, this, "-- Warning: Incoming message has no registered handler");
+                            break;
                         }
+
+                        handler(message.ClientId, message.Content);
+
                         break;
                 }
             }
@@ -1619,21 +1493,5 @@ Mobile Control Direct Server Infromation:
         {
             UpdateUserCode = updateMethod;
         }
-    }
-
-#if SERIES4
-    public class MobileControlResponseMessage: IMobileControlResponseMessage
-#else
-    public class MobileControlResponseMessage
-#endif
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("clientId")]
-        public object ClientId { get; set; }
-
-        [JsonProperty("content")]
-        public object Content { get; set; }
     }
 }

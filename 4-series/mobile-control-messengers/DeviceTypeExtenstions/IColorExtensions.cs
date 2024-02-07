@@ -1,6 +1,7 @@
 ﻿using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.AppServer.Messengers;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -14,10 +15,10 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
-            controller.AddAction(prefix + "red", new PressAndHoldAction(dev.Red));
-            controller.AddAction(prefix + "green", new PressAndHoldAction(dev.Green));
-            controller.AddAction(prefix + "yellow", new PressAndHoldAction(dev.Yellow));
-            controller.AddAction(prefix + "blue", new PressAndHoldAction(dev.Blue));
+            controller.AddAction(prefix + "red", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Red(b)));
+            controller.AddAction(prefix + "green", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Green(b)));
+            controller.AddAction(prefix + "yellow", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Yellow(b)));
+            controller.AddAction(prefix + "blue", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Blue(b)));
         }
 
         public static void UnlinkActions(this IColor dev, IMobileControl3 controller)

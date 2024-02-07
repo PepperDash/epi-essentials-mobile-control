@@ -12,12 +12,12 @@ using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class LightingBaseMessenger : MessengerBase
+    public class ILightingScenesMessenger : MessengerBase
     {
-        protected LightingBase Device { get; private set; }
+        protected ILightingScenes Device { get; private set; }
 
-        public LightingBaseMessenger(string key, LightingBase device, string messagePath)
-            : base(key, messagePath, device)
+        public ILightingScenesMessenger(string key, ILightingScenes device, string messagePath)
+            : base(key, messagePath, device as Device)
         {
             if (device == null)
             {
@@ -47,9 +47,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.CustomRegisterWithAppServer(appServerController);
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
+            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
 
-            appServerController.AddAction(string.Format("{0}/selectScene", MessagePath), new Action<LightingScene>((s) => Device.SelectScene(s)));
+            appServerController.AddAction(string.Format("{0}/selectScene", MessagePath), (id, content) => {
+                var s = content.ToObject<LightingScene>();
+                Device.SelectScene(s);
+            });
         }
 
 

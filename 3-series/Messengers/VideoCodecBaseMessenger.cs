@@ -9,8 +9,9 @@ using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.VideoCodec.Interfaces;
 using Crestron.SimplSharp;
-using PepperDash.Essentials.Devices.Common.VideoCodec.ZoomRoom;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using static PepperDash.Essentials.AppServer.Messengers.VideoCodecBaseStateMessage.CameraStatus;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -214,30 +215,51 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 base.CustomRegisterWithAppServer(appServerController);
 
-                appServerController.AddAction(String.Format("{0}/isReady", MessagePath), new Action(SendIsReady));
-                appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
-                appServerController.AddAction(String.Format("{0}/dial", MessagePath), new Action<string>(s => Codec.Dial(s)));
-                appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), new Action<Meeting>(m => Codec.Dial(m)));
-                appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), new Action<string>(s =>
+                appServerController.AddAction(String.Format("{0}/isReady", MessagePath), (id, content) => SendIsReady());
+
+                appServerController.AddAction(String.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
+
+                appServerController.AddAction(String.Format("{0}/dial", MessagePath), (id, content) => {
+                    var value = content.ToObject<MobileControlSimpleContent<string>>();
+
+                    Codec.Dial(value.Value);
+                });
+                
+                appServerController.AddAction(String.Format("{0}/dialMeeting", MessagePath), (id, content) => Codec.Dial(content.ToObject<Meeting>()));
+
+                appServerController.AddAction(String.Format("{0}/endCallById", MessagePath), (id, content) =>
                 {
-                    var call = GetCallWithId(s);
+                    var s = content.ToObject<MobileControlSimpleContent<string>>();
+                    var call = GetCallWithId(s.Value);
                     if (call != null)
                         Codec.EndCall(call);
-                }));
-                appServerController.AddAction(MessagePath + "/endAllCalls", new Action(Codec.EndAllCalls));
-                appServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s => Codec.SendDtmf(s)));
-                appServerController.AddAction(MessagePath + "/rejectById", new Action<string>(s =>
+                });
+
+                appServerController.AddAction(MessagePath + "/endAllCalls", (id, content) => Codec.EndAllCalls());
+
+                appServerController.AddAction(MessagePath + "/dtmf", (id, content) =>
                 {
-                    var call = GetCallWithId(s);
+                    var s = content.ToObject<MobileControlSimpleContent<string>>();
+                    Codec.SendDtmf(s.Value);
+                });
+
+                appServerController.AddAction(MessagePath + "/rejectById", (id, content) =>
+                {
+                    var s = content.ToObject<MobileControlSimpleContent<string>>();
+
+                    var call = GetCallWithId(s.Value);
                     if (call != null)
                         Codec.RejectCall(call);
-                }));
-                appServerController.AddAction(MessagePath + "/acceptById", new Action<string>(s =>
+                });
+
+                appServerController.AddAction(MessagePath + "/acceptById", (id, content) =>
                 {
-                    var call = GetCallWithId(s);
+                    var s = content.ToObject<MobileControlSimpleContent<string>>();
+
+                    var call = GetCallWithId(s.Value);
                     if (call != null)
                         Codec.AcceptCall(call);
-                }));
+                });
 
                 Codec.SharingContentIsOnFeedback.OutputChange += SharingContentIsOnFeedback_OutputChange;
                 Codec.SharingSourceFeedback.OutputChange += SharingSourceFeedback_OutputChange;
@@ -246,10 +268,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var dirCodec = Codec as IHasDirectory;
                 if (dirCodec != null)
                 {
-                    appServerController.AddAction(MessagePath + "/getDirectory", new Action(GetDirectoryRoot));
-                    appServerController.AddAction(MessagePath + "/directoryById", new Action<string>(GetDirectory));
-                    appServerController.AddAction(MessagePath + "/directorySearch", new Action<string>(DirectorySearch));
-                    appServerController.AddAction(MessagePath + "/directoryBack", new Action(GetPreviousDirectory));
+                    appServerController.AddAction(MessagePath + "/getDirectory", (id, content) => GetDirectoryRoot());
+
+                    appServerController.AddAction(MessagePath + "/directoryById", (id, content) => {
+                        var msg = content.ToObject<MobileControlSimpleContent<string>>();
+                        GetDirectory(msg.Value);
+                    });
+
+                    appServerController.AddAction(MessagePath + "/directorySearch", (id, content) => {
+                        var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                        GetDirectory(msg.Value);
+                    });
+
+                    appServerController.AddAction(MessagePath + "/directoryBack", (id, content) => GetPreviousDirectory());
 
                     dirCodec.PhonebookSyncState.InitialSyncCompleted += PhonebookSyncState_InitialSyncCompleted;
                 }
@@ -258,7 +290,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var recCodec = Codec as IHasCallHistory;
                 if (recCodec != null)
                 {
-                    appServerController.AddAction(MessagePath + "/getCallHistory", new Action(PostCallHistory));
+                    appServerController.AddAction(MessagePath + "/getCallHistory", (id, content) => PostCallHistory());
                 }
                 var cameraCodec = Codec as IHasCodecCameras;
                 if (cameraCodec != null)
@@ -267,8 +299,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     cameraCodec.CameraSelected += cameraCodec_CameraSelected;
 
-                    appServerController.AddAction(MessagePath + "/cameraSelect",
-                        new Action<string>(cameraCodec.SelectCamera));
+                    appServerController.AddAction(MessagePath + "/cameraSelect", (id, content) =>
+                    {
+                        var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                        cameraCodec.SelectCamera(msg.Value);
+                    });
+                        
 
                     MapCameraActions();
 
@@ -279,10 +316,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                         presetsCodec.CodecRoomPresetsListHasChanged += presetsCodec_CameraPresetsListHasChanged;
 
-                        appServerController.AddAction(MessagePath + "/cameraPreset",
-                            new Action<int>(presetsCodec.CodecRoomPresetSelect));
-                        appServerController.AddAction(MessagePath + "/cameraPresetStore",
-                            new Action<CodecRoomPreset>(p => presetsCodec.CodecRoomPresetStore(p.ID, p.Description)));
+                        appServerController.AddAction(MessagePath + "/cameraPreset",(id, content) =>
+                        {
+                            var msg = content.ToObject<MobileControlSimpleContent<int>>();
+
+                            presetsCodec.CodecRoomPresetSelect(msg.Value);
+                        });
+
+                        appServerController.AddAction(MessagePath + "/cameraPresetStore", (id, content) =>
+                        {
+                            var msg = content.ToObject<CodecRoomPreset>();
+
+                            presetsCodec.CodecRoomPresetStore(msg.ID, msg.Description);
+                        });
                     }
 
                     var speakerTrackCodec = Codec as IHasCameraAutoMode;
@@ -292,10 +338,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                         speakerTrackCodec.CameraAutoModeIsOnFeedback.OutputChange += CameraAutoModeIsOnFeedback_OutputChange;
 
-                        appServerController.AddAction(MessagePath + "/cameraModeAuto",
-                            new Action(speakerTrackCodec.CameraAutoModeOn));
-                        appServerController.AddAction(MessagePath + "/cameraModeManual",
-                            new Action(speakerTrackCodec.CameraAutoModeOff));
+                        appServerController.AddAction(MessagePath + "/cameraModeAuto", (id, content) => speakerTrackCodec.CameraAutoModeOn());
+
+                        appServerController.AddAction(MessagePath + "/cameraModeManual",(id, content) => speakerTrackCodec.CameraAutoModeOff());                            
                     }
 
                     var cameraOffCodec = Codec as IHasCameraOff;
@@ -305,8 +350,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                         cameraOffCodec.CameraIsOffFeedback.OutputChange += (CameraIsOffFeedback_OutputChange);
 
-                        appServerController.AddAction(MessagePath + "/cameraModeOff",
-                            new Action(cameraOffCodec.CameraOff));
+                        appServerController.AddAction(MessagePath + "/cameraModeOff",(id, content) => cameraOffCodec.CameraOff());
                     }
                 }
 
@@ -317,8 +361,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Debug.Console(2, this, "Adding IHasCodecSelfView Actions");
 
-                    appServerController.AddAction(MessagePath + "/cameraSelfView",
-                        new Action(selfViewCodec.SelfViewModeToggle));
+                    appServerController.AddAction(MessagePath + "/cameraSelfView", (id, content) => selfViewCodec.SelfViewModeToggle());                        
 
                     selfViewCodec.SelfviewIsOnFeedback.OutputChange += new EventHandler<FeedbackEventArgs>(SelfviewIsOnFeedback_OutputChange);
                 }
@@ -329,12 +372,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Debug.Console(2, this, "Adding IHasCodecLayouts Actions");
 
-                    appServerController.AddAction(MessagePath + "/cameraRemoteView",
-                        new Action(layoutsCodec.LocalLayoutToggle));
+                    appServerController.AddAction(MessagePath + "/cameraRemoteView", (id, content) => layoutsCodec.LocalLayoutToggle());
 
-                    appServerController.AddAction(MessagePath + "/cameraLayout",
-                        new Action(layoutsCodec.LocalLayoutToggle));
-
+                    appServerController.AddAction(MessagePath + "/cameraLayout", (id, content) => layoutsCodec.LocalLayoutToggle());
                 }
 
                 var pwCodec = Codec as IPasswordPrompt;
@@ -342,7 +382,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Debug.Console(2, this, "Adding IPasswordPrompt Actions");
 
-                    appServerController.AddAction(MessagePath + "/password", new Action<string>((s) => pwCodec.SubmitPassword(s)));
+                    appServerController.AddAction(MessagePath + "/password", (id, content) => {
+                        var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                        pwCodec.SubmitPassword(msg.Value);
+                    });
                 }
 
                 var farEndContentStatus = Codec as IHasFarEndContentStatus;
@@ -355,13 +399,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 Debug.Console(2, this, "Adding Privacy & Standby Actions");
 
-                appServerController.AddAction(MessagePath + "/privacyModeOn", new Action(Codec.PrivacyModeOn));
-                appServerController.AddAction(MessagePath + "/privacyModeOff", new Action(Codec.PrivacyModeOff));
-                appServerController.AddAction(MessagePath + "/privacyModeToggle", new Action(Codec.PrivacyModeToggle));
-                appServerController.AddAction(MessagePath + "/sharingStart", new Action(Codec.StartSharing));
-                appServerController.AddAction(MessagePath + "/sharingStop", new Action(Codec.StopSharing));
-                appServerController.AddAction(MessagePath + "/standbyOn", new Action(Codec.StandbyActivate));
-                appServerController.AddAction(MessagePath + "/standbyOff", new Action(Codec.StandbyDeactivate));
+                appServerController.AddAction(MessagePath + "/privacyModeOn", (id, content) => Codec.PrivacyModeOn());
+                appServerController.AddAction(MessagePath + "/privacyModeOff", (id, content) => Codec.PrivacyModeOff());
+                appServerController.AddAction(MessagePath + "/privacyModeToggle", (id, content) => Codec.PrivacyModeToggle());
+                appServerController.AddAction(MessagePath + "/sharingStart", (id, content) => Codec.StartSharing());
+                appServerController.AddAction(MessagePath + "/sharingStop", (id, content) => Codec.StopSharing());
+                appServerController.AddAction(MessagePath + "/standbyOn", (id, content) => Codec.StandbyActivate());
+                appServerController.AddAction(MessagePath + "/standbyOff", (id, content) => Codec.StandbyDeactivate());
             }
             catch (Exception e)
             {
@@ -440,37 +484,72 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var camera = cameraCodec.SelectedCamera as IHasCameraPtzControl;
                 if (camera != null)
                 {
-                    AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(b =>
+                    AppServerController.AddAction(MessagePath + "/cameraUp", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.TiltUp();
-                        else camera.TiltStop();
+                        if (b)
+                        {
+                            camera.TiltUp();
+                            return;
+                        }
+                        
+                        camera.TiltStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(b =>
+                    
+                    AppServerController.AddAction(MessagePath + "/cameraDown", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.TiltDown();
-                        else camera.TiltStop();
+                        if (b)
+                        {
+                            camera.TiltDown();
+                            return;
+                        }
+
+                        camera.TiltStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction(b =>
+
+                    AppServerController.AddAction(MessagePath + "/cameraLeft", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.PanLeft();
-                        else camera.PanStop();
+                        if (b)
+                        {
+                            camera.PanLeft();
+                            return;
+                        }
+
+                        camera.PanStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction(b =>
+
+                    AppServerController.AddAction(MessagePath + "/cameraRight", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.PanRight();
-                        else camera.PanStop();
+                        if (b)
+                        {
+                            camera.PanRight();
+                            return;
+                        }
+
+                        camera.PanStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction(b =>
+
+                    AppServerController.AddAction(MessagePath + "/cameraZoomIn", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.ZoomIn();
-                        else camera.ZoomStop();
+                        if (b)
+                        {
+                            camera.ZoomIn();
+                            return;
+                        }
+
+                        camera.ZoomStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction(b =>
+
+                    AppServerController.AddAction(MessagePath + "/cameraZoomOut", (id, content) => HandleCameraPressAndHold(content, (b) =>
                     {
-                        if (b) camera.ZoomOut();
-                        else camera.ZoomStop();
+                        if (b)
+                        {
+                            camera.ZoomOut();
+                            return;
+                        }
+
+                        camera.ZoomStop();
                     }));
-                    AppServerController.AddAction(MessagePath + "/cameraHome", new Action(camera.PositionHome));
+                    AppServerController.AddAction(MessagePath + "/cameraHome", (id, content) => camera.PositionHome());
 
                     var focusCamera = cameraCodec as IHasCameraFocusControl;
 
@@ -480,21 +559,47 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     if (focusCamera != null)
                     {
-                        AppServerController.AddAction(MessagePath + "/cameraAutoFocus",
-                            new Action(focusCamera.TriggerAutoFocus));
-                        AppServerController.AddAction(MessagePath + "/cameraFocusNear", new PressAndHoldAction(b =>
+                        AppServerController.AddAction(MessagePath + "/cameraAutoFocus", (id, content) => focusCamera.TriggerAutoFocus());
+                            
+                        AppServerController.AddAction(MessagePath + "/cameraFocusNear", (id, content) => HandleCameraPressAndHold(content, (b) =>
                         {
-                            if (b) focusCamera.FocusNear();
-                            else focusCamera.FocusStop();
+                            if (b)
+                            {
+                                focusCamera.FocusNear();
+                                return;
+                            }
+
+                            focusCamera.FocusStop();
                         }));
-                        AppServerController.AddAction(MessagePath + "/cameraFocusFar", new PressAndHoldAction(b =>
+
+                        AppServerController.AddAction(MessagePath + "/cameraFocusFar", (id, content) => HandleCameraPressAndHold(content, (b) =>
                         {
-                            if (b) focusCamera.FocusFar();
-                            else focusCamera.FocusStop();
+                            if (b)
+                            {
+                                focusCamera.FocusFar();
+                                return;
+                            }
+
+                            focusCamera.FocusStop();
                         }));
                     }
                 }
             }
+        }
+
+        private void HandleCameraPressAndHold(JToken content, Action<bool> cameraAction)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, cameraAction);
+
+            cameraAction(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
         }
 
         private string GetCameraMode()
@@ -627,8 +732,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var status = new VideoCodecBaseStateMessage();
 
+            var codecType = Codec.GetType();            
+
             status.IsReady = Codec.IsReady;
-            status.IsZoomRoom = Codec is ZoomRoom;
+            status.IsZoomRoom = codecType.GetInterface("IHasZoomRoomLayouts") != null;
 
             PostStatusMessage(status);
         }
@@ -664,6 +771,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 status.CurrentDirectory = directoryCodec.CurrentDirectoryResult;
             }
 
+            var codecType = Codec.GetType();
+
             status.CameraSelfViewIsOn = Codec is IHasCodecSelfView && (Codec as IHasCodecSelfView).SelfviewIsOnFeedback.BoolValue;
             status.IsInCall = Codec.IsInCall;
             status.PrivacyModeIsOn = Codec.PrivacyModeIsOnFeedback.BoolValue;
@@ -677,7 +786,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             status.HasRecents = Codec is IHasCallHistory;
             status.HasCameras = Codec is IHasCameras;
             status.Presets = GetCurrentPresets();
-            status.IsZoomRoom = Codec is ZoomRoom;
+            status.IsZoomRoom = codecType.GetInterface("IHasZoomRoomLayouts") != null;
             status.ReceivingContent = Codec is IHasFarEndContentStatus && (Codec as IHasFarEndContentStatus).ReceivingContent.BoolValue;
 
             var meetingInfoCodec = Codec as IHasMeetingInfo;
@@ -751,9 +860,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(status);
         }
 
-        private VideoCodecBaseStateMessage.CameraStatus.Camera GetSelectedCamera(IHasCodecCameras camerasCodec)
+        private Camera GetSelectedCamera(IHasCodecCameras camerasCodec)
         {
-            var camera = new VideoCodecBaseStateMessage.CameraStatus.Camera();
+            var camera = new Camera();
 
             if (camerasCodec.SelectedCameraFeedback != null)
                 camera.Key = camerasCodec.SelectedCameraFeedback.StringValue;
@@ -761,7 +870,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 camera.Name = camerasCodec.SelectedCamera.Name;
 
-                camera.Capabilities = new VideoCodecBaseStateMessage.CameraStatus.Camera.CameraCapabilities()
+                camera.Capabilities = new Camera.CameraCapabilities()
                 {
                     CanPan = camerasCodec.SelectedCamera.CanPan,
                     CanTilt = camerasCodec.SelectedCamera.CanTilt,

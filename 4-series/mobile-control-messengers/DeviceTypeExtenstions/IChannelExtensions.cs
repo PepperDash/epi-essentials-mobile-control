@@ -1,6 +1,9 @@
 ﻿using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Newtonsoft.Json.Linq;
+using System;
+using PepperDash.Essentials.AppServer.Messengers;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -12,12 +15,13 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
-            controller.AddAction(prefix + "chanUp", new PressAndHoldAction(dev.ChannelUp));
-            controller.AddAction(prefix + "chanDown", new PressAndHoldAction(dev.ChannelDown));
-            controller.AddAction(prefix + "lastChan", new PressAndHoldAction(dev.LastChannel));
-            controller.AddAction(prefix + "guide", new PressAndHoldAction(dev.Guide));
-            controller.AddAction(prefix + "info", new PressAndHoldAction(dev.Info));
-            controller.AddAction(prefix + "exit", new PressAndHoldAction(dev.Exit));
+            controller.AddAction(prefix + "chanUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChannelUp(b)));
+            
+            controller.AddAction(prefix + "chanDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChannelDown(b)));
+            controller.AddAction(prefix + "lastChan", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.LastChannel(b)));
+            controller.AddAction(prefix + "guide", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Guide(b)));
+            controller.AddAction(prefix + "info", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Info(b)));
+            controller.AddAction(prefix + "exit", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Exit(b)));
         }
 
         public static void UnlinkActions(this IChannel dev, IMobileControl3 controller)
@@ -31,5 +35,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.RemoveAction(prefix + "info");
             controller.RemoveAction(prefix + "exit");
         }
+
+        
     }
 }

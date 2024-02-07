@@ -1,6 +1,7 @@
 ﻿using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.AppServer.Messengers;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -12,14 +13,14 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
 
-            controller.AddAction(prefix + "play", new PressAndHoldAction(dev.Play));
-            controller.AddAction(prefix + "pause", new PressAndHoldAction(dev.Pause));
-            controller.AddAction(prefix + "stop", new PressAndHoldAction(dev.Stop));
-            controller.AddAction(prefix + "prevTrack", new PressAndHoldAction(dev.ChapPlus));
-            controller.AddAction(prefix + "nextTrack", new PressAndHoldAction(dev.ChapMinus));
-            controller.AddAction(prefix + "rewind", new PressAndHoldAction(dev.Rewind));
-            controller.AddAction(prefix + "ffwd", new PressAndHoldAction(dev.FFwd));
-            controller.AddAction(prefix + "record", new PressAndHoldAction(dev.Record));
+            controller.AddAction(prefix + "play", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Play(b)));
+            controller.AddAction(prefix + "pause", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Pause(b)));
+            controller.AddAction(prefix + "stop", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Stop(b)));
+            controller.AddAction(prefix + "prevTrack", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChapPlus(b)));
+            controller.AddAction(prefix + "nextTrack", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChapMinus(b)));
+            controller.AddAction(prefix + "rewind", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Rewind(b)));
+            controller.AddAction(prefix + "ffwd", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.FFwd(b)));
+            controller.AddAction(prefix + "record", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Record(b)));
         }
 
         public static void UnlinkActions(this ITransport dev, IMobileControl3 controller)

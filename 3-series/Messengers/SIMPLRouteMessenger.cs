@@ -37,11 +37,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
 #endif
         {
             appServerController.AddAction(MessagePath + "/fullStatus",
-                new Action(() => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource))));
+                (id, content) => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource)));
 
-            appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(
-                    c => _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem)));
+            appServerController.AddAction(MessagePath + "/source",(id, content) =>
+            {
+                var c = content.ToObject<SourceSelectMessageContent>();
+
+                _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem);
+            });
         }
 
 #if SERIES4

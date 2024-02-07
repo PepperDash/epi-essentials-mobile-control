@@ -41,28 +41,46 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.CustomRegisterWithAppServer(appServerController);
 
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendAtcFullMessageObject));
-            appServerController.AddAction(MessagePath + "/dial", new Action<string>(s => Codec.Dial(s)));
-            appServerController.AddAction(MessagePath + "/endCallById", new Action<string>(s =>
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendAtcFullMessageObject());
+            appServerController.AddAction(MessagePath + "/dial", (id, content) => {
+                var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                Codec.Dial(msg.Value);
+            }); 
+
+            appServerController.AddAction(MessagePath + "/endCallById", (id, content) =>
             {
-                var call = GetCallWithId(s);
+                var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                var call = GetCallWithId(msg.Value);
                 if (call != null)
                     Codec.EndCall(call);
-            }));
-            appServerController.AddAction(MessagePath + "/endAllCalls", new Action(Codec.EndAllCalls));
-            appServerController.AddAction(MessagePath + "/dtmf", new Action<string>(s => Codec.SendDtmf(s)));
-            appServerController.AddAction(MessagePath + "/rejectById", new Action<string>(s =>
+            });
+
+            appServerController.AddAction(MessagePath + "/endAllCalls", (id, content) => Codec.EndAllCalls());
+            appServerController.AddAction(MessagePath + "/dtmf", (id, content) => {
+                var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                Codec.SendDtmf(msg.Value);
+            });
+
+            appServerController.AddAction(MessagePath + "/rejectById", (id, content) =>
             {
-                var call = GetCallWithId(s);
+                var msg = content.ToObject<MobileControlSimpleContent<string>>();
+
+                var call = GetCallWithId(msg.Value);
+
                 if (call != null)
                     Codec.RejectCall(call);
-            }));
-            appServerController.AddAction(MessagePath + "/acceptById", new Action<string>(s =>
+            });
+
+            appServerController.AddAction(MessagePath + "/acceptById", (id, content) =>
             {
-                var call = GetCallWithId(s);
+                var msg = content.ToObject<MobileControlSimpleContent<string>>();
+                var call = GetCallWithId(msg.Value);
                 if (call != null)
                     Codec.AcceptCall(call);
-            }));
+            });
         }
 
         /// <summary>
@@ -87,7 +105,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private void SendAtcFullMessageObject()
         {
             var info = Codec.CodecInfo;
-            PostStatusMessage(new
+            
+            PostStatusMessage(new            
             {
                 isInCall = Codec.IsInCall,
                 calls = Codec.ActiveCalls,

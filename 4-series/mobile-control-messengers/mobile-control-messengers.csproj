@@ -36,7 +36,6 @@
     <Compile Include="..\..\3-series\Messengers\IRunRouteActionMessenger.cs" Link="Messengers\IRunRouteActionMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\LightingBaseMessenger.cs" Link="Messengers\LightingBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\MessengerBase.cs" Link="Messengers\MessengerBase.cs" />
-    <Compile Include="..\..\3-series\Messengers\PropertyCopier.cs" Link="Messengers\PropertyCopier.cs" />
     <Compile Include="..\..\3-series\Messengers\RoomEventScheduleMessenger.cs" Link="Messengers\RoomEventScheduleMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\ShadeBaseMessenger.cs" Link="Messengers\ShadeBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\SIMPLAtcMessenger.cs" Link="Messengers\SIMPLAtcMessenger.cs" />
@@ -48,7 +47,6 @@
     <Compile Include="..\..\3-series\Messengers\SystemMonitorMessenger.cs" Link="Messengers\SystemMonitorMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\TwoWayDisplayBaseMessenger.cs" Link="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\VideoCodecBaseMessenger.cs" Link="Messengers\VideoCodecBaseMessenger.cs" />
-    <Compile Include="..\..\3-series\Messengers\ZoomRoomMessenger.cs" Link="Messengers\ZoomRoomMessenger.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\SIMPLAtcJoinMap.cs" Link="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
@@ -60,10 +58,9 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Messengers\" />
     <Folder Include="SIMPLJoinMaps\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2341" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2380" />
   </ItemGroup>
 </Project>

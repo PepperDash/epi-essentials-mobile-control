@@ -55,9 +55,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendPresets));
-            appServerController.AddAction(MessagePath + "/recall", new Action<PresetChannelMessage>((p) =>
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendPresets());
+
+            appServerController.AddAction(MessagePath + "/recall", (id, content) => 
             {
+                var p = content.ToObject<PresetChannelMessage>();
+
                 var dev = DeviceManager.GetDeviceForKey(p.DeviceKey) as ISetTopBoxNumericKeypad;
 
                 if (dev == null)
@@ -67,8 +70,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
 
                 RecallPreset(dev, p.Preset.Channel);
-            }));
-            appServerController.AddAction(MessagePath + "/save", new Action<List<PresetChannel>>(SavePresets));
+            });
+
+            appServerController.AddAction(MessagePath + "/save", (id, content) => {
+                var presets = content.ToObject<List<PresetChannel>>();
+
+                SavePresets(presets);
+            });
 
             _presetsDevice.TvPresets.PresetsSaved += (p) => SendPresets();
         }

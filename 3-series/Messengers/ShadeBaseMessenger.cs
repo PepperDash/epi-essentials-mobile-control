@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-using PepperDash.Core;
-using PepperDash.Essentials.Core.Shades;
-
 using Newtonsoft.Json;
+using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Shades;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class ShadeBaseMessenger : MessengerBase
+    public class IShadesOpenCloseStopMessenger : MessengerBase
     {
-        protected ShadeBase Device { get; private set; }
+        protected IShadesOpenCloseStop Device { get; private set; }
 
-        public ShadeBaseMessenger(string key, ShadeBase device, string messagePath)
-            : base(key, messagePath, device)
+        public IShadesOpenCloseStopMessenger(string key, IShadesOpenCloseStop device, string messagePath)
+            : base(key, messagePath, device as Device)
         {
             if (device == null)
             {
@@ -35,40 +29,40 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.CustomRegisterWithAppServer(appServerController);
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
+            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
 
-            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), new Action( () =>
+            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), (id, content) =>
                 {
 
                     Device.Open();
 
-                }));
+                });
 
-            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), new Action(() =>
+            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), (id, content) =>
                 {
 
                     Device.Close();
 
-                }));
+                });
 
-            var stopDevice = Device as IShadesOpenCloseStop;
+            var stopDevice = Device;
             if (stopDevice != null)
             {
-                appServerController.AddAction(string.Format("{0}/stopOrPreset", MessagePath), new Action(() =>
+                appServerController.AddAction(string.Format("{0}/stopOrPreset", MessagePath), (id, content) =>
                 {
                     stopDevice.Stop();
-                }));
+                });
             }
 
             var feedbackDevice = Device as IShadesOpenClosedFeedback;
             if (feedbackDevice != null)
             {
-                feedbackDevice.ShadeIsOpenFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(ShadeIsOpenFeedback_OutputChange);
-                feedbackDevice.ShadeIsClosedFeedback.OutputChange += new EventHandler<PepperDash.Essentials.Core.FeedbackEventArgs>(ShadeIsClosedFeedback_OutputChange);
+                feedbackDevice.ShadeIsOpenFeedback.OutputChange += new EventHandler<Core.FeedbackEventArgs>(ShadeIsOpenFeedback_OutputChange);
+                feedbackDevice.ShadeIsClosedFeedback.OutputChange += new EventHandler<Core.FeedbackEventArgs>(ShadeIsClosedFeedback_OutputChange);
             }
         }
 
-        void ShadeIsOpenFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
+        void ShadeIsOpenFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
         {
             var state = new ShadeBaseStateMessage();
 
@@ -77,7 +71,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(state);
         }
 
-        void ShadeIsClosedFeedback_OutputChange(object sender, PepperDash.Essentials.Core.FeedbackEventArgs e)
+        void ShadeIsClosedFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
         {
             var state = new ShadeBaseStateMessage();
 

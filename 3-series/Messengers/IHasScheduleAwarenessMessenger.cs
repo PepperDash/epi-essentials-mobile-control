@@ -31,7 +31,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullScheduleObject));
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullScheduleObject());
 
         }
 

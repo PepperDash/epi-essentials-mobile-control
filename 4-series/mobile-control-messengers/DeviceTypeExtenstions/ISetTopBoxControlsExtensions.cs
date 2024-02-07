@@ -1,6 +1,7 @@
 ﻿using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.AppServer.Messengers;
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -12,8 +13,8 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             var prefix = string.Format(@"/device/{0}/", dev.Key);
 
-            controller.AddAction(prefix + "dvrList", new PressAndHoldAction(dev.DvrList));
-            controller.AddAction(prefix + "replay", new PressAndHoldAction(dev.Replay));
+            controller.AddAction(prefix + "dvrList", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.DvrList(b)));
+            controller.AddAction(prefix + "replay", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Replay(b)));
         }
 
         public static void UnlinkActions(this ISetTopBoxControls dev, IMobileControl3 controller)

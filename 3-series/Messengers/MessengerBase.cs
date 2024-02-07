@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -149,10 +150,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (AppServerController != null)
             {
-                AppServerController.SendMessageObject(new
+                AppServerController.SendMessageObject(new MobileControlMessage
                 {
-                    type = MessagePath,
-                    content = contentObject
+                    Type = MessagePath,
+                    Content = JToken.FromObject(contentObject)
                 });
             }
         }
@@ -172,24 +173,23 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 message.Name = _device.Name;
 
-                AppServerController.SendMessageObject(new
+                AppServerController.SendMessageObject(new MobileControlMessage
                 {
-                    type = MessagePath,
-                    content = message,
+                    Type = MessagePath,
+                    Content = JToken.FromObject(message),
                 });
             }
         }
 
-#if SERIES4
-        protected void PostStatusMessage(IMobileControlResponseMessage message)
+#if SERIES4       
+        protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
 
         {
             if (AppServerController == null)
             {
                 return;
-            }
+            }            
 
-            var deviceState = message.Content as DeviceStateMessageBase;
             if (deviceState != null)
             {
                 //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
@@ -199,12 +199,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 deviceState.Name = _device.Name;
             }
-            //else
-            //{
-            //    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
-            //}
 
-            AppServerController.SendMessageObject(message);
+            AppServerController.SendMessageObject(new MobileControlMessage { Type = type, ClientId = clientId, Content = JToken.FromObject(deviceState) });
         }
 #endif
 
@@ -216,10 +212,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 message.Name = _device.Name;
 
-                AppServerController.SendMessageObject(new
+                AppServerController.SendMessageObject(new MobileControlMessage
                 {
-                    type = MessagePath,
-                    content = message,
+                    Type = MessagePath,
+                    Content = JToken.FromObject(message),
                 });
             }
         }
