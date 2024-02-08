@@ -740,7 +740,8 @@ namespace PepperDash.Essentials
         private void SendFullStatusForClientId(string id, IEssentialsRoom room)
         {
             //Parent.SendMessageObject(GetFullStatus(room));
-            PostStatusMessage(GetFullStatusForClientId(id, room));
+            var message = GetFullStatusForClientId(room);
+            PostStatusMessage(message, id);
         }
 
 
@@ -749,7 +750,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="room">The room to get status of</param>
         /// <returns>The status response message</returns>
-        MobileControlMessage GetFullStatusForClientId(string id, IEssentialsRoom room)
+        RoomStateMessage GetFullStatusForClientId(IEssentialsRoom room)
         {
             Debug.Console(2, this, "GetFullStatus");
 
@@ -773,30 +774,24 @@ namespace PepperDash.Essentials
                 }
             }
 
-            var state = new RoomStateMessage();
-
-            state.Configuration = GetRoomConfiguration(room);
-            state.ActivityMode = 1;
-            state.IsOn = room.OnFeedback.BoolValue;
-            state.SelectedSourceKey = sourceKey;
-            state.Volumes = volumes;
-            state.IsWarmingUp = room.IsWarmingUpFeedback.BoolValue;
-            state.IsCoolingDown = room.IsCoolingDownFeedback.BoolValue;
+            var state = new RoomStateMessage
+            {
+                Configuration = GetRoomConfiguration(room),
+                ActivityMode = 1,
+                IsOn = room.OnFeedback.BoolValue,
+                SelectedSourceKey = sourceKey,
+                Volumes = volumes,
+                IsWarmingUp = room.IsWarmingUpFeedback.BoolValue,
+                IsCoolingDown = room.IsCoolingDownFeedback.BoolValue
+            };
 
             var vtcRoom = room as IEssentialsHuddleVtc1Room;
             if (vtcRoom != null)
             {
                 state.IsInCall = vtcRoom.InCallFeedback.BoolValue;
-            }
+            }            
 
-            var messageObject = new MobileControlMessage
-            {
-                Type = MessagePath,
-                ClientId = id,
-                Content = JToken.FromObject(state)
-            };
-
-            return messageObject;
+            return state;
         }
 
         /// <summary>
@@ -811,6 +806,7 @@ namespace PepperDash.Essentials
             var huddleRoom = room as IEssentialsHuddleSpaceRoom;
             if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
             {
+                Debug.Console(2, this, "Getting huddle room config");
                 configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
                 configuration.DefaultPresentationSourceKey = huddleRoom.PropertiesConfig.DefaultSourceItem;
@@ -820,6 +816,7 @@ namespace PepperDash.Essentials
             var vtc1Room = room as IEssentialsHuddleVtc1Room;
             if (vtc1Room != null && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
             {
+                Debug.Console(2, this, "Getting vtc room config");
                 configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
                 configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
                 configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
@@ -828,6 +825,7 @@ namespace PepperDash.Essentials
             var techRoom = room as IEssentialsTechRoom;
             if (techRoom != null && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
             {
+                Debug.Console(2, this, "Getting tech room config");
                 configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
             }
 
@@ -836,6 +834,7 @@ namespace PepperDash.Essentials
             {
                 if (vcRoom.VideoCodec != null)
                 {
+                    Debug.Console(2, this, "Getting codec config");
                     var type = vcRoom.VideoCodec.GetType();
 
                     configuration.HasVideoConferencing = true;
@@ -849,13 +848,16 @@ namespace PepperDash.Essentials
             {
                 if (acRoom.AudioCodec != null)
                 {
+                    Debug.Console(2, this, "Getting audio codec config");
                     configuration.HasAudioConferencing = true;
                     configuration.AudioCodecKey = acRoom.AudioCodec.Key;
                 }
             }
 
             var envRoom = room as IEnvironmentalControls;
+            if(envRoom != null)
             {
+                Debug.Console(2, this, "Getting environmental controls config");
                 configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
 
                 if(envRoom.HasEnvironmentalControlDevices)
@@ -887,6 +889,7 @@ namespace PepperDash.Essentials
             var defDisplayRoom = room as IHasDefaultDisplay;
             if (defDisplayRoom != null)
             {
+                Debug.Console(2, this, "Getting default display config");
                 configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
                 configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
             }
@@ -894,15 +897,32 @@ namespace PepperDash.Essentials
             var multiDisplayRoom = room as IHasMultipleDisplays;
             if (multiDisplayRoom != null)
             {
-                foreach(var display in multiDisplayRoom.Displays)
+                Debug.Console(2, this, "Getting multiple display config");
+
+                if (multiDisplayRoom.Displays == null)
                 {
-                    configuration.DisplayKeys.Add(display.Value.Key);
+                    Debug.Console(2, this, "Displays collection is null");
+                }
+                else
+                {
+                    Debug.Console(2, this, "Displays collection exists");
+
+                    foreach (var display in multiDisplayRoom.Displays)
+                    {
+                        if(display.Value == null)
+                        {
+                            Debug.Console(2, this, "Value for key {0} is null", display.Key);
+                            continue;
+                        }
+                        configuration.DisplayKeys.Add(display.Value.Key);
+                    }
                 }
             }
 
             var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
             if (sourceList != null)
             {
+                Debug.Console(2, this, "Getting source list config");
                 configuration.SourceList = sourceList;
                 configuration.HasRoutingControls = true;
 
@@ -920,12 +940,6 @@ namespace PepperDash.Essentials
                     }
                 }
             }
-
-            //var cameraDevices = DeviceManager.AllDevices.Where((d) => d is CameraBase);
-            //if (cameraDevices != null && cameraDevices.Count() > 0)
-            //{
-            //    configuration.HasCameraControls = true;
-            //}
 
             return configuration;
         }
