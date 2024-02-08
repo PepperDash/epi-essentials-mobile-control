@@ -855,6 +855,7 @@ _directServer.ConnectedUiClientsCount);
 @"
 Client {0}:
 Room Key: {1}
+Touchpanel Key: {6}
 Token: {2}
 Client URL: {3}
 Connected: {4}
@@ -865,7 +866,7 @@ clientContext.Value.Token.RoomKey,
 clientContext.Key,
 string.Format("{0}{1}", _directServer.UserAppUrlPrefix, clientContext.Key),
 isAlive,
-duration);
+duration, clientContext.Value.Token.TouchpanelKey);
                     clientNo++;
                 }
             }
