@@ -158,12 +158,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
+#if SERIES4       
         /// <summary>
         /// Helper for posting status message
         /// </summary>
         /// <param name="type"></param>
         /// <param name="message"></param>
-        protected void PostStatusMessage(DeviceStateMessageBase message)
+        protected void PostStatusMessage(DeviceStateMessageBase message, string clientId=null)
         {
             if (AppServerController != null)
             {
@@ -176,12 +177,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 AppServerController.SendMessageObject(new MobileControlMessage
                 {
                     Type = MessagePath,
+                    ClientId = clientId,
                     Content = JToken.FromObject(message),
                 });
             }
         }
 
-#if SERIES4       
+
         protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
 
         {
