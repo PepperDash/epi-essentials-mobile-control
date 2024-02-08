@@ -12,7 +12,7 @@ namespace PepperDash.Essentials
     /// <summary>
     /// 
     /// </summary>
-    public abstract class MobileControlBridgeBase : MessengerBase, IMobileControlRoomBridge
+    public abstract class MobileControlBridgeBase : MessengerBase, IMobileControlRoomMessenger
     {
         public event EventHandler<EventArgs> UserCodeChanged;
 
@@ -88,6 +88,17 @@ namespace PepperDash.Essentials
             QrCodeChecksum = qrChecksum;
 
             SetUserCode(code);
+        }
+
+        public virtual void UpdateAppUrl(string url)
+        {
+            AppUrl = url;
+
+            var handler = AppUrlChanged;
+
+            if (handler == null) return;
+
+            handler(this, new EventArgs());
         }
 
         /// <summary>
