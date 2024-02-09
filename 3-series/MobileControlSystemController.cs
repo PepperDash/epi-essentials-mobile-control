@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
+﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
@@ -15,16 +11,14 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
-using PepperDash.Essentials.Core.Presets;
 using PepperDash.Essentials.Core.Queues;
-using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Room.MobileControl;
-using PepperDash.Essentials.Devices.Common.Codec;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using WebSocketSharp;
-using PepperDash.Essentials.AppServer.Messengers;
-using Independentsoft.Email.Mime;
 #if SERIES4
-using PepperDash.Essentials.AppServer;
 #endif
 
 namespace PepperDash.Essentials
@@ -35,17 +29,15 @@ namespace PepperDash.Essentials
 
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
-        private const long ButtonHeartbeatInterval = 1000;
 
         private readonly Dictionary<string, Action<string, JToken>> _actionDictionary =
             new Dictionary<string, Action<string, JToken>>(StringComparer.InvariantCultureIgnoreCase);
 
-        private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
 #if SERIES4
-        private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>(); 
+        private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>();
 #else
         private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>();
 #endif
@@ -80,7 +72,7 @@ namespace PepperDash.Essentials
                 if (!string.IsNullOrEmpty(SystemUrl))
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config or SIMPL Bridge.  Unable to connect to Mobile Control.");
-                    return String.Empty;
+                    return string.Empty;
                 }
 
                 var result = Regex.Match(SystemUrl, @"https?:\/\/.*\/systems\/(.*)\/#.*");
@@ -120,13 +112,6 @@ namespace PepperDash.Essentials
         private DateTime _lastAckMessage;
 
         private CTimer _pingTimer;
-
-        /// <summary>
-        /// Prevents post operations from stomping on each other and getting lost
-        /// </summary>
-        private CEvent _postLockEvent = new CEvent(true, true);
-
-        private CEvent _registerLockEvent = new CEvent(true, true);
 
         private CTimer _serverReconnectTimer;
         private LogLevel _wsLogLevel = LogLevel.Error;
@@ -212,13 +197,9 @@ namespace PepperDash.Essentials
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
-            // Config Messenger
-            //var cmKey = Key + "-config";
-            //ConfigMessenger = new ConfigMessenger(cmKey, "/config");
-            //ConfigMessenger.RegisterWithAppServer(this);
-
-            ApiOnlineAndAuthorized = new BoolFeedback(() => {
-                if(_wsClient2 == null)
+            ApiOnlineAndAuthorized = new BoolFeedback(() =>
+            {
+                if (_wsClient2 == null)
                     return false;
 
                 return _wsClient2.IsAlive && IsAuthorized;
@@ -228,12 +209,10 @@ namespace PepperDash.Essentials
         public MobileControlConfig Config { get; private set; }
 
         public string Host { get; private set; }
-        //public ConfigMessenger ConfigMessenger { get; private set; }
-        
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
-            SendMessageObject(new MobileControlMessage{Type = "/system/roomCombinationChanged"});
+            SendMessageObject(new MobileControlMessage { Type = "/system/roomCombinationChanged" });
         }
 
         public bool CheckForDeviceMessenger(string key)
@@ -253,7 +232,8 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            if(_deviceMessengers.Any((kv) => kv.Value.MessagePath.Equals(messenger.MessagePath, StringComparison.InvariantCulture))) {
+            if (_deviceMessengers.Any((kv) => kv.Value.MessagePath.Equals(messenger.MessagePath, StringComparison.InvariantCulture)))
+            {
                 Debug.Console(1, this, "Messenger with path {0} alread added", messenger.MessagePath);
                 return;
             }
@@ -263,22 +243,6 @@ namespace PepperDash.Essentials
             _deviceMessengers.Add(messenger.Key, messenger);
 
             messenger.RegisterWithAppServer(this);
-        }
-
-        private void CreateMobileControlRoomBridges()
-        {
-            if (Config.RoomBridges.Count == 0)
-            {
-                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
-                return;
-            }
-
-            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => 
-                new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey, DeviceManager.GetDeviceForKey(bridgeConfig.RoomKey) as Device)))
-            {
-                AddBridgePostActivationAction(bridge);
-                DeviceManager.AddDevice(bridge);
-            }
         }
 
         #region IMobileControl Members
@@ -315,7 +279,7 @@ namespace PepperDash.Essentials
                 _wsClient2 = null;
             }
 
-            if (String.IsNullOrEmpty(SystemUuid))
+            if (string.IsNullOrEmpty(SystemUuid))
             {
                 Debug.Console(0, this, Debug.ErrorLogLevel.Error, "System UUID not defined. Unable to connect to Mobile Control");
                 return false;
@@ -384,7 +348,7 @@ namespace PepperDash.Essentials
                 return;  // Web socket log level not currently allowed in series4
             }
 
-            if (String.IsNullOrEmpty(cmdparameters))
+            if (string.IsNullOrEmpty(cmdparameters))
             {
                 Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
                 return;
@@ -398,7 +362,7 @@ namespace PepperDash.Essentials
 
             try
             {
-                var debugLevel = (LogLevel) Enum.Parse(typeof (LogLevel), cmdparameters, true);
+                var debugLevel = (LogLevel)Enum.Parse(typeof(LogLevel), cmdparameters, true);
 
                 _wsLogLevel = debugLevel;
 
@@ -406,13 +370,13 @@ namespace PepperDash.Essentials
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
- 
+
 
                 Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
             }
             catch
             {
-                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",cmdparameters,
+                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}", cmdparameters,
                     LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
             }
         }
@@ -517,7 +481,7 @@ namespace PepperDash.Essentials
             if (b != null)
             {
                 Debug.Console(0, this, "Adding room bridge with delayed configuration");
-                b.ConfigurationIsReady += bridge_ConfigurationIsReady;
+                b.ConfigurationIsReady += Bridge_ConfigurationIsReady;
             }
             else
             {
@@ -537,7 +501,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void bridge_ConfigurationIsReady(object sender, EventArgs e)
+        private void Bridge_ConfigurationIsReady(object sender, EventArgs e)
         {
             Debug.Console(1, this, "Bridge ready.  Registering");
 
@@ -555,7 +519,7 @@ namespace PepperDash.Essentials
             {
                 SendInitialMessage();
             }
-               
+
         }
 
         /// <summary>
@@ -565,7 +529,6 @@ namespace PepperDash.Essentials
         private void ReconnectToServerTimerCallback(object o)
         {
             Debug.Console(1, this, "Attempting to reconnect to server...");
-            //RegisterSystemToServer();
 
             ConnectWebsocketClient();
         }
@@ -609,7 +572,7 @@ namespace PepperDash.Essentials
                     var req = new HttpClientRequest();
                     req.Url.Parse(url);
 
-                    var c = new HttpClient {AllowAutoRedirect = false};
+                    var c = new HttpClient { AllowAutoRedirect = false };
                     c.DispatchAsync(req, (r, e) =>
                     {
                         CheckHttpDebug(r, e);
@@ -635,14 +598,14 @@ namespace PepperDash.Essentials
                                     }
                                     break;
                                 case 301:
-                                {
-                                    var newUrl = r.Header.GetHeaderValue("Location");
-                                    var newHostValue = newUrl.Substring(0,
-                                        newUrl.IndexOf(path, StringComparison.Ordinal));
-                                    Debug.Console(0, this,
-                                        "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                                        newHostValue);
-                                }
+                                    {
+                                        var newUrl = r.Header.GetHeaderValue("Location");
+                                        var newHostValue = newUrl.Substring(0,
+                                            newUrl.IndexOf(path, StringComparison.Ordinal));
+                                        Debug.Console(0, this,
+                                            "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
+                                            newHostValue);
+                                    }
                                     break;
                                 default:
                                     Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
@@ -682,7 +645,7 @@ namespace PepperDash.Essentials
 
             req.ContentString = "SOME STUFF HERE";
 
-            var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
+            var c = new HttpsClient { HostVerification = false, PeerVerification = false, Verbose = true };
 
             c.DispatchAsync(req, (r, e) =>
             {
@@ -704,19 +667,6 @@ namespace PepperDash.Essentials
             });
         }
 
-        private void MyCallBackResponseHandler(HttpsClientResponse r, HTTPS_CALLBACK_ERROR e)
-        {
-            if (r.Code != 200)
-            {
-                Debug.Console(2, this, "Print Error {0}", e);
-            }
-            else
-            {
-                Debug.Console(2, this, "Got valid response {0}", r.Code);
-            }
-
-        }
-
         /// <summary>
         /// Processes HttpsClientResponse and registers system to server as necessary
         /// </summary>
@@ -728,10 +678,10 @@ namespace PepperDash.Essentials
                 Debug.Console(0, "System authorized, sending config.");
                 RegisterSystemToServer();
             }
-            else if (r.Code == 404 && String.IsNullOrEmpty(r.ContentString))
+            else if (r.Code == 404 && string.IsNullOrEmpty(r.ContentString))
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
+                if (string.IsNullOrEmpty(r.ContentString))
                 {
                     Debug.Console(0, "content: {0}", r.ContentString);
                 }
@@ -751,7 +701,7 @@ namespace PepperDash.Essentials
             else if (r.Code == 301 && r.Header != null)
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
+                if (string.IsNullOrEmpty(r.ContentString))
                 {
                     Debug.Console(0, "content {0}", r.ContentString);
                 }
@@ -766,7 +716,7 @@ namespace PepperDash.Essentials
             else
             {
                 Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
+                if (string.IsNullOrEmpty(r.ContentString))
                 {
                     Debug.Console(0, "Content {0}", r.ContentString);
                 }
@@ -916,14 +866,12 @@ Mobile Control Direct Server Infromation:
                 // set to 99999 to let things work on 4-Series
                 if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series4) == eCrestronSeries.Series4)
                 {
-                    _wsClient2.Log.Level = (LogLevel) 99999;
+                    _wsClient2.Log.Level = (LogLevel)99999;
                 }
                 else if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series3) == eCrestronSeries.Series3)
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
-
-                //_wsClient2.Log.Level = _wsLogLevel;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
@@ -1145,7 +1093,7 @@ Mobile Control Direct Server Infromation:
 #if SERIES4
         public void SendMessageObjectToDirectClient(object o)
         {
-            if(Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
             {
                 _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
             }
@@ -1206,8 +1154,6 @@ Mobile Control Direct Server Infromation:
 
                 HandleConnectFailure();
             }
-
-            
         }
 
         /// <summary>
@@ -1287,10 +1233,10 @@ Mobile Control Direct Server Infromation:
             }
             catch
             {
-                qrChecksum = new JValue(String.Empty);
+                qrChecksum = new JValue(string.Empty);
             }
 
-            Debug.Console(1, this, "QR checksum: {0}", qrChecksum == null ? String.Empty : qrChecksum.Value<string>());
+            Debug.Console(1, this, "QR checksum: {0}", qrChecksum == null ? string.Empty : qrChecksum.Value<string>());
 
             if (code == null)
             {
@@ -1366,10 +1312,6 @@ Mobile Control Direct Server Infromation:
 
             try
             {
-                /*var messageObj = JObject.Parse(message);
-
-                var type = messageObj["type"].Value<string>();*/
-
                 var message = JsonConvert.DeserializeObject<MobileControlMessage>(messageText);
 
                 switch (message.Type)
@@ -1387,10 +1329,8 @@ Mobile Control Direct Server Infromation:
                         HandleClientJoined(message.Content);
                         break;
                     case "raw":
-                    {
                         var wrapper = message.Content.ToObject<DeviceActionWrapper>();
                         DeviceJsonApi.DoDeviceAction(wrapper);
-                    }
                         break;
                     case "close":
                         Debug.Console(1, this, "Received close message from server.");
@@ -1398,7 +1338,7 @@ Mobile Control Direct Server Infromation:
                     default:
                         Action<string, JToken> handler;
 
-                        if(!_actionDictionary.TryGetValue(message.Type, out handler))
+                        if (!_actionDictionary.TryGetValue(message.Type, out handler))
                         {
                             Debug.Console(1, this, "-- Warning: Incoming message has no registered handler");
                             break;
@@ -1443,16 +1383,16 @@ Mobile Control Direct Server Infromation:
                     switch (tokens[0].ToLower())
                     {
                         case "get":
-                        {
-                            var resp = new HttpClient().Get(url);
-                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                        }
+                            {
+                                var resp = new HttpClient().Get(url);
+                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                            }
                             break;
                         case "post":
-                        {
-                            var resp = new HttpClient().Post(url, new byte[] {});
-                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                        }
+                            {
+                                var resp = new HttpClient().Post(url, new byte[] { });
+                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                            }
                             break;
                         default:
                             CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
@@ -1478,7 +1418,7 @@ Mobile Control Direct Server Infromation:
 
     public class ClientSpecificUpdateRequest
     {
-        public ClientSpecificUpdateRequest(Action<string> action )
+        public ClientSpecificUpdateRequest(Action<string> action)
         {
             ResponseMethod = action;
         }
