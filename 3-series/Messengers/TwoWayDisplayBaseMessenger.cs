@@ -1,17 +1,13 @@
-﻿using System;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
-using Feedback = PepperDash.Essentials.Core.Feedback;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Newtonsoft.Json;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class TwoWayDisplayBaseMessenger:MessengerBase
     {
-        private const string PowerStatusPath = "/powerStatus";
-        private const string InputStatusPath = "/inputStatus";
-
         private readonly TwoWayDisplayBase _display;
 
         public TwoWayDisplayBaseMessenger(string key, string messagePath) : base(key, messagePath)
@@ -28,10 +24,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         public void SendFullStatus()
         {
-            var messageObj = new
+            var messageObj = new TwoWayDisplayBaseStateMessage
             {
-                powerState = _display.PowerIsOnFeedback.BoolValue,
-                currentInput = _display.CurrentInputFeedback.StringValue
+                PowerState = _display.PowerIsOnFeedback.BoolValue,
+                CurrentInput = _display.CurrentInputFeedback.StringValue
             };
 
             PostStatusMessage(messageObj);
@@ -111,5 +107,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         #endregion
+    }
+
+    public class TwoWayDisplayBaseStateMessage: DeviceStateMessageBase
+    {
+        [JsonProperty("powerState", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? PowerState { get; set; }
+
+        [JsonProperty("currentInput", NullValueHandling = NullValueHandling.Ignore)]
+        public string CurrentInput { get; set; }
     }
 }

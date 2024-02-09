@@ -158,7 +158,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-#if SERIES4       
+      
         /// <summary>
         /// Helper for posting status message
         /// </summary>
@@ -166,24 +166,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="message"></param>
         protected void PostStatusMessage(DeviceStateMessageBase message, string clientId=null)
         {
-            if (AppServerController != null)
+            if(AppServerController == null)
             {
-                message.SetInterfaces(_deviceIntefaces);
-
-                message.Key = _device.Key;
-
-                message.Name = _device.Name;
-
-                AppServerController.SendMessageObject(new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    ClientId = clientId,
-                    Content = JToken.FromObject(message),
-                });
+                return;
             }
+            
+            message.SetInterfaces(_deviceIntefaces);
+
+            message.Key = _device.Key;
+
+            message.Name = _device.Name;
+
+            AppServerController.SendMessageObject(new MobileControlMessage
+            {
+                Type = MessagePath,
+                ClientId = clientId,
+                Content = JToken.FromObject(message),
+            });
+            
         }
 
-
+#if SERIES4 
         protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
 
         {
