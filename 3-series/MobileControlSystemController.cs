@@ -5,6 +5,7 @@ using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
@@ -12,6 +13,7 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Queues;
+using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.Room.MobileControl;
 using System;
 using System.Collections.Generic;
@@ -25,8 +27,6 @@ namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl3
     {
-        //WebSocketClient WSClient;
-
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
 
@@ -1024,6 +1024,14 @@ Mobile Control Direct Server Infromation:
         {
             Debug.Console(1, this, "Sending initial join message");
 
+            var touchPanels = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().Select((tp) =>
+            {
+                return new
+                {
+                    touchPanelKey = tp.Key,
+                    roomKey = tp.DefaultRoomKey
+                };
+            });
 
             var msg = new MobileControlMessage
             {
@@ -1031,6 +1039,7 @@ Mobile Control Direct Server Infromation:
                 Content = JToken.FromObject(new
                 {
                     config = GetConfigWithPluginVersion(),
+                    touchPanels
                 })
             };
 
