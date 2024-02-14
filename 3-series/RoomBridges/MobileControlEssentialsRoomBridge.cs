@@ -25,6 +25,9 @@ using ShadeBase = PepperDash.Essentials.Devices.Common.Shades.ShadeBase;
 using PepperDash.Essentials.Core.Shades;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
+using Org.BouncyCastle.Crypto.Prng;
+using PepperDash.Essentials.Devices.Common.TouchPanel;
+using Crestron.SimplSharp;
 
 #if SERIES4
 using PepperDash.Essentials.AppServer;
@@ -34,6 +37,7 @@ namespace PepperDash.Essentials
 {
     public class MobileControlEssentialsRoomBridge : MobileControlBridgeBase
     {
+        private List<JoinToken> _touchPanelTokens = new List<JoinToken>();
         public IEssentialsRoom Room { get; private set; }
 
         public string DefaultRoomKey
@@ -90,6 +94,10 @@ namespace PepperDash.Essentials
 
             appServerController.AddAction(string.Format(@"/room/{0}/promptForCode", Room.Key), (id, content) => OnUserPromptedForCode());
             appServerController.AddAction(string.Format(@"/room/{0}/clientJoined", Room.Key), (id, content) => OnClientJoined());
+
+            appServerController.AddAction(string.Format(@"/room/{0}/touchPanels", Room.Key), (id, content) => OnTouchPanelsUpdated(content));
+
+            appServerController.AddAction($@"/room/{Room.Key}/userApp", (id, content) => OnUserAppUpdated(content));
 
             appServerController.AddAction(string.Format(@"/room/{0}/userCode", Room.Key), (id,content) => {
                 var msg = content.ToObject<UserCodeChangedContent>();
@@ -235,6 +243,41 @@ namespace PepperDash.Essentials
             Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
 
             AddTechRoomActions();
+        }
+
+        private void OnTouchPanelsUpdated(JToken content)
+        {
+            var message = content.ToObject<ApiTouchPanelToken>();
+
+            _touchPanelTokens = message.TouchPanels;
+
+            UpdateTouchPanelAppUrls(message.UserAppUrl);
+        }
+
+        private void UpdateTouchPanelAppUrls(string userAppUrl)
+        {
+            foreach (var tp in _touchPanelTokens)
+            {
+                var dev = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().FirstOrDefault((tpc) => tpc.Key.Equals(tp.TouchpanelKey, StringComparison.InvariantCultureIgnoreCase));
+
+                if (dev == null)
+                {
+                    continue;
+                }
+
+                var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+
+                var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+                UpdateAppUrl($"{userAppUrl}?token={tp.Token}");
+            }
+        }
+
+        private void OnUserAppUpdated(JToken content)
+        {
+            var message = content.ToObject<ApiTouchPanelToken>();
+
+            UpdateTouchPanelAppUrls(message.UserAppUrl);
         }
 
         private void InCallFeedback_OutputChange(object sender, FeedbackEventArgs e)
@@ -1060,6 +1103,15 @@ namespace PepperDash.Essentials
         Lighting,
         Shade,
         ShadeController,
+    }
+
+    public class ApiTouchPanelToken
+    {
+        [JsonProperty("touchPanels", NullValueHandling = NullValueHandling.Ignore)]
+        public List<JoinToken> TouchPanels { get; set; } = new List<JoinToken>();
+
+        [JsonProperty("userAppUrl", NullValueHandling = NullValueHandling.Ignore)]
+        public string UserAppUrl { get; set; } = "";
     }
 
 #if SERIES3

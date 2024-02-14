@@ -297,6 +297,8 @@ namespace PepperDash.Essentials
                 }
             };
 
+            _wsClient2.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12;
+
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
             _wsClient2.OnError += HandleError;

@@ -1090,6 +1090,8 @@ namespace PepperDash.Essentials
         public string Uuid { get; set; }
 
         public string TouchpanelKey { get; set; } = "";
+
+        public string Token { get; set; } = null;
     }
 
     /// <summary>
