@@ -1,15 +1,18 @@
 ﻿using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net;
+using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Web;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
+using PepperDash.Essentials.WebApiHandlers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Principal;
@@ -18,6 +21,7 @@ using System.Text.RegularExpressions;
 using WebSocketSharp;
 using WebSocketSharp.Net;
 using WebSocketSharp.Server;
+using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
 
 namespace PepperDash.Essentials
 {
@@ -154,6 +158,8 @@ namespace PepperDash.Essentials
 
         private HttpServer _server;
 
+        public HttpServer Server => _server;
+
         public Dictionary<string, UiClientContext> UiClients { get; private set; }
 
         private MobileControlSystemController _parent;
@@ -176,6 +182,8 @@ namespace PepperDash.Essentials
         /// The path for the WebSocket messaging
         /// </summary>
         private string _wsPath = "/mc/api/ui/join/";
+
+        public string WsPath => _wsPath;
 
         /// <summary>
         /// The path to the location of the files for the user app (single page Angular app)
@@ -239,6 +247,38 @@ namespace PepperDash.Essentials
 
             //_joinTokens = new Dictionary<string, JoinToken>();
 
+            if (Global.Platform == eDevicePlatform.Appliance)
+            {
+                AddConsoleCommands();
+            }
+
+            AddPreActivationAction(() => AddWebApiPaths());
+        }
+
+        private void AddWebApiPaths()
+        {
+            var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault();
+
+            if (apiServer == null)
+            {
+                Debug.Console(0, this, "No API Server available");
+                return;
+            }
+
+            var routes = new List<HttpCwsRoute>
+            {
+                new HttpCwsRoute($"devices/{Key}/client")
+                {
+                    Name = "ClientHandler",
+                    RouteHandler = new UiClientHandler(this)
+                },
+            };
+
+            apiServer.AddRoute(routes);
+        }
+
+        private void AddConsoleCommands()
+        {
             CrestronConsole.AddNewConsoleCommand(GenerateClientTokenFromConsole, "MobileAddUiClient", "Adds a client and generates a token. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(RemoveToken, "MobileRemoveUiClient", "Removes a client. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand((s) => PrintClientInfo(), "MobileGetClientInfo", "Displays the current client info", ConsoleAccessLevelEnum.AccessOperator);
@@ -281,7 +321,7 @@ namespace PepperDash.Essentials
         private void AddClientsForTouchpanels()
         {
             var touchpanels = DeviceManager.AllDevices
-                .OfType<MobileControlTouchpanelController>();
+                .OfType<MobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
                 
 
             var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
@@ -289,17 +329,21 @@ namespace PepperDash.Essentials
 
             foreach (var client in newTouchpanels)
             {
-                var key = GenerateClientToken(client.DefaultRoomKey, client.Key, false);
+                var bridge = _parent.GetRoomBridge(client.DefaultRoomKey);
+
+                if (bridge == null)
+                {
+                    Debug.Console(0, this, $"Unable to find room with key: {client.DefaultRoomKey}");
+                    return;
+                }
+
+                var (key, path) = GenerateClientToken(bridge, client.Key);
 
                 if(key == null)
                 {
                     Debug.Console(0, this, $"Unable to generate a client for {client.Key}");
                     continue;
-                }
-
-                
-
-                
+                }             
             }
 
             foreach(var touchpanel in touchpanels.Select(tp =>
@@ -344,12 +388,12 @@ namespace PepperDash.Essentials
         private void CreateFolderStructure()
         {
             if (!Directory.Exists(userAppPath)) {
-                Directory.Create(userAppPath);
+                Directory.CreateDirectory(userAppPath);
             }
 
             if (!Directory.Exists($"{userAppPath}{localConfigFolderName}"))
             {
-                Directory.Create($"{userAppPath}{localConfigFolderName}");
+                Directory.CreateDirectory($"{userAppPath}{localConfigFolderName}");
             }
 
             using(var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.Create, FileAccess.ReadWrite)))
@@ -492,7 +536,7 @@ namespace PepperDash.Essentials
         /// <summary>
         /// Stores secrets to memory to persist through reboot
         /// </summary>
-        private void UpdateSecret()
+        public void UpdateSecret()
         {
             _secret.Tokens.Clear();
 
@@ -521,15 +565,44 @@ namespace PepperDash.Essentials
             var values = s.Split(' ');
             var roomKey = values[0];
             var grantCode = values[1];
-            
-            GenerateClientToken(grantCode, roomKey);
+
+            var bridge = _parent.GetRoomBridge(roomKey);
+
+            if (bridge == null)
+            {
+                CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find room with key: {0}", roomKey));
+                return;
+            }
+
+            var (token, path) = ValidateGrantCode(grantCode, bridge);
+
+            if (token == null)
+            {
+                CrestronConsole.ConsoleCommandResponse("Grant Code is not valid");
+                return;
+            }
+
+            CrestronConsole.ConsoleCommandResponse($"Added new WebSocket UiClient service at path: {path}");
+            CrestronConsole.ConsoleCommandResponse($"Token: {token}");
         }
 
-        private void GenerateClientToken(string grantCode, string roomKey)
+        public (string, string) ValidateGrantCode(string grantCode, string roomKey) {
+            var bridge = _parent.GetRoomBridge(roomKey);
+
+            if (bridge == null)
+            {
+                Debug.Console(0, this, $"Unable to find room with key: {roomKey}");
+                return (null, null);
+            }
+
+            return ValidateGrantCode(grantCode, bridge);
+        }
+
+        public (string, string) ValidateGrantCode(string grantCode, MobileControlBridgeBase bridge)
         {
             // TODO: Authenticate grant code passed in
             // For now, we just generate a random guid as the token and use it as the ClientId as well
-            var grantCodeIsValid = true;
+            var grantCodeIsValid = true;            
 
             if (grantCodeIsValid)
             {
@@ -538,66 +611,42 @@ namespace PepperDash.Essentials
                     _secret = new ServerTokenSecrets(grantCode);
                 }
 
-                GenerateClientToken(roomKey, "", true);
+                return GenerateClientToken(bridge, "");
             }
             else
             {
-                CrestronConsole.ConsoleCommandResponse("Grant Code is not valid");
+                return (null, null);
             }
         }
 
-        private string GenerateClientToken(string roomKey, string touchPanelKey = "", bool consoleContext = false)
-        {         
-            var bridge = _parent.GetRoomBridge(roomKey);
-            if (bridge != null)
+        public (string, string) GenerateClientToken (MobileControlBridgeBase bridge, string touchPanelKey = "")
+        {              
+            var key = Guid.NewGuid().ToString();
+
+            var token = new JoinToken { Code = bridge.UserCode, RoomKey = bridge.RoomKey, Uuid = _parent.SystemUuid, TouchpanelKey = touchPanelKey };
+
+            UiClients.Add(key, new UiClientContext(token));
+
+            var path = _wsPath + key;
+
+            _server.AddWebSocketService(path, () =>
             {
-                var key = Guid.NewGuid().ToString();
+                var c = new UiClient();
+                Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                c.Controller = _parent;
+                c.RoomKey = bridge.RoomKey;
+                UiClients[key].SetClient(c);
+                return c;
+            });
 
-                var token = new JoinToken { Code = bridge.UserCode, RoomKey = bridge.RoomKey, Uuid = _parent.SystemUuid, TouchpanelKey = touchPanelKey };
-
-                UiClients.Add(key, new UiClientContext(token));
-
-                var path = _wsPath + key;
-
-                _server.AddWebSocketService(path, () =>
-                {
-                    var c = new UiClient();
-                    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
-                    c.Controller = _parent;
-                    c.RoomKey = roomKey;
-                    UiClients[key].SetClient(c);
-                    return c;
-                });
-
-                if (consoleContext)
-                {
-                    CrestronConsole.ConsoleCommandResponse("Added new WebSocket UiClient service at path: {0}", path);
-                    CrestronConsole.ConsoleCommandResponse(string.Format("Token: {0}", key));
-                }
-                else {
-                    Debug.Console(0, this, $"Added new WebSocket UiClient service at path: {path}");
-                    Debug.Console(0, this, $"Token: {path}");
-                }
-
+            Debug.Console(0, this, $"Added new WebSocket UiClient service at path: {path}");
+            Debug.Console(0, this, $"Token: {key}");         
                 
-                Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);                
+            Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);                
 
-                UpdateSecret();
+            UpdateSecret();
 
-                return key;
-            }
-            else
-            {
-                if (consoleContext)
-                {
-                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to find room with key: {0}", roomKey));
-                    return null;
-                }
-
-                Debug.Console(0, this, $"Unable to find room with key: ${roomKey}");
-
-                return null;
-            }            
+            return (key, path);            
         }
 
         /// <summary>

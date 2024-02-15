@@ -3,9 +3,9 @@ using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
+using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
@@ -13,8 +13,11 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Queues;
+using PepperDash.Essentials.Core.Web;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.Room.MobileControl;
+using PepperDash.Essentials.Services;
+using PepperDash.Essentials.WebApiHandlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +36,8 @@ namespace PepperDash.Essentials
         private readonly Dictionary<string, Action<string, JToken>> _actionDictionary =
             new Dictionary<string, Action<string, JToken>>(StringComparer.InvariantCultureIgnoreCase);
 
+        public Dictionary<string, Action<string, JToken>> ActionDictionary => _actionDictionary;
+
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
@@ -49,12 +54,20 @@ namespace PepperDash.Essentials
         private bool _disableReconnect;
         private WebSocket _wsClient2;
 
+        public MobileControlApiService ApiService { get; private set; }
+
+        public List<MobileControlBridgeBase> RoomBridges => _roomBridges;
+
 #if SERIES4
         private MobileControlWebsocketServer _directServer;
+
+        public MobileControlWebsocketServer DirectServer => _directServer;
 #endif
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
 
         public string SystemUrl; //set only from SIMPL Bridge!
+
+        public bool Connected => _wsClient2 != null && _wsClient2.IsAlive;
 
         public string SystemUuid
         {
@@ -111,6 +124,8 @@ namespace PepperDash.Essentials
 
         private DateTime _lastAckMessage;
 
+        public DateTime LastAckMessage => _lastAckMessage;
+
         private CTimer _pingTimer;
 
         private CTimer _serverReconnectTimer;
@@ -150,8 +165,62 @@ namespace PepperDash.Essentials
                 Host = "https://" + Host;
             }
 
+            ApiService = new MobileControlApiService(Host);
+
             Debug.Console(0, this, "Mobile UI controller initializing for server:{0}", config.ServerUrl);
 
+            if(Global.Platform == eDevicePlatform.Appliance)
+            {
+                AddConsoleCommands();
+            }
+
+            AddPreActivationAction(() => AddWebApiPaths());
+
+            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+
+            ApiOnlineAndAuthorized = new BoolFeedback(() =>
+            {
+                if (_wsClient2 == null)
+                    return false;
+
+                return _wsClient2.IsAlive && IsAuthorized;
+            });
+        }
+
+        private void AddWebApiPaths()
+        {
+            var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault();
+
+            if(apiServer == null)
+            {
+                Debug.Console(0, this, "No API Server available");
+                return;
+            }
+
+            var routes = new List<HttpCwsRoute>
+            {
+                new HttpCwsRoute($"device/{Key}/authorize")
+                {
+                    Name = "MobileControlAuthorize",
+                    RouteHandler = new MobileAuthRequestHandler(this)
+                },
+                new HttpCwsRoute($"device/{Key}/info")
+                {
+                    Name = "MobileControlInformation",
+                    RouteHandler = new MobileInfoHandler(this)
+                },
+                new HttpCwsRoute($"device/{Key}/actionPaths")
+                {
+                    Name = "MobileControlActionPaths",
+                    RouteHandler = new ActionPathsHandler(this)
+                }
+            };
+
+            apiServer.AddRoute(routes);
+        }
+
+        private void AddConsoleCommands()
+        {
             CrestronConsole.AddNewConsoleCommand(AuthorizeSystem,
                 "mobileauth", "Authorizes system to talk to Mobile Control server",
                 ConsoleAccessLevelEnum.AccessOperator);
@@ -194,16 +263,6 @@ namespace PepperDash.Essentials
 
             CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
                 ConsoleAccessLevelEnum.AccessProgrammer);
-
-            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-            ApiOnlineAndAuthorized = new BoolFeedback(() =>
-            {
-                if (_wsClient2 == null)
-                    return false;
-
-                return _wsClient2.IsAlive && IsAuthorized;
-            });
         }
 
         public MobileControlConfig Config { get; private set; }
@@ -554,175 +613,25 @@ namespace PepperDash.Essentials
             if (string.IsNullOrEmpty(Config.ServerUrl))
             {
                 CrestronConsole.ConsoleCommandResponse(
-                    "Mobile control API address is not set.  Check portal configuration");
+                    "Mobile control API address is not set. Check portal configuration");
                 return;
             }
 
+            var authTask = ApiService.SendAuthorizationRequest(Host, code, SystemUuid);
 
-            try
+            authTask.ContinueWith(t =>
             {
-                string path = string.Format("/api/system/grantcode/{0}/{1}", code, SystemUuid);
-                string url = string.Format("{0}{1}", Host, path);
-                Debug.Console(0, this, "Authorizing to: {0}", url);
+                var response = t.Result;
 
-                if (Host.StartsWith("https:"))
+                if (response.Authorized)
                 {
-                    DispatchHttpsAuthorizationRequest(url);
+                    Debug.Console(0, this, "System authorized, sending config.");
+                    RegisterSystemToServer();
+                    return;
                 }
-                else
-                {
-                    var req = new HttpClientRequest();
-                    req.Url.Parse(url);
 
-                    var c = new HttpClient { AllowAutoRedirect = false };
-                    c.DispatchAsync(req, (r, e) =>
-                    {
-                        CheckHttpDebug(r, e);
-                        if (e == HTTP_CALLBACK_ERROR.COMPLETED)
-                        {
-                            switch (r.Code)
-                            {
-                                case 200:
-                                    Debug.Console(0, "System authorized, sending config.");
-                                    RegisterSystemToServer();
-                                    break;
-                                case 404:
-                                    if (r.ContentString.Contains("codeNotFound"))
-                                    {
-                                        Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
-                                            SystemUuid);
-                                    }
-                                    else if (r.ContentString.Contains("uuidNotFound"))
-                                    {
-                                        Debug.Console(0,
-                                            "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
-                                            SystemUuid);
-                                    }
-                                    break;
-                                case 301:
-                                    {
-                                        var newUrl = r.Header.GetHeaderValue("Location");
-                                        var newHostValue = newUrl.Substring(0,
-                                            newUrl.IndexOf(path, StringComparison.Ordinal));
-                                        Debug.Console(0, this,
-                                            "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                                            newHostValue);
-                                    }
-                                    break;
-                                default:
-                                    Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            if (r != null)
-                            {
-                                Debug.Console(0, this, "Error in http authorization (A) {0}: {1}", r.Code, e);
-                            }
-                            else
-                            {
-                                Debug.Console(0, this, "Error in http authorization (B) {0}", e);
-                            }
-                        }
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Console(0, this, "Error in authorizing (C): {0}", e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Dispatchs and handles an Https Authorization Request
-        /// </summary>
-        /// <param name="url">Url to dispatch request to</param>
-        private void DispatchHttpsAuthorizationRequest(string url)
-        {
-            var req = new HttpsClientRequest();
-            req.Url.Parse(url);
-
-            var JsonHeader = new HttpsHeader("content-type", "application/json");
-
-            req.ContentString = "SOME STUFF HERE";
-
-            var c = new HttpsClient { HostVerification = false, PeerVerification = false, Verbose = true };
-
-            c.DispatchAsync(req, (r, e) =>
-            {
-                if (e == HTTPS_CALLBACK_ERROR.COMPLETED)
-                {
-                    ProcessAuthorizationResponse(r);
-                }
-                else
-                {
-                    if (r != null)
-                    {
-                        Debug.Console(0, this, "Error in http authorization (A) {0}: {1}", r.Code, e);
-                    }
-                    else
-                    {
-                        Debug.Console(0, this, "Error in http authorization (B) {0}", e);
-                    }
-                }
+                Debug.Console(0, this, response.Reason);
             });
-        }
-
-        /// <summary>
-        /// Processes HttpsClientResponse and registers system to server as necessary
-        /// </summary>
-        /// <param name="r">Response from authorization request</param>
-        private void ProcessAuthorizationResponse(HttpsClientResponse r)
-        {
-            if (r.Code == 200)
-            {
-                Debug.Console(0, "System authorized, sending config.");
-                RegisterSystemToServer();
-            }
-            else if (r.Code == 404 && string.IsNullOrEmpty(r.ContentString))
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (string.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "content: {0}", r.ContentString);
-                }
-
-                if (r.ContentString.Contains("codeNotFound"))
-                {
-                    Debug.Console(0, "code not found for system UUID {0}",
-                        SystemUuid);
-                }
-                else if (r.ContentString.Contains("uuidNotFound"))
-                {
-                    Debug.Console(0,
-                        "uuid {0} not found. Check Essentials configuration is correct",
-                        SystemUuid);
-                }
-            }
-            else if (r.Code == 301 && r.Header != null)
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (string.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "content {0}", r.ContentString);
-                }
-
-                var newUrl = r.Header.GetHeaderValue("Location");
-                var newHostValue = newUrl.Substring(0,
-                    newUrl.IndexOf(r.ResponseUrl, StringComparison.Ordinal));
-                Debug.Console(0, this,
-                    "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                    newHostValue);
-            }
-            else
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (string.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "Content {0}", r.ContentString);
-                }
-            }
         }
 
         /// <summary>
@@ -835,7 +744,7 @@ Mobile Control Direct Server Infromation:
         /// <summary>
         /// Registers the room with the server
         /// </summary>
-        private void RegisterSystemToServer()
+        public void RegisterSystemToServer()
         {
 #if SERIES4
             if (!Config.EnableApiServer)
@@ -1026,7 +935,7 @@ Mobile Control Direct Server Infromation:
         {
             Debug.Console(1, this, "Sending initial join message");
 
-            var touchPanels = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().Select((tp) =>
+            var touchPanels = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
             {
                 return new
                 {

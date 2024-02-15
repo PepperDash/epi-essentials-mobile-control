@@ -19,6 +19,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 {
     public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback
     {
+        private MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
 
         private StringFeedback AppUrlFeedback;
@@ -30,8 +31,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public string DefaultRoomKey => _config.DefaultRoomKey;
 
+        public bool UseDirectServer => localConfig.UseDirectServer;
+
         public MobileControlTouchpanelController(string key, string name, BasicTriListWithSmartObject panel, MobileControlTouchpanelProperties config):base(key, name, panel, config)
         {
+            localConfig = config;
+
             AddPostActivationAction(SubscribeForMobileControlUpdates);
 
             AppUrlFeedback = new StringFeedback(() => _bridge?.AppUrl);
@@ -42,9 +47,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             Feedbacks = new FeedbackCollection<Feedback>
             {
                 AppUrlFeedback, QrCodeUrlFeedback, McServerUrlFeedback, UserCodeFeedback
-            };
-
-            
+            };            
         }
         protected override void ExtenderSystemReservedSigs_DeviceExtenderSigChange(DeviceExtender currentDeviceExtender, SigEventArgs args)
         {
@@ -136,7 +139,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     return app;
                 }
                 else if (type == "xpanel")
-                    return new XpanelForSmartGraphics(id, Global.ControlSystem);
+                    return new XpanelForHtml5(id, Global.ControlSystem);
                 else if (type == "tsw550")
                     return new Tsw550(id, Global.ControlSystem);
                 else if (type == "tsw552")
