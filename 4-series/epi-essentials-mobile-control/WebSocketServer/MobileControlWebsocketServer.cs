@@ -324,7 +324,7 @@ namespace PepperDash.Essentials
                 .OfType<MobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
                 
 
-            var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
+            var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
 
 
             foreach (var client in newTouchpanels)
