@@ -105,7 +105,7 @@ namespace PepperDash.Essentials
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
                     var clientSpecificMessage = msgToSend as MobileControlMessage;
-                    if (clientSpecificMessage.ClientId == null)
+                    if (clientSpecificMessage.ClientId != null)
                     {
                         var clientId = clientSpecificMessage.ClientId;
 
