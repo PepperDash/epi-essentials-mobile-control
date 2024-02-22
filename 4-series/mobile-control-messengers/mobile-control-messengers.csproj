@@ -47,6 +47,7 @@
     <Compile Include="..\..\3-series\Messengers\SystemMonitorMessenger.cs" Link="Messengers\SystemMonitorMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\TwoWayDisplayBaseMessenger.cs" Link="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\VideoCodecBaseMessenger.cs" Link="Messengers\VideoCodecBaseMessenger.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\MobileControlBridgeBase.cs" Link="Messengers\MobileControlBridgeBase.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\SIMPLAtcJoinMap.cs" Link="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
@@ -61,6 +62,6 @@
     <Folder Include="SIMPLJoinMaps\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-beta-2386" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2391" />
   </ItemGroup>
 </Project>
