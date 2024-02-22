@@ -33,7 +33,7 @@ namespace PepperDash.Essentials
         }
     }
 
-    public class MobileControlSimplFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
+    public class MobileControlSimplFactory : EssentialsPluginDeviceFactory<MobileControlSIMPLRoomBridge>
     {
         public MobileControlSimplFactory()
         {
@@ -57,8 +57,11 @@ namespace PepperDash.Essentials
                     return;
                 }
                 Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(parent);
-                parent.AddBridge(bridge);
+
+                /*bridge.AddParent(parent);
+                parent.AddBridge(bridge);*/
+
+                parent.AddDeviceMessenger(bridge);
             });
 
             return bridge;

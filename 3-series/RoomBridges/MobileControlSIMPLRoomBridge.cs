@@ -35,7 +35,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public Dictionary<string, MessengerBase> DeviceMessengers { get; private set; }
 
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -466,9 +466,11 @@ namespace PepperDash.Essentials.Room.MobileControl
             {
                 if (type.ToLower().Equals("simplcameramessenger"))
                 {
-                    var props = new SimplMessengerPropertiesConfig();
-                    props.DeviceKey = key;
-                    props.JoinMapKey = "";
+                    var props = new SimplMessengerPropertiesConfig
+                    {
+                        DeviceKey = key,
+                        JoinMapKey = ""
+                    };
                     var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
                     props.JoinStart = joinStart;
                     devConf.Properties = JToken.FromObject(props);
@@ -490,7 +492,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             if (!String.IsNullOrEmpty(Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue))
             {
-                Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+                ConfigReader.ConfigObject.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;

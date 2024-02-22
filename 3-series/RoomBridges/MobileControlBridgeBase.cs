@@ -1,5 +1,4 @@
 ﻿using System;
-using PepperDash.Essentials.Core;
 
 using PepperDash.Core;
 
@@ -22,7 +21,7 @@ namespace PepperDash.Essentials
 
         public event EventHandler<EventArgs> AppUrlChanged;
 
-        public MobileControlSystemController Parent { get; private set; }
+        public IMobileControl3 Parent { get; private set; }
 
         public string AppUrl { get; private set; }
         public string UserCode { get; private set; }
@@ -52,11 +51,11 @@ namespace PepperDash.Essentials
         /// as adding actions to parent
         /// </summary>
         /// <param name="parent"></param>
-        public virtual void AddParent(MobileControlSystemController parent)
+        public virtual void AddParent(IMobileControl3 parent)
         {
             Parent = parent;
 
-            McServerUrl = Parent.Config.ClientAppUrl;
+            McServerUrl = Parent.ClientAppUrl;
 
             RegisterWithAppServer(parent);
         }

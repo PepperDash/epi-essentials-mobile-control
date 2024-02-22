@@ -4,6 +4,7 @@ using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Essentials;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Policy;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -22,6 +24,7 @@ using WebSocketSharp;
 using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 using ErrorEventArgs = WebSocketSharp.ErrorEventArgs;
+
 
 namespace PepperDash.Essentials
 {
@@ -348,9 +351,9 @@ namespace PepperDash.Essentials
 
             foreach(var touchpanel in touchpanels.Select(tp =>
             {
-                var token = _secret.Tokens.FirstOrDefault((t) => t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase));                
+                var token = _secret.Tokens.FirstOrDefault((t) => t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase));
 
-                var messenger = DeviceManager.AllDevices.OfType<IMobileControlRoomMessenger>().FirstOrDefault(m => m.Key.Contains(tp.DefaultRoomKey, StringComparison.InvariantCultureIgnoreCase));
+                var messenger = _parent.GetRoomBridge(tp.DefaultRoomKey);
 
                 return new { token.Key, Touchpanel = tp, Messenger = messenger };
             }))
@@ -370,6 +373,10 @@ namespace PepperDash.Essentials
                 var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
 
                 var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+                var appUrl = $"http://{processorIp}:{_parent.Config.DirectServer.Port}/mc/app?token={touchpanel.Key}";
+
+                Debug.Console(2, this, $"Sending URL {appUrl}");                
 
                 touchpanel.Messenger.UpdateAppUrl($"http://{processorIp}:{_parent.Config.DirectServer.Port}/mc/app?token={touchpanel.Key}");
             }

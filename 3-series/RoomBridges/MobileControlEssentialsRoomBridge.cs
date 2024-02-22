@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Crestron.SimplSharp.Ssh;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -10,11 +9,9 @@ using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Room.Config;
-using PepperDash.Essentials.Devices.Common.Displays;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
-using PepperDash.Essentials.Devices.Common.SoftCodec;
 using PepperDash.Essentials.Core.Lighting;
 
 using Newtonsoft.Json;
@@ -22,12 +19,9 @@ using Newtonsoft.Json.Converters;
 using PepperDash.Essentials.Devices.Common.Room;
 using IShades = PepperDash.Essentials.Core.Shades.IShades;
 using ShadeBase = PepperDash.Essentials.Devices.Common.Shades.ShadeBase;
-using PepperDash.Essentials.Core.Shades;
-using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
-using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
-using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
 using Crestron.SimplSharp;
+using Crestron.SimplSharpPro.DeviceSupport;
 
 #if SERIES4
 using PepperDash.Essentials.AppServer;
@@ -40,9 +34,7 @@ namespace PepperDash.Essentials
         private List<JoinToken> _touchPanelTokens = new List<JoinToken>();
         public IEssentialsRoom Room { get; private set; }
 
-        public string DefaultRoomKey
-        {
-            get; private set; }
+        public string DefaultRoomKey { get; private set; }
         /// <summary>
         /// 
         /// </summary>
@@ -220,7 +212,7 @@ namespace PepperDash.Essentials
                 privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
 
-            SetupDeviceMessengers();
+            //SetupDeviceMessengers();
 
             var defCallRm = Room as IRunDefaultCallRoute;
             if (defCallRm != null)
@@ -319,7 +311,7 @@ namespace PepperDash.Essentials
             OnUserCodeChanged();
         }
 
-        /// <summary>
+/*        /// <summary>
         /// Override of base: calls base to add parent and then registers actions and events.
         /// </summary>
         /// <param name="parent"></param>
@@ -327,7 +319,7 @@ namespace PepperDash.Essentials
         {
             base.AddParent(parent);
 
-        }
+        }*/
 
         private void AddTechRoomActions()
         {
@@ -410,121 +402,6 @@ namespace PepperDash.Essentials
             state.Volumes = volumes;
 
             PostStatusMessage(state);
-        }
-
-        /// <summary>
-        /// Set up the messengers for each device type
-        /// </summary>
-        private void SetupDeviceMessengers()
-        {
-            foreach (var device in DeviceManager.AllDevices)
-            {
-                Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
-
-                if (device is CameraBase)
-                {
-                    var camDevice = device as CameraBase;
-                    Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
-                    var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
-                        "/device/" + device.Key);
-                    Parent.AddDeviceMessenger(cameraMessenger);
-                    
-                }
-
-                if (device is BlueJeansPc)
-                {
-                    var softCodecDevice = device as BlueJeansPc;
-                    Debug.Console(2, this, "Adding IRunRouteActionMessnger for device: {0}", device.Key);
-                    var routeMessenger = new RunRouteActionMessenger(device.Key + "-" + Parent.Key, softCodecDevice,
-                        "/device/" + device.Key);
-                    Parent.AddDeviceMessenger(routeMessenger);
-                  
-                }
-
-                if (device is ITvPresetsProvider)
-                {
-                    var presetsDevice = device as ITvPresetsProvider;
-                    if (presetsDevice.TvPresets == null)
-                    {
-                        Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
-                    }
-                    else
-                    {
-                        Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
-                        var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Parent.Key, String.Format("/device/{0}/presets", device.Key),
-                            presetsDevice);
-                        Parent.AddDeviceMessenger(presetsMessenger);
-                        
-                    }
-                }
-
-                if (device is DisplayBase)
-                {
-                    var display = device as DisplayBase;
-                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
-
-                    display.LinkActions(Parent);
-                }
-
-                if (device is TwoWayDisplayBase)
-                {
-                    var display = device as TwoWayDisplayBase;
-                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
-                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Parent.Key,
-                        String.Format("/device/{0}", device.Key), display);
-                    Parent.AddDeviceMessenger(twoWayDisplayMessenger);
-                }
-
-                if (device is ICommunicationMonitor)
-                {
-                    var monitor = device as ICommunicationMonitor;
-                    Debug.Console(2, this, "Adding CommunicationMonitor for device: {0}", device.Key);
-                    var communicationMonitorMessenger = new CommMonitorMessenger(device.Key + "-" + Parent.Key + "-monitor",
-                        String.Format("/device/{0}/commMonitor", device.Key), monitor);
-                    Parent.AddDeviceMessenger(communicationMonitorMessenger);
-                    
-                }
-
-                if (device is IBasicVolumeWithFeedback)
-                {
-                    var deviceKey = device.Key;
-                    var volControlDevice = device as IBasicVolumeWithFeedback;
-                    Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
-                    var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Parent.Key + "-volume",
-                        String.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
-                    Parent.AddDeviceMessenger(messenger);
-                }
-
-                if (device is ILightingScenes)
-                {
-                    var deviceKey = device.Key;
-                    var lightingDevice = device as ILightingScenes;
-                    Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new ILightingScenesMessenger(deviceKey + "-" + Parent.Key,
-                        lightingDevice, string.Format("/device/{0}", deviceKey));
-                    Parent.AddDeviceMessenger(messenger);
-                }
-
-                if (device is IShadesOpenCloseStop)
-                {
-                    var deviceKey = device.Key;
-                    var shadeDevice = device as IShadesOpenCloseStop;
-                    Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new IShadesOpenCloseStopMessenger(deviceKey + "-" + Parent.Key,
-                        shadeDevice, string.Format("/device/{0}", deviceKey));
-                    Parent.AddDeviceMessenger(messenger);
-                }
-
-                var genericDevice = device as EssentialsDevice;
-
-                if(genericDevice == null)
-                {
-                    continue;
-                }
-
-                Debug.Console(2, this, "Adding GenericMessenger for device: {0}", genericDevice.Key);              
-                Parent.AddDeviceMessenger(new GenericMessenger(genericDevice.Key + "-" + Parent.Key + "-generic", genericDevice, string.Format("/device/{0}", genericDevice.Key)));                
-            }
         }
 
         /// <summary>
@@ -843,8 +720,13 @@ namespace PepperDash.Essentials
         /// <returns></returns>
         private RoomConfiguration GetRoomConfiguration(IEssentialsRoom room)
         {
-            var configuration = new RoomConfiguration();
-
+            var configuration = new RoomConfiguration
+            {
+                Touchpanels = DeviceManager.AllDevices.
+                OfType<MobileControlTouchpanelController>()
+                .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
+                .Select(tp => tp.Key).ToList()
+            };
 
             var huddleRoom = room as IEssentialsHuddleSpaceRoom;
             if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
@@ -909,7 +791,7 @@ namespace PepperDash.Essentials
                     {
                         eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
 
-                        if(dev is LightingBase)
+                        if(dev is Devices.Common.Lighting.LightingBase)
                         {
                             type = eEnvironmentalDeviceTypes.Lighting;
                         }
@@ -1045,6 +927,9 @@ namespace PepperDash.Essentials
         [JsonProperty("hasRoutingControls", NullValueHandling = NullValueHandling.Ignore)]
         public bool? HasRoutingControls { get; set; }
 
+        [JsonProperty("touchpanels", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> Touchpanels { get; set; }
+
         [JsonProperty("videoCodecKey", NullValueHandling = NullValueHandling.Ignore)]
         public string VideoCodecKey { get; set; }
         [JsonProperty("audioCodecKey", NullValueHandling = NullValueHandling.Ignore)]
@@ -1077,6 +962,7 @@ namespace PepperDash.Essentials
             DisplayKeys = new List<string>();
             EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();
             SourceList = new Dictionary<string, SourceListItem>();
+            Touchpanels = new List<string>();
         }
 
     }

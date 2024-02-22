@@ -11,9 +11,13 @@ using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Queues;
+using PepperDash.Essentials.Core.Shades;
 using PepperDash.Essentials.Core.Web;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using PepperDash.Essentials.Devices.Common.SoftCodec;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Services;
@@ -23,6 +27,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using WebSocketSharp;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
+using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 #if SERIES4
 #endif
 
@@ -42,7 +48,9 @@ namespace PepperDash.Essentials
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
 #if SERIES4
-        private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>();
+        private readonly Dictionary<string, IMobileControlMessenger> _messengers = new Dictionary<string, IMobileControlMessenger>();
+
+        private readonly Dictionary<string, IMobileControlMessenger> _defaultMessengers = new Dictionary<string, IMobileControlMessenger>();
 #else
         private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>();
 #endif
@@ -174,6 +182,12 @@ namespace PepperDash.Essentials
                 AddConsoleCommands();
             }
 
+            AddPreActivationAction(() => LinkSystemMonitorToAppServer());
+
+            AddPreActivationAction(() => SetupDefaultDeviceMessengers());
+
+            AddPreActivationAction(() => SetupDefaultRoomMessengers());
+
             AddPreActivationAction(() => AddWebApiPaths());
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
@@ -185,6 +199,122 @@ namespace PepperDash.Essentials
 
                 return _wsClient2.IsAlive && IsAuthorized;
             });
+        }
+
+        private void SetupDefaultRoomMessengers()
+        {
+            foreach (var room in DeviceManager.AllDevices.OfType<IEssentialsRoom>())
+            {
+                var messenger = new MobileControlEssentialsRoomBridge(room);
+
+                _roomBridges.Add(messenger);
+
+                AddDefaultDeviceMessenger(messenger);
+            }
+        }
+
+        /// <summary>
+        /// Set up the messengers for each device type
+        /// </summary>
+        private void SetupDefaultDeviceMessengers()
+        {
+            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)))
+            {
+                Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
+
+                if (device is CameraBase)
+                {
+                    var camDevice = device as CameraBase;
+                    Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
+                    var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Key, camDevice,
+                        "/device/" + device.Key);
+                    AddDefaultDeviceMessenger(cameraMessenger);
+
+                }
+
+                if (device is BlueJeansPc)
+                {
+                    var softCodecDevice = device as BlueJeansPc;
+                    Debug.Console(2, this, "Adding IRunRouteActionMessnger for device: {0}", device.Key);
+                    var routeMessenger = new RunRouteActionMessenger(device.Key + "-" + Key, softCodecDevice,
+                        "/device/" + device.Key);
+                    AddDefaultDeviceMessenger(routeMessenger);
+                }
+
+                if (device is ITvPresetsProvider)
+                {
+                    var presetsDevice = device as ITvPresetsProvider;
+                    if (presetsDevice.TvPresets == null)
+                    {
+                        Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
+                    }
+                    else
+                    {
+                        Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
+                        var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Key, string.Format("/device/{0}/presets", device.Key),
+                            presetsDevice);
+                        AddDefaultDeviceMessenger(presetsMessenger);
+
+                    }
+                }
+
+                if (device is DisplayBase)
+                {
+                    var display = device as DisplayBase;
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    display.LinkActions(this);
+                }
+
+                if (device is TwoWayDisplayBase)
+                {
+                    var display = device as TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Key,
+                        string.Format("/device/{0}", device.Key), display);
+                    AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+                }
+
+                if (device is IBasicVolumeWithFeedback)
+                {
+                    var deviceKey = device.Key;
+                    var volControlDevice = device as IBasicVolumeWithFeedback;
+                    Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
+                    var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Key + "-volume",
+                        string.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
+                    AddDefaultDeviceMessenger(messenger);
+                }
+
+                if (device is ILightingScenes)
+                {
+                    var deviceKey = device.Key;
+                    var lightingDevice = device as ILightingScenes;
+                    Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new ILightingScenesMessenger(deviceKey + "-" + Key,
+                        lightingDevice, string.Format("/device/{0}", deviceKey));
+                    AddDefaultDeviceMessenger(messenger);
+                }
+
+                if (device is IShadesOpenCloseStop)
+                {
+                    var deviceKey = device.Key;
+                    var shadeDevice = device as IShadesOpenCloseStop;
+                    Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new IShadesOpenCloseStopMessenger(deviceKey + "-" + Key,
+                        shadeDevice, string.Format("/device/{0}", deviceKey));
+                    AddDefaultDeviceMessenger(messenger);
+                }
+
+                var genericDevice = device as EssentialsDevice;
+
+                if (genericDevice == null)
+                {
+                    continue;
+                }
+
+                Debug.Console(2, this, "Adding GenericMessenger for device: {0}", genericDevice.Key);
+                AddDefaultDeviceMessenger(new GenericMessenger(genericDevice.Key + "-" + Key + "-generic", genericDevice, string.Format("/device/{0}", genericDevice.Key)));
+            }
         }
 
         private void AddWebApiPaths()
@@ -269,6 +399,8 @@ namespace PepperDash.Essentials
 
         public string Host { get; private set; }
 
+        public string ClientAppUrl => Config.ClientAppUrl;
+
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
             SendMessageObject(new MobileControlMessage { Type = "/system/roomCombinationChanged" });
@@ -276,7 +408,7 @@ namespace PepperDash.Essentials
 
         public bool CheckForDeviceMessenger(string key)
         {
-            return _deviceMessengers.ContainsKey(key);
+            return _messengers.ContainsKey(key);
         }
 
 #if SERIES4
@@ -285,33 +417,68 @@ namespace PepperDash.Essentials
         public void AddDeviceMessenger(MessengerBase messenger)
 #endif
         {
-            if (_deviceMessengers.ContainsKey(messenger.Key))
+            if (_messengers.ContainsKey(messenger.Key))
             {
                 Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
                 return;
             }
 
-            if (_deviceMessengers.Any((kv) => kv.Value.MessagePath.Equals(messenger.MessagePath, StringComparison.InvariantCulture)))
+            if(messenger is IDelayedConfiguration simplMessenger)
             {
-                Debug.Console(1, this, "Messenger with path {0} alread added", messenger.MessagePath);
-                return;
+                simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
+            }
+
+            if(messenger is MobileControlBridgeBase roomBridge)
+            {
+                _roomBridges.Add(roomBridge);
             }
 
             Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
 
-            _deviceMessengers.Add(messenger.Key, messenger);
+            _messengers.Add(messenger.Key, messenger);
+        }    
+        
+        private void AddDefaultDeviceMessenger(IMobileControlMessenger messenger)
+        {
+            if (_defaultMessengers.ContainsKey(messenger.Key))
+            {
+                Debug.Console(1, this, "Default messenger with key {0} already added", messenger.Key);
+                return;
+            }
 
-            messenger.RegisterWithAppServer(this);
+            if(messenger is IDelayedConfiguration simplMessenger)
+            {
+                simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
+            }
+            Debug.Console(2, this, "Adding default messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            _defaultMessengers.Add(messenger.Key, messenger);
+
+        }
+
+        public override void Initialize()
+        {
+            foreach(var messenger in _messengers)
+            {
+                messenger.Value.RegisterWithAppServer(this);
+            }
+
+            foreach(var messenger in _defaultMessengers)
+            {
+                messenger.Value.RegisterWithAppServer(this);
+            }
+
+            var simplMessengers = _messengers.OfType<IDelayedConfiguration>().ToList();
+
+            if (simplMessengers.Count > 0)
+            {
+                return;
+            }
+
+            RegisterSystemToServer();
         }
 
         #region IMobileControl Members
-
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
-        {
-            var bridge = new MobileControlEssentialsRoomBridge(room);
-            AddBridgePostActivationAction(bridge);
-            DeviceManager.AddDevice(bridge);
-        }
 
         public static IMobileControl GetAppServer()
         {
@@ -375,29 +542,23 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
-
-            var appServer = GetAppServer() as MobileControlSystemController;
-
-            if (sysMon == null || appServer == null)
+            if (!(DeviceManager.GetDeviceForKey("systemMonitor") is SystemMonitorController sysMon))
             {
                 return;
             }
 
-            var key = sysMon.Key + "-" + appServer.Key;
-            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
+            var key = sysMon.Key + "-" + Key;
+            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");            
 
-            messenger.RegisterWithAppServer(appServer);
-
-            DeviceManager.AddDevice(messenger);
+            AddDeviceMessenger(messenger);
         }
 
-        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+/*        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
         {
             var bridge = new MobileControlEssentialsRoomBridge(room);
             AddBridgePostActivationAction(bridge);
             DeviceManager.AddDevice(bridge);
-        }
+        }     */   
 
         #endregion
 
@@ -442,7 +603,7 @@ namespace PepperDash.Essentials
             }
         }
 
-        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
+/*        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
         {
             bridge.AddPostActivationAction(() =>
             {
@@ -450,29 +611,7 @@ namespace PepperDash.Essentials
                 bridge.AddParent(this);
                 AddBridge(bridge);
             });
-        }
-
-        /// <summary>
-        /// If config rooms is empty or null then go
-        /// </summary>
-        /// <returns></returns>
-        public override bool CustomActivate()
-        {
-            if (ConfigReader.ConfigObject.Rooms != null && ConfigReader.ConfigObject.Rooms.Count != 0)
-            {
-                return base.CustomActivate();
-            }
-
-            if (_roomBridges.OfType<IDelayedConfiguration>().ToList().Count > 0)
-            {
-                return base.CustomActivate();
-            }
-
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Config contains no rooms.  Registering with Server.");
-            RegisterSystemToServer();
-
-            return base.CustomActivate();
-        }
+        }*/        
 
         /// <summary>
         /// Sends message to server to indicate the system is shutting down
@@ -508,15 +647,14 @@ namespace PepperDash.Essentials
         /// <param name="action">The action to be triggered by the commmand</param>
         public void AddAction(string key, Action<string, JToken> action)
         {
-            if (!_actionDictionary.ContainsKey(key))
-            {
-                _actionDictionary.Add(key, action);
-            }
-            else
+            if (_actionDictionary.ContainsKey(key))
             {
                 Debug.Console(1, this,
                     "Cannot add action with key '{0}' because key already exists in ActionDictionary.", key);
+                return;
             }
+
+            _actionDictionary.Add(key, action);
         }
 
         /// <summary>
@@ -531,29 +669,29 @@ namespace PepperDash.Essentials
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="bridge"></param>
-        public void AddBridge(MobileControlBridgeBase bridge)
-        {
-            _roomBridges.Add(bridge);
-            var b = bridge as IDelayedConfiguration;
-            if (b != null)
-            {
-                Debug.Console(0, this, "Adding room bridge with delayed configuration");
-                b.ConfigurationIsReady += Bridge_ConfigurationIsReady;
-            }
-            else
-            {
-                Debug.Console(0, this, "Adding room bridge and sending configuration");
+        /*       /// <summary>
+               /// 
+               /// </summary>
+               /// <param name="bridge"></param>
+               public void AddBridge(MobileControlBridgeBase bridge)
+               {
+                   _roomBridges.Add(bridge);
+                   var b = bridge as IDelayedConfiguration;
+                   if (b != null)
+                   {
+                       Debug.Console(0, this, "Adding room bridge with delayed configuration");
+                       b.ConfigurationIsReady += Bridge_ConfigurationIsReady;
+                   }
+                   else
+                   {
+                       Debug.Console(0, this, "Adding room bridge and sending configuration");
 
-                RegisterSystemToServer();
-            }
-        }
+                       RegisterSystemToServer();
+                   }
+               }*/
 
         public MobileControlBridgeBase GetRoomBridge(string key)
-        {
+        {            
             return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
 

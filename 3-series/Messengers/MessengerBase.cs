@@ -19,9 +19,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public abstract class MessengerBase: EssentialsDevice
 #endif
     {
-        private Device _device;
+        protected Device _device;
 
-        private List<string> _deviceIntefaces;
+        private List<string> _deviceInterfaces;
 
         /// <summary>
         /// 
@@ -55,7 +55,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             _device = device;
 
-            _deviceIntefaces = GetInterfaces(_device);
+            _deviceInterfaces = GetInterfaces(_device);
         }
 
         /// <summary>
@@ -171,7 +171,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 return;
             }
             
-            message.SetInterfaces(_deviceIntefaces);
+            message.SetInterfaces(_deviceInterfaces);
 
             message.Key = _device.Key;
 
@@ -198,7 +198,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (deviceState != null)
             {
                 //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-                deviceState.SetInterfaces(_deviceIntefaces);
+                deviceState.SetInterfaces(_deviceInterfaces);
 
                 deviceState.Key = _device.Key;
 
