@@ -69,7 +69,7 @@ namespace PepperDash.Essentials.Touchpanel
         {
             var message = new TswAppStateMessage
             {
-                AppOpen = _appControl.AppOpenFeedback.BoolValue
+                AppOpen = _appControl.AppOpenFeedback.BoolValue,
                 AppPackage = _appControl.AppPackageFeedback.StringValue
             };
 
