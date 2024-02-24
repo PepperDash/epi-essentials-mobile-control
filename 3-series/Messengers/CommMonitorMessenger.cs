@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json.Linq;
+using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -13,12 +14,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private readonly ICommunicationMonitor _monitor;
 
-        public CommMonitorMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
-
         public CommMonitorMessenger(string key, string messagePath, ICommunicationMonitor monitor)
-            : this(key, messagePath)
+            : base(key, messagePath, monitor as Device)
         {
             _monitor = monitor;
         }

@@ -4,18 +4,17 @@ using PepperDash.Core;
 using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core;
+using Newtonsoft.Json;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class RoomEventScheduleMessenger:MessengerBase
     {
         private readonly IRoomEventSchedule _room;
-        public RoomEventScheduleMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
+
 
         public RoomEventScheduleMessenger(string key, string messagePath, IRoomEventSchedule room)
-            : this(key, messagePath)
+            : base(key, messagePath, room as Device)
         {
             _room = room;
         }
@@ -64,12 +63,18 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private void SendFullStatus(List<ScheduledEventConfig> events) 
         {
 
-                var message = new
+                var message = new RoomEventScheduleStateMessage
                 {
-                    scheduleEvents = events,
+                    ScheduleEvents = events,
                 };
 
                 PostStatusMessage(message);
         }
+    }
+
+    public class RoomEventScheduleStateMessage:DeviceStateMessageBase
+    {
+        [JsonProperty("scheduleEvents")]
+        public List<ScheduledEventConfig> ScheduleEvents { get; set; }
     }
 }

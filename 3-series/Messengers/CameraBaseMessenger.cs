@@ -22,7 +22,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="camera"></param>
         /// <param name="messagePath"></param>
         public CameraBaseMessenger(string key, CameraBase camera, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, camera)
         {
             if (camera == null)
                 throw new ArgumentNullException("camera");

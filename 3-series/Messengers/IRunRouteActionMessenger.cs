@@ -2,6 +2,7 @@
 using PepperDash.Essentials.Core;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using Newtonsoft.Json;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -14,7 +15,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public IRunRouteAction RoutingDevice { get; private set; }
 
         public RunRouteActionMessenger(string key, IRunRouteAction routingDevice, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, routingDevice as Device)
         {
             if (routingDevice == null)
                 throw new ArgumentNullException("routingDevice");
@@ -79,11 +80,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 if (string.IsNullOrEmpty(sourceKey))
                     sourceKey = "none";
 
-                PostStatusMessage(new
+                PostStatusMessage(new RoutingStateMessage
                 {
-                    selectedSourceKey = sourceKey
+                    SelectedSourceKey = sourceKey
                 });
             }
         }
+    }
+
+    public class RoutingStateMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("selectedSourceKey")]
+        public string SelectedSourceKey { get; set; }
     }
 }

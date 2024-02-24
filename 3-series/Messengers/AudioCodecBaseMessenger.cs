@@ -24,7 +24,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="codec"></param>
         /// <param name="messagePath"></param>
         public AudioCodecBaseMessenger(string key, AudioCodecBase codec, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, codec)
         {
             if (codec == null)
                 throw new ArgumentNullException("codec");

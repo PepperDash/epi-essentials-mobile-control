@@ -6,7 +6,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class GenericMessenger : MessengerBase
     {
-        private EssentialsDevice _device;
+        private EssentialsDevice localDevice;
 
         public GenericMessenger(string key, EssentialsDevice device, string messagePath):base(key, messagePath, device)
         {
@@ -15,7 +15,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 throw new ArgumentNullException("device");
             }
 
-            _device = device;
+            localDevice = device;
         }
 
 #if SERIES4

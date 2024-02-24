@@ -59,7 +59,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         /// <summary>
-        /// Gets the intefaces implmented on the device
+        /// Gets the interfaces implmented on the device
         /// </summary>
         /// <param name="device"></param>
         /// <returns></returns>

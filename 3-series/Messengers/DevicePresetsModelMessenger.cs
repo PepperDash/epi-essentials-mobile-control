@@ -12,13 +12,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         private readonly ITvPresetsProvider _presetsDevice;
 
-        public DevicePresetsModelMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-
-        }
-
         public DevicePresetsModelMessenger(string key, string messagePath, ITvPresetsProvider presetsDevice)
-            : this(key, messagePath)
+            : base(key, messagePath, presetsDevice as Device)
         {
             _presetsDevice = presetsDevice;
         }
@@ -30,9 +25,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void SendPresets()
         {
-            PostStatusMessage(new
+            PostStatusMessage(new PresetStateMessage
             {
-                favorites = _presetsDevice.TvPresets.PresetsList
+                Favorites = _presetsDevice.TvPresets.PresetsList
             });
         }
 
@@ -91,5 +86,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("deviceKey")]
         public string DeviceKey;
+    }
+
+    public class PresetStateMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("favorites", NullValueHandling = NullValueHandling.Ignore)]
+        public List<PresetChannel> Favorites { get; set; } = new List<PresetChannel>();
     }
 }

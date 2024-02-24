@@ -36,27 +36,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public VideoCodecBaseMessenger(string key, VideoCodecBase codec, string messagePath)
             : base(key, messagePath, codec)
         {
-            if (codec == null)
-                throw new ArgumentNullException("codec");
-
-            Codec = codec;
+            Codec = codec ?? throw new ArgumentNullException("codec");
             codec.CallStatusChange += codec_CallStatusChange;
             codec.IsReadyChange += codec_IsReadyChange;
 
-            var dirCodec = codec as IHasDirectory;
-            if (dirCodec != null)
+            if (codec is IHasDirectory dirCodec)
             {
                 dirCodec.DirectoryResultReturned += dirCodec_DirectoryResultReturned;
             }
 
-            var recCodec = codec as IHasCallHistory;
-            if (recCodec != null)
+            if (codec is IHasCallHistory recCodec)
             {
                 recCodec.CallHistory.RecentCallsListHasChanged += CallHistory_RecentCallsListHasChanged;
             }
 
-            var pwPromptCodec = codec as IPasswordPrompt;
-            if (pwPromptCodec != null)
+            if (codec is IPasswordPrompt pwPromptCodec)
             {
                 pwPromptCodec.PasswordRequired += OnPasswordRequired;
             }

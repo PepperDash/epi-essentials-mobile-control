@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Net.Mime;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -7,7 +10,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class DeviceVolumeMessenger:MessengerBase
     {
-        private IBasicVolumeWithFeedback _device;
+        private IBasicVolumeWithFeedback _localDevice;
         private string _deviceKey;
 
         public DeviceVolumeMessenger(string key, string messagePath) : base(key, messagePath)
@@ -15,20 +18,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         public DeviceVolumeMessenger(string key, string messagePath, string deviceKey, IBasicVolumeWithFeedback device)
-            : this(key, messagePath)
+            : base(key, messagePath, device as Device)
         {
-            _device = device;
+            _localDevice = device;
             _deviceKey = deviceKey;
         }
 
         private void SendStatus()
         {
-            var messageObj = new
+            var messageObj = new VolumeStateMessage
             {
-                volume = new
+                Volume = new Volume
                 {
-                    level = _device.VolumeLevelFeedback.IntValue,
-                    muted = _device.MuteFeedback.BoolValue,
+                    Level = _localDevice.VolumeLevelFeedback.IntValue,
+                    Muted = _localDevice.MuteFeedback.BoolValue,
                 }
             };
 
@@ -48,7 +51,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/level", (id, content) => {
                 var volume = content.ToObject<MobileControlSimpleContent<ushort>>();
 
-                _device.SetVolume(volume.Value);
+                _localDevice.SetVolume(volume.Value);
             });
 
             appServerController.AddAction(MessagePath + "/muteToggle", (id, content) => {
@@ -56,36 +59,60 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 if (!state.Value) return;
 
-                _device.MuteToggle();
+                _localDevice.MuteToggle();
             });
 
-            _device.MuteFeedback.OutputChange += (sender, args) =>
+            _localDevice.MuteFeedback.OutputChange += (sender, args) =>
             {
-                var messageObj = new
+                var messageObj = new MobileControlMessage
                 {
-                    volume = new
-                    {
-                        muted = args.BoolValue
-                    }
+                    Type = MessagePath,
+                    Content = JToken.FromObject(
+                        new {
+                            volume = new
+                            {
+                                muted = args.BoolValue
+                            }
+                        })
                 };
 
-                PostStatusMessage(messageObj);
+                appServerController.SendMessageObject(messageObj);
             };
 
-            _device.VolumeLevelFeedback.OutputChange += (sender, args) =>
+            _localDevice.VolumeLevelFeedback.OutputChange += (sender, args) =>
             {
-                var messageObj = new
+                var messageObj = new MobileControlMessage
                 {
-                    volume = new
-                    {
-                        level = args.IntValue
-                    }
+                    Type = MessagePath,
+                    Content = JToken.FromObject(
+                        new {
+                            volume = new
+                            {
+                                level = args.IntValue
+                            }
+                        }
+                    )
                 };
 
-                PostStatusMessage(messageObj);
+                appServerController.SendMessageObject(messageObj);
             };
         }
 
         #endregion
+    }
+
+    public class VolumeStateMessage:DeviceStateMessageBase
+    {
+        [JsonProperty("volume", NullValueHandling = NullValueHandling.Ignore)]
+        public Volume Volume { get; set; }
+    }
+
+    public class Volume
+    {
+        [JsonProperty("level", NullValueHandling = NullValueHandling.Ignore)]
+        public int? Level { get; set; }
+
+        [JsonProperty("muted", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Muted { get; set; }
     }
 }

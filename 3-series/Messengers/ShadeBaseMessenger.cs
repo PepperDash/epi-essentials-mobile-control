@@ -8,17 +8,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class IShadesOpenCloseStopMessenger : MessengerBase
     {
-        protected IShadesOpenCloseStop Device { get; private set; }
+        private IShadesOpenCloseStop device;
 
-        public IShadesOpenCloseStopMessenger(string key, IShadesOpenCloseStop device, string messagePath)
-            : base(key, messagePath, device as Device)
+        public IShadesOpenCloseStopMessenger(string key, IShadesOpenCloseStop shades, string messagePath)
+            : base(key, messagePath, shades as Device)
         {
-            if (device == null)
-            {
-                throw new ArgumentNullException("device");
-            }
-
-            Device = device;
+            device = shades;
         }
 
 #if SERIES4
@@ -34,18 +29,18 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), (id, content) =>
                 {
 
-                    Device.Open();
+                    device.Open();
 
                 });
 
             appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), (id, content) =>
                 {
 
-                    Device.Close();
+                    device.Close();
 
                 });
 
-            var stopDevice = Device;
+            var stopDevice = device;
             if (stopDevice != null)
             {
                 appServerController.AddAction(string.Format("{0}/stopOrPreset", MessagePath), (id, content) =>
@@ -54,8 +49,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 });
             }
 
-            var feedbackDevice = Device as IShadesOpenClosedFeedback;
-            if (feedbackDevice != null)
+            if (device is IShadesOpenClosedFeedback feedbackDevice)
             {
                 feedbackDevice.ShadeIsOpenFeedback.OutputChange += new EventHandler<Core.FeedbackEventArgs>(ShadeIsOpenFeedback_OutputChange);
                 feedbackDevice.ShadeIsClosedFeedback.OutputChange += new EventHandler<Core.FeedbackEventArgs>(ShadeIsClosedFeedback_OutputChange);
@@ -64,9 +58,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         void ShadeIsOpenFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
         {
-            var state = new ShadeBaseStateMessage();
-
-            state.IsOpen = e.BoolValue;
+            var state = new ShadeBaseStateMessage
+            {
+                IsOpen = e.BoolValue
+            };
 
             PostStatusMessage(state);
         }
@@ -85,8 +80,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var state = new ShadeBaseStateMessage();
 
-            var feedbackDevice = Device as IShadesOpenClosedFeedback;
-            if (feedbackDevice != null)
+            if (device is IShadesOpenClosedFeedback feedbackDevice)
             {
                 state.IsOpen = feedbackDevice.ShadeIsOpenFeedback.BoolValue;
                 state.IsClosed = feedbackDevice.ShadeIsClosedFeedback.BoolValue;
