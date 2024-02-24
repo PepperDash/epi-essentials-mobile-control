@@ -29,6 +29,7 @@ using System.Text.RegularExpressions;
 using WebSocketSharp;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
+using System.Threading.Tasks;
 #if SERIES4
 #endif
 
@@ -39,10 +40,10 @@ namespace PepperDash.Essentials
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
 
-        private readonly Dictionary<string, Action<string, JToken>> _actionDictionary =
-            new Dictionary<string, Action<string, JToken>>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, List<Action<string, JToken>>> _actionDictionary =
+            new Dictionary<string, List<Action<string, JToken>>>(StringComparer.InvariantCultureIgnoreCase);
 
-        public Dictionary<string, Action<string, JToken>> ActionDictionary => _actionDictionary;
+        public Dictionary<string, List<Action<string, JToken>>> ActionDictionary => _actionDictionary;
 
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
@@ -266,11 +267,28 @@ namespace PepperDash.Essentials
                     display.LinkActions(this);
                 }
 
+                if (device is Core.DisplayBase)
+                {
+                    var display = device as Core.DisplayBase;
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    display.LinkActions(this);
+                }
+
                 if (device is TwoWayDisplayBase)
                 {
                     var display = device as TwoWayDisplayBase;
                     Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
                     var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Key,
+                        string.Format("/device/{0}", device.Key), display);
+                    AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+                }
+
+                if (device is Core.TwoWayDisplayBase)
+                {
+                    var display = device as Core.TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new CoreTwoWayDisplayBaseMessenger(device.Key + "-" + Key,
                         string.Format("/device/{0}", device.Key), display);
                     AddDefaultDeviceMessenger(twoWayDisplayMessenger);
                 }
@@ -460,12 +478,30 @@ namespace PepperDash.Essentials
         {
             foreach(var messenger in _messengers)
             {
-                messenger.Value.RegisterWithAppServer(this);
+                try
+                {
+                    messenger.Value.RegisterWithAppServer(this);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, this, $"Exception registering paths for {messenger.Key}: {ex.Message}");
+                    Debug.Console(2, this, $"Exception registering paths for {messenger.Key}: {ex.StackTrace}");
+                    continue;
+                }
             }
 
             foreach(var messenger in _defaultMessengers)
             {
-                messenger.Value.RegisterWithAppServer(this);
+                try
+                {
+                    messenger.Value.RegisterWithAppServer(this);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, this, $"Exception registering paths for {messenger.Key}: {ex.Message}");
+                    Debug.Console(2, this, $"Exception registering paths for {messenger.Key}: {ex.StackTrace}");
+                    continue;
+                }
             }
 
             var simplMessengers = _messengers.OfType<IDelayedConfiguration>().ToList();
@@ -647,14 +683,18 @@ namespace PepperDash.Essentials
         /// <param name="action">The action to be triggered by the commmand</param>
         public void AddAction(string key, Action<string, JToken> action)
         {
-            if (_actionDictionary.ContainsKey(key))
+            if (_actionDictionary.TryGetValue(key, out List<Action<string, JToken>> actionList))
             {
-                Debug.Console(1, this,
-                    "Cannot add action with key '{0}' because key already exists in ActionDictionary.", key);
+                actionList.Add(action);
                 return;
             }
 
-            _actionDictionary.Add(key, action);
+            actionList = new List<Action<string, JToken>>
+            {
+                action
+            };
+
+            _actionDictionary.Add(key, actionList);
         }
 
         /// <summary>
@@ -668,27 +708,6 @@ namespace PepperDash.Essentials
                 _actionDictionary.Remove(key);
             }
         }
-
-        /*       /// <summary>
-               /// 
-               /// </summary>
-               /// <param name="bridge"></param>
-               public void AddBridge(MobileControlBridgeBase bridge)
-               {
-                   _roomBridges.Add(bridge);
-                   var b = bridge as IDelayedConfiguration;
-                   if (b != null)
-                   {
-                       Debug.Console(0, this, "Adding room bridge with delayed configuration");
-                       b.ConfigurationIsReady += Bridge_ConfigurationIsReady;
-                   }
-                   else
-                   {
-                       Debug.Console(0, this, "Adding room bridge and sending configuration");
-
-                       RegisterSystemToServer();
-                   }
-               }*/
 
         public MobileControlBridgeBase GetRoomBridge(string key)
         {            
@@ -1394,15 +1413,18 @@ Mobile Control Direct Server Infromation:
                         Debug.Console(1, this, "Received close message from server.");
                         break;
                     default:
-                        Action<string, JToken> handler;
+                        List<Action<string, JToken>> handlers;
 
-                        if (!_actionDictionary.TryGetValue(message.Type, out handler))
+                        if (!_actionDictionary.TryGetValue(message.Type, out handlers))
                         {
                             Debug.Console(1, this, "-- Warning: Incoming message has no registered handler");
                             break;
                         }
 
-                        handler(message.ClientId, message.Content);
+                        foreach(var handler in handlers)
+                        {                           
+                            Task.Run(() => handler(message.ClientId, message.Content));
+                        }                        
 
                         break;
                 }
