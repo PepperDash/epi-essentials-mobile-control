@@ -1,7 +1,7 @@
-﻿using System;
-using Crestron.SimplSharpPro.EthernetCommunication;
+﻿using Crestron.SimplSharpPro.EthernetCommunication;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
+using System;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {

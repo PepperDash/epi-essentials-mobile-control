@@ -1,11 +1,8 @@
-﻿using PepperDash.Essentials.Core;
-using PepperDash.Core;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
+using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 #if SERIES4
-using PepperDash.Essentials.AppServer;
 #endif
 namespace PepperDash.Essentials.Room.MobileControl
 {
@@ -13,10 +10,10 @@ namespace PepperDash.Essentials.Room.MobileControl
     {
         public static void LinkActions(this IChannel dev, IMobileControl3 controller)
         {
-            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed)dev).Key);
 
             controller.AddAction(prefix + "chanUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChannelUp(b)));
-            
+
             controller.AddAction(prefix + "chanDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.ChannelDown(b)));
             controller.AddAction(prefix + "lastChan", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.LastChannel(b)));
             controller.AddAction(prefix + "guide", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Guide(b)));
@@ -26,7 +23,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this IChannel dev, IMobileControl3 controller)
         {
-            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
+            var prefix = string.Format(@"/device/{0}/", ((IKeyed)dev).Key);
 
             controller.RemoveAction(prefix + "chanUp");
             controller.RemoveAction(prefix + "chanDown");
@@ -36,6 +33,6 @@ namespace PepperDash.Essentials.Room.MobileControl
             controller.RemoveAction(prefix + "exit");
         }
 
-        
+
     }
 }

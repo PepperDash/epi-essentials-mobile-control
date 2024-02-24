@@ -1,11 +1,10 @@
-﻿using System;
-using System.Linq;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
-using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
+using System.Linq;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 
 namespace PepperDash.Essentials.Room.MobileControl
@@ -14,7 +13,7 @@ namespace PepperDash.Essentials.Room.MobileControl
     {
         public static void LinkActions(this DisplayBase display, IMobileControl3 controller)
         {
-            var prefix = String.Format(@"/device/{0}/", display.Key);
+            var prefix = string.Format(@"/device/{0}/", display.Key);
 
             controller.AddAction(prefix + "powerOn", (id, content) => display.PowerOn());
             controller.AddAction(prefix + "powerOff", (id, content) => display.PowerOff());
@@ -54,7 +53,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this DisplayBase display, IMobileControl3 controller)
         {
-            var prefix = String.Format(@"/device/{0}/", display.Key);
+            var prefix = string.Format(@"/device/{0}/", display.Key);
 
             controller.RemoveAction(prefix + "powerOn");
             controller.RemoveAction(prefix + "powerOff");

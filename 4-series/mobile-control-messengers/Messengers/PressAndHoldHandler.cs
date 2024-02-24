@@ -3,9 +3,6 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -15,7 +12,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private static readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
 
-        private static Dictionary<string, Action<string, Action<bool>>> _pushedActionHandlers;
+        private static readonly Dictionary<string, Action<string, Action<bool>>> _pushedActionHandlers;
 
         static PressAndHoldHandler()
         {
@@ -25,13 +22,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {"held", ResetTimer },
                 {"false", StopTimer }
             };
-        }        
+        }
 
         private static void AddTimer(string type, Action<bool> action)
         {
-            CTimer cancelTimer;
 
-            if (_pushedActions.TryGetValue(type, out cancelTimer))
+            if (_pushedActions.TryGetValue(type, out CTimer cancelTimer))
             {
                 return;
             }
@@ -48,27 +44,26 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private static void ResetTimer(string type, Action<bool> action)
         {
-            CTimer cancelTimer;
 
-            if (!_pushedActions.TryGetValue(type, out cancelTimer)) { return; }
+            if (!_pushedActions.TryGetValue(type, out CTimer cancelTimer)) { return; }
 
             cancelTimer.Reset(ButtonHeartbeatInterval);
         }
 
         private static void StopTimer(string type, Action<bool> action)
         {
-            CTimer cancelTimer;
 
-            if(!_pushedActions.TryGetValue(type, out cancelTimer)) { return; }
+            if (!_pushedActions.TryGetValue(type, out CTimer cancelTimer)) { return; }
 
             cancelTimer.Stop();
             _pushedActions.Remove(type);
         }
 
-        public static Action<string, Action<bool>> GetPressAndHoldHandler(string value) {
-            Action<string, Action<bool>> handler;
+        public static Action<string, Action<bool>> GetPressAndHoldHandler(string value)
+        {
 
-            if(!_pushedActionHandlers.TryGetValue(value, out handler)) {
+            if (!_pushedActionHandlers.TryGetValue(value, out Action<string, Action<bool>> handler))
+            {
                 Debug.Console(0, "Unable to get Press & Hold handler for {0}", value);
                 return null;
             }

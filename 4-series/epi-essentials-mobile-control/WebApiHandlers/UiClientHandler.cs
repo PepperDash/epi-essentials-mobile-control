@@ -6,10 +6,10 @@ using PepperDash.Essentials.Core.Web;
 
 namespace PepperDash.Essentials.WebApiHandlers
 {
-    public class UiClientHandler:WebApiBaseRequestHandler
+    public class UiClientHandler : WebApiBaseRequestHandler
     {
         private readonly MobileControlWebsocketServer server;
-        public UiClientHandler(MobileControlWebsocketServer directServer):base(true)
+        public UiClientHandler(MobileControlWebsocketServer directServer) : base(true)
         {
             server = directServer;
         }
@@ -22,7 +22,7 @@ namespace PepperDash.Essentials.WebApiHandlers
 
             var request = JsonConvert.DeserializeObject<ClientRequest>(body);
 
-            var response = new ClientResponse();            
+            var response = new ClientResponse();
 
             if (string.IsNullOrEmpty(request?.RoomKey))
             {
@@ -34,12 +34,12 @@ namespace PepperDash.Essentials.WebApiHandlers
                 res.Write(JsonConvert.SerializeObject(response), false);
                 res.End();
                 return;
-            }            
+            }
 
             if (string.IsNullOrEmpty(request.GrantCode))
             {
                 response.Error = "grantCode is required";
-                
+
                 res.StatusCode = 400;
                 res.ContentType = "application/json";
                 res.Headers.Add("Content-Type", "application/json");
@@ -68,9 +68,9 @@ namespace PepperDash.Essentials.WebApiHandlers
 
             var request = JsonConvert.DeserializeObject<ClientRequest>(body);
 
-            
 
-            if(string.IsNullOrEmpty(request?.Token))
+
+            if (string.IsNullOrEmpty(request?.Token))
             {
                 var response = new ClientResponse
                 {
@@ -86,7 +86,7 @@ namespace PepperDash.Essentials.WebApiHandlers
                 return;
             }
 
-            
+
 
             if (!server.UiClients.TryGetValue(request.Token, out UiClientContext clientContext))
             {
@@ -104,7 +104,7 @@ namespace PepperDash.Essentials.WebApiHandlers
                 return;
             }
 
-            if(clientContext.Client != null && clientContext.Client.Context.WebSocket.IsAlive)
+            if (clientContext.Client != null && clientContext.Client.Context.WebSocket.IsAlive)
             {
                 clientContext.Client.Context.WebSocket.Close(WebSocketSharp.CloseStatusCode.Normal, "Token removed from server");
             }

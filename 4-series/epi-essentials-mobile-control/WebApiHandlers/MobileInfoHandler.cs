@@ -9,9 +9,9 @@ using System.Linq;
 
 namespace PepperDash.Essentials.WebApiHandlers
 {
-    public class MobileInfoHandler:WebApiBaseRequestHandler
+    public class MobileInfoHandler : WebApiBaseRequestHandler
     {
-        private MobileControlSystemController mcController;
+        private readonly MobileControlSystemController mcController;
         public MobileInfoHandler(MobileControlSystemController controller) : base(true)
         {
             mcController = controller;
@@ -42,7 +42,7 @@ namespace PepperDash.Essentials.WebApiHandlers
     public class InformationResponse
     {
         [JsonIgnore]
-        private MobileControlSystemController mcController;
+        private readonly MobileControlSystemController mcController;
 
         [JsonProperty("edgeServer", NullValueHandling = NullValueHandling.Ignore)]
         public MobileControlEdgeServer EdgeServer => mcController.Config.EnableApiServer ? new MobileControlEdgeServer(mcController) : null;
@@ -105,7 +105,7 @@ namespace PepperDash.Essentials.WebApiHandlers
         public int ClientsConnected => directServer.ConnectedUiClientsCount;
 
         [JsonProperty("clients")]
-        public List<MobileControlDirectClient> Clients => directServer.UiClients.Select((c, i) => { return new MobileControlDirectClient(c,i,directServer.UserAppUrlPrefix); }).ToList();
+        public List<MobileControlDirectClient> Clients => directServer.UiClients.Select((c, i) => { return new MobileControlDirectClient(c, i, directServer.UserAppUrlPrefix); }).ToList();
 
         public MobileControlDirectServer(MobileControlWebsocketServer server)
         {
@@ -113,7 +113,8 @@ namespace PepperDash.Essentials.WebApiHandlers
         }
     }
 
-    public class MobileControlDirectClient {
+    public class MobileControlDirectClient
+    {
         [JsonIgnore]
         private readonly UiClientContext context;
 
@@ -142,7 +143,7 @@ namespace PepperDash.Essentials.WebApiHandlers
         public string Token => Key;
 
         [JsonProperty("connected")]
-        public bool Connected => context.Client == null ? false: context.Client.Context.WebSocket.IsAlive;
+        public bool Connected => context.Client == null ? false : context.Client.Context.WebSocket.IsAlive;
 
         [JsonProperty("duration")]
         public double Duration => context.Client == null ? 0 : context.Client.ConnectedDuration.TotalSeconds;
@@ -150,7 +151,7 @@ namespace PepperDash.Essentials.WebApiHandlers
         public MobileControlDirectClient(KeyValuePair<string, UiClientContext> clientContext, int index, string urlPrefix)
         {
             context = clientContext.Value;
-            Key =   clientContext.Key;
+            Key = clientContext.Key;
             clientNumber = index;
             this.urlPrefix = urlPrefix;
         }

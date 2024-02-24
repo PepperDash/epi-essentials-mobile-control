@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+﻿using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
-using Newtonsoft.Json;
 
 
 namespace PepperDash.Essentials
@@ -18,7 +13,7 @@ namespace PepperDash.Essentials
         public MobileControlRuntimeInfo RuntimeInfo { get; set; }
 
         public MobileControlEssentialsConfig(EssentialsConfig config)
-            :base()
+            : base()
         {
             // TODO: Consider using Reflection to iterate properties
             this.Devices = config.Devices;

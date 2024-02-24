@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using PepperDash.Essentials.Devices.Common.Codec;
-using PepperDash.Essentials.Devices.Common.AudioCodec;
-
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.AudioCodec;
+using PepperDash.Essentials.Devices.Common.Codec;
+using System;
+using System.Linq;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -26,11 +26,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public AudioCodecBaseMessenger(string key, AudioCodecBase codec, string messagePath)
             : base(key, messagePath, codec)
         {
-            if (codec == null)
-                throw new ArgumentNullException("codec");
-
-            Codec = codec;
-            codec.CallStatusChange += codec_CallStatusChange;
+            Codec = codec ?? throw new ArgumentNullException("codec");
+            codec.CallStatusChange += Codec_CallStatusChange;
         }
 
 #if SERIES4
@@ -42,11 +39,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             base.CustomRegisterWithAppServer(appServerController);
 
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendAtcFullMessageObject());
-            appServerController.AddAction(MessagePath + "/dial", (id, content) => {
+            appServerController.AddAction(MessagePath + "/dial", (id, content) =>
+            {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 Codec.Dial(msg.Value);
-            }); 
+            });
 
             appServerController.AddAction(MessagePath + "/endCallById", (id, content) =>
             {
@@ -58,7 +56,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             });
 
             appServerController.AddAction(MessagePath + "/endAllCalls", (id, content) => Codec.EndAllCalls());
-            appServerController.AddAction(MessagePath + "/dtmf", (id, content) => {
+            appServerController.AddAction(MessagePath + "/dtmf", (id, content) =>
+            {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 Codec.SendDtmf(msg.Value);
@@ -93,7 +92,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             return Codec.ActiveCalls.FirstOrDefault(c => c.Id == id);
         }
 
-        private void codec_CallStatusChange(object sender, CodecCallStatusItemChangeEventArgs e)
+        private void Codec_CallStatusChange(object sender, CodecCallStatusItemChangeEventArgs e)
         {
             SendAtcFullMessageObject();
         }
@@ -105,16 +104,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private void SendAtcFullMessageObject()
         {
             var info = Codec.CodecInfo;
-            
-            PostStatusMessage(new            
-            {
-                isInCall = Codec.IsInCall,
-                calls = Codec.ActiveCalls,
-                info = new
+
+            PostStatusMessage(JToken.FromObject(new
                 {
-                    phoneNumber = info.PhoneNumber
-                }
-            });
+                    isInCall = Codec.IsInCall,
+                    calls = Codec.ActiveCalls,
+                    info = new
+                    {
+                        phoneNumber = info.PhoneNumber
+                    }
+                })
+            );
         }
     }
 }

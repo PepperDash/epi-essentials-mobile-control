@@ -1,27 +1,22 @@
-﻿using System;
-using Crestron.SimplSharp;
-using PepperDash.Core;
-using PepperDash.Essentials.Core.Monitoring;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+﻿using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PepperDash.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Monitoring;
+using System;
 using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class SystemMonitorMessenger : MessengerBase
     {
-        private SystemMonitorController systemMonitor;
-
-        private IMobileControl3 appServer;
+        private readonly SystemMonitorController systemMonitor;
 
         public SystemMonitorMessenger(string key, SystemMonitorController sysMon, string messagePath)
             : base(key, messagePath, sysMon)
         {
-            if (sysMon == null)
-                throw new ArgumentNullException("sysMon");
-
-            this.systemMonitor = sysMon;
+            this.systemMonitor = sysMon ?? throw new ArgumentNullException("sysMon");
 
             this.systemMonitor.SystemMonitorPropertiesChanged += SysMon_SystemMonitorPropertiesChanged;
 
@@ -44,11 +39,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (e.ProgramInfo != null)
             {
                 //Debug.Console(1, "Posting Status Message: {0}", e.ProgramInfo.ToString());
-                appServer.SendMessageObject(new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(e.ProgramInfo)
-                });
+                PostStatusMessage(JToken.FromObject(e.ProgramInfo)
+                );
             }
         }
 
@@ -68,11 +60,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             foreach (var p in systemMonitor.ProgramStatusFeedbackCollection)
             {
-                appServer.SendMessageObject(new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(p.Value.ProgramInfo)
-                });                
+                PostStatusMessage(JToken.FromObject(p.Value.ProgramInfo)
+                );
             }
         }
 
@@ -81,10 +70,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             Debug.Console(1, "Posting System Monitor Status Message.");
 
             // This takes a while, launch a new thread
-            Task.Run(() => appServer.SendMessageObject(new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new SystemMonitorStateMessage
+            Task.Run(() => PostStatusMessage(JToken.FromObject(new SystemMonitorStateMessage
                 {
 
                     TimeZone = systemMonitor.TimeZoneFeedback.IntValue,
@@ -94,7 +80,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     BacnetVersion = systemMonitor.BaCnetAppVersionFeedback.StringValue,
                     ControllerVersion = systemMonitor.ControllerVersionFeedback.StringValue
                 })
-            }));
+            ));
         }
 
 #if SERIES4

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Essentials.Devices.Common.Codec;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using PepperDash.Core;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PepperDash.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.Codec;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -16,14 +13,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public IHasScheduleAwareness ScheduleSource { get; private set; }
 
         public IHasScheduleAwarenessMessenger(string key, IHasScheduleAwareness scheduleSource, string messagePath)
-            :base(key, messagePath, scheduleSource as Device)
+            : base(key, messagePath, scheduleSource as Device)
         {
-            if (scheduleSource == null)
-            {
-                throw new ArgumentNullException("scheduleSource");
-            }
-
-            ScheduleSource = scheduleSource;
+            ScheduleSource = scheduleSource ?? throw new ArgumentNullException("scheduleSource");
             ScheduleSource.CodecSchedule.MeetingsListHasChanged += new EventHandler<EventArgs>(CodecSchedule_MeetingsListHasChanged);
             ScheduleSource.CodecSchedule.MeetingEventChange += new EventHandler<MeetingEventArgs>(CodecSchedule_MeetingEventChange);
         }
@@ -37,23 +29,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullScheduleObject());
         }
 
-        void CodecSchedule_MeetingEventChange(object sender, MeetingEventArgs e)
+        private void CodecSchedule_MeetingEventChange(object sender, MeetingEventArgs e)
         {
-            AppServerController.SendMessageObject(new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject( new MeetingChangeMessage
+            PostStatusMessage(JToken.FromObject(new MeetingChangeMessage
                 {
-                    MeetingChange = new MeetingChange 
-                {
-                    ChangeType = e.ChangeType.ToString(),
-                    Meeting = e.Meeting
-                }
+                    MeetingChange = new MeetingChange
+                    {
+                        ChangeType = e.ChangeType.ToString(),
+                        Meeting = e.Meeting
+                    }
                 })
-            });
+            );
         }
 
-        void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
+        private void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
         {
             SendFullScheduleObject();
         }
@@ -64,10 +53,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private void SendFullScheduleObject()
         {
             PostStatusMessage(new FullScheduleMessage
-                {
-                    Meetings = ScheduleSource.CodecSchedule.Meetings,
-                    MeetingWarningMinutes = ScheduleSource.CodecSchedule.MeetingWarningMinutes
-                });
+            {
+                Meetings = ScheduleSource.CodecSchedule.Meetings,
+                MeetingWarningMinutes = ScheduleSource.CodecSchedule.MeetingWarningMinutes
+            });
         }
     }
 

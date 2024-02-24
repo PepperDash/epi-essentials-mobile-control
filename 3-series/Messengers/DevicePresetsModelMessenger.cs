@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Presets;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class DevicePresetsModelMessenger:MessengerBase
+    public class DevicePresetsModelMessenger : MessengerBase
     {
         private readonly ITvPresetsProvider _presetsDevice;
 
@@ -16,11 +16,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
             : base(key, messagePath, presetsDevice as Device)
         {
             _presetsDevice = presetsDevice;
-        }
-
-        private void TvPresetsOnPresetChanged(ISetTopBoxNumericKeypad device, string channel)
-        {
-            throw new NotImplementedException();
         }
 
         private void SendPresets()
@@ -36,11 +31,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _presetsDevice.TvPresets.Dial(channel, device);
         }
 
-        private void SavePresets(List<PresetChannel> presets )
+        private void SavePresets(List<PresetChannel> presets)
         {
             _presetsDevice.TvPresets.UpdatePresets(presets);
         }
-       
+
 
         #region Overrides of MessengerBase
 
@@ -52,13 +47,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendPresets());
 
-            appServerController.AddAction(MessagePath + "/recall", (id, content) => 
+            appServerController.AddAction(MessagePath + "/recall", (id, content) =>
             {
                 var p = content.ToObject<PresetChannelMessage>();
 
-                var dev = DeviceManager.GetDeviceForKey(p.DeviceKey) as ISetTopBoxNumericKeypad;
 
-                if (dev == null)
+                if (!(DeviceManager.GetDeviceForKey(p.DeviceKey) is ISetTopBoxNumericKeypad dev))
                 {
                     Debug.Console(1, "Unable to find device with key {0}", p.DeviceKey);
                     return;
@@ -67,7 +61,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 RecallPreset(dev, p.Preset.Channel);
             });
 
-            appServerController.AddAction(MessagePath + "/save", (id, content) => {
+            appServerController.AddAction(MessagePath + "/save", (id, content) =>
+            {
                 var presets = content.ToObject<List<PresetChannel>>();
 
                 SavePresets(presets);

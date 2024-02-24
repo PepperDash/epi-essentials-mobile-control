@@ -1,6 +1,4 @@
-﻿using System;
-using System.Net.Mime;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -8,20 +6,18 @@ using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class DeviceVolumeMessenger:MessengerBase
+    public class DeviceVolumeMessenger : MessengerBase
     {
-        private IBasicVolumeWithFeedback _localDevice;
-        private string _deviceKey;
+        private readonly IBasicVolumeWithFeedback _localDevice;
 
         public DeviceVolumeMessenger(string key, string messagePath) : base(key, messagePath)
         {
         }
 
-        public DeviceVolumeMessenger(string key, string messagePath, string deviceKey, IBasicVolumeWithFeedback device)
+        public DeviceVolumeMessenger(string key, string messagePath, IBasicVolumeWithFeedback device)
             : base(key, messagePath, device as Device)
         {
             _localDevice = device;
-            _deviceKey = deviceKey;
         }
 
         private void SendStatus()
@@ -48,13 +44,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
 
-            appServerController.AddAction(MessagePath + "/level", (id, content) => {
+            appServerController.AddAction(MessagePath + "/level", (id, content) =>
+            {
                 var volume = content.ToObject<MobileControlSimpleContent<ushort>>();
 
                 _localDevice.SetVolume(volume.Value);
             });
 
-            appServerController.AddAction(MessagePath + "/muteToggle", (id, content) => {
+            appServerController.AddAction(MessagePath + "/muteToggle", (id, content) =>
+            {
                 var state = content.ToObject<MobileControlSimpleContent<bool>>();
 
                 if (!state.Value) return;
@@ -64,44 +62,36 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _localDevice.MuteFeedback.OutputChange += (sender, args) =>
             {
-                var messageObj = new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(
-                        new {
+                PostStatusMessage(JToken.FromObject(
+                        new
+                        {
                             volume = new
                             {
                                 muted = args.BoolValue
                             }
                         })
-                };
-
-                appServerController.SendMessageObject(messageObj);
+                );
             };
 
             _localDevice.VolumeLevelFeedback.OutputChange += (sender, args) =>
             {
-                var messageObj = new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(
-                        new {
+                PostStatusMessage(JToken.FromObject(
+                        new
+                        {
                             volume = new
                             {
                                 level = args.IntValue
                             }
                         }
                     )
-                };
-
-                appServerController.SendMessageObject(messageObj);
+                );                
             };
         }
 
         #endregion
     }
 
-    public class VolumeStateMessage:DeviceStateMessageBase
+    public class VolumeStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("volume", NullValueHandling = NullValueHandling.Ignore)]
         public Volume Volume { get; set; }

@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
@@ -63,7 +63,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         }
 
         public Volume(string key, bool muted)
-            :this(key)
+            : this(key)
         {
             Muted = muted;
         }

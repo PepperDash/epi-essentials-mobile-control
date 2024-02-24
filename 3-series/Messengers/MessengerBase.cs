@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -21,7 +20,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         protected Device _device;
 
-        private List<string> _deviceInterfaces;
+        private readonly List<string> _deviceInterfaces;
 
         /// <summary>
         /// 
@@ -86,10 +85,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public void RegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            if (appServerController == null)
-                throw new ArgumentNullException("appServerController");
-
-            AppServerController = appServerController;
+            AppServerController = appServerController ?? throw new ArgumentNullException("appServerController");
             CustomRegisterWithAppServer(AppServerController);
         }
 
@@ -103,9 +99,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            var commMonitor = _device as ICommunicationMonitor;
-
-            if (commMonitor != null)
+            if (_device is ICommunicationMonitor commMonitor)
             {
                 //Debug.Console(2, this, "Subscribing to CommunicationMonitor.StatusChange on: ", _device.Key);
                 commMonitor.CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
@@ -116,8 +110,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CommunicationMonitor_StatusChange(object sender, MonitorStatusChangeEventArgs e)
         {
-            var message = new DeviceStateMessageBase();
-            message.CommMonitor = GetCommunicationMonitorState();
+            var message = new DeviceStateMessageBase
+            {
+                CommMonitor = GetCommunicationMonitorState()
+            };
 
 
             PostStatusMessage(message);
@@ -125,12 +121,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         protected CommunicationMonitorState GetCommunicationMonitorState()
         {
-            var commMonitor = _device as ICommunicationMonitor;
-            if (commMonitor != null)
+            if (_device is ICommunicationMonitor commMonitor)
             {
-                var state = new CommunicationMonitorState();
-                state.IsOnline = commMonitor.CommunicationMonitor.IsOnline;
-                state.Status = commMonitor.CommunicationMonitor.Status;
+                var state = new CommunicationMonitorState
+                {
+                    IsOnline = commMonitor.CommunicationMonitor.IsOnline,
+                    Status = commMonitor.CommunicationMonitor.Status
+                };
                 //Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
                 return state;
             }
@@ -144,85 +141,48 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <summary>
         /// Helper for posting status message
         /// </summary>
-        /// <param name="contentObject">The contents of the content object</param>
-        [Obsolete("Will be removed in next major release, please use overload as substitute")]
-        protected void PostStatusMessage(object contentObject)
-        {
-            if (AppServerController != null)
-            {
-                AppServerController.SendMessageObject(new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(contentObject)
-                });
-            }
-        }
-
-      
-        /// <summary>
-        /// Helper for posting status message
-        /// </summary>
         /// <param name="type"></param>
         /// <param name="message"></param>
-        protected void PostStatusMessage(DeviceStateMessageBase message, string clientId=null)
+        protected void PostStatusMessage(DeviceStateMessageBase message, string clientId = null)
         {
-            if(AppServerController == null)
-            {
-                return;
-            }
-            
             message.SetInterfaces(_deviceInterfaces);
 
             message.Key = _device.Key;
 
             message.Name = _device.Name;
 
-            AppServerController.SendMessageObject(new MobileControlMessage
-            {
-                Type = MessagePath,
-                ClientId = clientId,
-                Content = JToken.FromObject(message),
-            });
-            
+            PostStatusMessage(JToken.FromObject(message),MessagePath, clientId);
         }
 
 #if SERIES4 
         protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
-
         {
-            if (AppServerController == null)
-            {
-                return;
-            }            
+            //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
+            deviceState.SetInterfaces(_deviceInterfaces);
 
-            if (deviceState != null)
-            {
-                //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-                deviceState.SetInterfaces(_deviceInterfaces);
+            deviceState.Key = _device.Key;
 
-                deviceState.Key = _device.Key;
+            deviceState.Name = _device.Name;            
 
-                deviceState.Name = _device.Name;
-            }
-
-            AppServerController.SendMessageObject(new MobileControlMessage { Type = type, ClientId = clientId, Content = JToken.FromObject(deviceState) });
+            PostStatusMessage(JToken.FromObject(deviceState), type, clientId);
         }
 #endif
+        protected void PostStatusMessage(JToken content, string type = "", string clientId = null)
+        {
+            AppServerController?.SendMessageObject(new MobileControlMessage { Type = string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
+        }
 
         protected void PostEventMessage(DeviceEventMessageBase message)
         {
-            if (AppServerController != null)
+            message.Key = _device.Key;
+
+            message.Name = _device.Name;
+
+            AppServerController?.SendMessageObject(new MobileControlMessage
             {
-                message.Key = _device.Key;
-
-                message.Name = _device.Name;
-
-                AppServerController.SendMessageObject(new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(message),
-                });
-            }
+                Type = MessagePath,
+                Content = JToken.FromObject(message),
+            });   
         }
     }
 
@@ -252,7 +212,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
     }
-    
+
     /// <summary>
     /// Base class for state messages that includes the type of message and the implmented interfaces
     /// </summary>

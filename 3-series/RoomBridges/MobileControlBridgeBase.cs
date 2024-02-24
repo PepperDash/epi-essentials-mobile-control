@@ -1,9 +1,7 @@
-﻿using System;
-
-using PepperDash.Core;
-
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+﻿using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 
 namespace PepperDash.Essentials

@@ -8,14 +8,14 @@ using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.WebApiHandlers
 {
-    public class MobileAuthRequestHandler:WebApiBaseRequestAsyncHandler
-    {        
+    public class MobileAuthRequestHandler : WebApiBaseRequestAsyncHandler
+    {
         private readonly MobileControlSystemController mcController;
 
-        public MobileAuthRequestHandler(MobileControlSystemController controller):base(true)
-        {          
+        public MobileAuthRequestHandler(MobileControlSystemController controller) : base(true)
+        {
             mcController = controller;
-        }        
+        }
 
         protected override async Task HandlePost(HttpCwsContext context)
         {
@@ -31,7 +31,7 @@ namespace PepperDash.Essentials.WebApiHandlers
                 return;
             }
 
-            var response = await mcController.ApiService.SendAuthorizationRequest(mcController.Host, grantCode.GrantCode, mcController.SystemUuid);            
+            var response = await mcController.ApiService.SendAuthorizationRequest(mcController.Host, grantCode.GrantCode, mcController.SystemUuid);
 
             Debug.Console(1, $"response received");
             if (response.Authorized)
@@ -40,7 +40,7 @@ namespace PepperDash.Essentials.WebApiHandlers
             }
 
             try
-            {                    
+            {
                 context.Response.StatusCode = 200;
                 var responseBody = JsonConvert.SerializeObject(response, Formatting.None);
                 context.Response.ContentType = "application/json";
@@ -58,7 +58,7 @@ namespace PepperDash.Essentials.WebApiHandlers
                     Debug.Console(0, $"Inner Exception: {ex.InnerException.Message}");
                     Debug.Console(2, $"Inner Exception Stack Trace: {ex.InnerException.StackTrace}");
                 }
-            }            
+            }
         }
-    }    
+    }
 }

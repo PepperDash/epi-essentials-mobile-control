@@ -3,7 +3,7 @@ using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.Devices.Common.TouchPanel
 {
-    public class MobileControlTouchpanelProperties:CrestronTouchpanelPropertiesConfig
+    public class MobileControlTouchpanelProperties : CrestronTouchpanelPropertiesConfig
     {
         [JsonProperty("useDirectServer")]
         public bool UseDirectServer { get; set; } = false;

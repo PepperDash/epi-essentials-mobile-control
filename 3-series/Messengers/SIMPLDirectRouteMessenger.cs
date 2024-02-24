@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using Crestron.SimplSharpPro.DeviceSupport;
+﻿using Crestron.SimplSharpPro.DeviceSupport;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class SimplDirectRouteMessenger:MessengerBase
+    public class SimplDirectRouteMessenger : MessengerBase
     {
         private readonly BasicTriList _eisc;
 
@@ -38,16 +37,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             //Audio source
             _eisc.SetStringSigAction(JoinMap.SourceForDestinationAudio.JoinNumber,
-                s => controller.SendMessageObject(new MobileControlMessage
+                s => PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath + "/programAudio/currentSource",
-                    Content = JToken.FromObject(new
-                    {
-                        selectedSourceKey = s,
-                    })
-                }));
+                    selectedSourceKey = s,
+                })
+                ));
 
-            controller.AddAction(MessagePath + "/programAudio/selectSource", (id, content) => {
+            controller.AddAction(MessagePath + "/programAudio/selectSource", (id, content) =>
+            {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 _eisc.StringInput[JoinMap.SourceForDestinationAudio.JoinNumber].StringValue = msg.Value;
@@ -66,47 +63,38 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     UpdateSourceForDestination(source, key);
                 }
 
-                controller.SendMessageObject(new MobileControlMessage
+                PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath + "/programAudio/currentSource",
-                    Content = JToken.FromObject(new
-                    {
-                        selectedSourceKey = _eisc.StringOutput[JoinMap.SourceForDestinationAudio.JoinNumber].StringValue
-                    })
-                });
+                    selectedSourceKey = _eisc.StringOutput[JoinMap.SourceForDestinationAudio.JoinNumber].StringValue
+                })
+                );
 
-                controller.SendMessageObject(new MobileControlMessage
+                PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath + "/advancedSharingMode",
-                    Content = JToken.FromObject(new
-                    {
-                        advancedSharingActive = _eisc.BooleanOutput[JoinMap.AdvancedSharingModeFb.JoinNumber].BoolValue
-                    })
-                });
+                    advancedSharingActive = _eisc.BooleanOutput[JoinMap.AdvancedSharingModeFb.JoinNumber].BoolValue
+                })
+                );
             });
 
-            controller.AddAction(MessagePath + "/advancedSharingMode",(id, content) =>
+            controller.AddAction(MessagePath + "/advancedSharingMode", (id, content) =>
             {
                 var b = content.ToObject<MobileControlSimpleContent<bool>>();
 
                 Debug.Console(1, "Current Sharing Mode: {2}\r\nadvanced sharing mode: {0} join number: {1}", b.Value,
                     JoinMap.AdvancedSharingModeOn.JoinNumber,
                     _eisc.BooleanOutput[JoinMap.AdvancedSharingModeOn.JoinNumber].BoolValue);
-           
+
                 _eisc.SetBool(JoinMap.AdvancedSharingModeOn.JoinNumber, b.Value);
                 _eisc.SetBool(JoinMap.AdvancedSharingModeOff.JoinNumber, !b.Value);
                 _eisc.PulseBool(JoinMap.AdvancedSharingModeToggle.JoinNumber);
             });
 
             _eisc.SetBoolSigAction(JoinMap.AdvancedSharingModeFb.JoinNumber,
-                (b) => controller.SendMessageObject(new MobileControlMessage
+                (b) => PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath + "/advancedSharingMode",
-                    Content = JToken.FromObject(new
-                    {
-                        advancedSharingActive = b
-                    })
-                }));
+                    advancedSharingActive = b
+                })
+                ));
         }
 
         public void RegisterForDestinationPaths()
@@ -120,27 +108,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _eisc.SetStringSigAction((uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order),
                     s => UpdateSourceForDestination(s, key));
 
-                AppServerController.AddAction(String.Format("{0}/{1}/selectSource", MessagePath, key), (id, content) => {
+                AppServerController.AddAction(string.Format("{0}/{1}/selectSource", MessagePath, key), (id, content) =>
+                {
                     var s = content.ToObject<MobileControlSimpleContent<string>>();
 
                     _eisc.StringInput[(uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order)].StringValue = s.Value;
                 });
-           
-            }            
+
+            }
         }
 
         #endregion
 
         private void UpdateSourceForDestination(string sourceKey, string destKey)
         {
-            AppServerController.SendMessageObject(new MobileControlMessage
+            PostStatusMessage(JToken.FromObject(new
             {
-                Type = String.Format("{0}/{1}/currentSource", MessagePath, destKey),
-                Content = JToken.FromObject(new
-                {
-                    selectedSourceKey = sourceKey
-                })
-            });
+                selectedSourceKey = sourceKey
+            }), $"{MessagePath}/{destKey}/currentSource");
         }
     }
 

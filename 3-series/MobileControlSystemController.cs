@@ -1,7 +1,6 @@
 ﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
-using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
@@ -26,10 +25,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using WebSocketSharp;
-using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
-using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using System.Threading.Tasks;
+using WebSocketSharp;
+using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
 #endif
 
@@ -68,7 +67,7 @@ namespace PepperDash.Essentials
         public List<MobileControlBridgeBase> RoomBridges => _roomBridges;
 
 #if SERIES4
-        private MobileControlWebsocketServer _directServer;
+        private readonly MobileControlWebsocketServer _directServer;
 
         public MobileControlWebsocketServer DirectServer => _directServer;
 #endif
@@ -178,7 +177,7 @@ namespace PepperDash.Essentials
 
             Debug.Console(0, this, "Mobile UI controller initializing for server:{0}", config.ServerUrl);
 
-            if(Global.Platform == eDevicePlatform.Appliance)
+            if (Global.Platform == eDevicePlatform.Appliance)
             {
                 AddConsoleCommands();
             }
@@ -299,7 +298,7 @@ namespace PepperDash.Essentials
                     var volControlDevice = device as IBasicVolumeWithFeedback;
                     Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
                     var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Key + "-volume",
-                        string.Format("/device/{0}/volume", deviceKey), deviceKey, volControlDevice);
+                        string.Format("/device/{0}/volume", deviceKey), volControlDevice);
                     AddDefaultDeviceMessenger(messenger);
                 }
 
@@ -323,9 +322,8 @@ namespace PepperDash.Essentials
                     AddDefaultDeviceMessenger(messenger);
                 }
 
-                var genericDevice = device as EssentialsDevice;
 
-                if (genericDevice == null)
+                if (!(device is EssentialsDevice genericDevice))
                 {
                     continue;
                 }
@@ -339,7 +337,7 @@ namespace PepperDash.Essentials
         {
             var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault();
 
-            if(apiServer == null)
+            if (apiServer == null)
             {
                 Debug.Console(0, this, "No API Server available");
                 return;
@@ -441,12 +439,12 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            if(messenger is IDelayedConfiguration simplMessenger)
+            if (messenger is IDelayedConfiguration simplMessenger)
             {
                 simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
             }
 
-            if(messenger is MobileControlBridgeBase roomBridge)
+            if (messenger is MobileControlBridgeBase roomBridge)
             {
                 _roomBridges.Add(roomBridge);
             }
@@ -454,8 +452,8 @@ namespace PepperDash.Essentials
             Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
 
             _messengers.Add(messenger.Key, messenger);
-        }    
-        
+        }
+
         private void AddDefaultDeviceMessenger(IMobileControlMessenger messenger)
         {
             if (_defaultMessengers.ContainsKey(messenger.Key))
@@ -464,7 +462,7 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            if(messenger is IDelayedConfiguration simplMessenger)
+            if (messenger is IDelayedConfiguration simplMessenger)
             {
                 simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
             }
@@ -476,7 +474,7 @@ namespace PepperDash.Essentials
 
         public override void Initialize()
         {
-            foreach(var messenger in _messengers)
+            foreach (var messenger in _messengers)
             {
                 try
                 {
@@ -490,7 +488,7 @@ namespace PepperDash.Essentials
                 }
             }
 
-            foreach(var messenger in _defaultMessengers)
+            foreach (var messenger in _defaultMessengers)
             {
                 try
                 {
@@ -584,17 +582,17 @@ namespace PepperDash.Essentials
             }
 
             var key = sysMon.Key + "-" + Key;
-            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");            
+            var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
 
             AddDeviceMessenger(messenger);
         }
 
-/*        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
-        {
-            var bridge = new MobileControlEssentialsRoomBridge(room);
-            AddBridgePostActivationAction(bridge);
-            DeviceManager.AddDevice(bridge);
-        }     */   
+        /*        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+                {
+                    var bridge = new MobileControlEssentialsRoomBridge(room);
+                    AddBridgePostActivationAction(bridge);
+                    DeviceManager.AddDevice(bridge);
+                }     */
 
         #endregion
 
@@ -639,15 +637,15 @@ namespace PepperDash.Essentials
             }
         }
 
-/*        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
-        {
-            bridge.AddPostActivationAction(() =>
-            {
-                Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(this);
-                AddBridge(bridge);
-            });
-        }*/        
+        /*        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
+                {
+                    bridge.AddPostActivationAction(() =>
+                    {
+                        Debug.Console(0, bridge, "Linking to parent controller");
+                        bridge.AddParent(this);
+                        AddBridge(bridge);
+                    });
+                }*/
 
         /// <summary>
         /// Sends message to server to indicate the system is shutting down
@@ -710,7 +708,7 @@ namespace PepperDash.Essentials
         }
 
         public MobileControlBridgeBase GetRoomBridge(string key)
-        {            
+        {
             return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
 
@@ -1333,40 +1331,6 @@ Mobile Control Direct Server Infromation:
             action(code.Value<string>(), qrChecksum.Value<string>());
         }
 
-        /// <summary>
-        /// Outputs debug info when enabled
-        /// </summary>
-        /// <param name="r"></param>
-        /// <param name="e"></param>
-        private void CheckHttpDebug(HttpClientResponse r, HTTP_CALLBACK_ERROR e)
-        {
-            if (!_httpDebugEnabled)
-            {
-                return;
-            }
-
-            try
-            {
-                Debug.Console(0, this, "------ Begin HTTP Debug ---------------------------------------");
-                if (r != null)
-                {
-                    Debug.Console(0, this, "HTTP Response URL: {0}", r.ResponseUrl ?? "NONE");
-                    Debug.Console(0, this, "HTTP Response code: {0}", r.Code);
-                    Debug.Console(0, this, "HTTP Response content: \r{0}", r.ContentString);
-                }
-                else
-                {
-                    Debug.Console(0, this, "No HTTP response");
-                }
-                Debug.Console(0, this, "HTTP Response 'error' {0}", e);
-                Debug.Console(0, this, "------ End HTTP Debug -----------------------------------------");
-            }
-            catch (Exception ex)
-            {
-                Debug.Console(0, this, "HttpDebugError: {0}", ex);
-            }
-        }
-
         public void HandleClientMessage(string message)
         {
             _receiveQueue.Enqueue(new ProcessStringMessage(message, ParseStreamRx));
@@ -1421,10 +1385,10 @@ Mobile Control Direct Server Infromation:
                             break;
                         }
 
-                        foreach(var handler in handlers)
-                        {                           
+                        foreach (var handler in handlers)
+                        {
                             Task.Run(() => handler(message.ClientId, message.Content));
-                        }                        
+                        }
 
                         break;
                 }

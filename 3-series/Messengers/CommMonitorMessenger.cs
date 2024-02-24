@@ -1,8 +1,8 @@
-﻿using System;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -24,15 +24,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new
             {
-                commMonitor = new {
+                commMonitor = new
+                {
                     online = _monitor.CommunicationMonitor.IsOnline,
                     status = _monitor.CommunicationMonitor.Status.ToString()
                 }
             };
 
-
-
-            PostStatusMessage(messageObj);
+            AppSer(messageObj);
         }
 
         #region Overrides of MessengerBase
@@ -44,7 +43,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 #endif
         {
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
-            
+
             _monitor.CommunicationMonitor.IsOnlineFeedback.OutputChange += IsOnlineFeedbackOnOutputChange;
             _monitor.CommunicationMonitor.StatusChange += CommunicationMonitorOnStatusChange;
         }
@@ -56,7 +55,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 Type = MessagePath + PollStatusPath,
                 Content = JToken.FromObject(new
                 {
-                    commMonitor = new {
+                    commMonitor = new
+                    {
                         status = monitorStatusChangeEventArgs.Status.ToString()
                     }
                 })
@@ -72,7 +72,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 Type = MessagePath + OnlineStatusPath,
                 Content = JToken.FromObject(new
                 {
-                    commMonitor = new {
+                    commMonitor = new
+                    {
                         online = feedbackEventArgs.BoolValue
                     }
                 })

@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using Newtonsoft.Json;
 using PepperDash.Essentials.Core;
-
-using Newtonsoft.Json;
 
 namespace PepperDash.Essentials
 {
-    class WebSocketServerSecretProvider : CrestronLocalSecretsProvider
+    internal class WebSocketServerSecretProvider : CrestronLocalSecretsProvider
     {
         public WebSocketServerSecretProvider(string key)
-            :base(key)
+            : base(key)
         {
             Key = key;
         }

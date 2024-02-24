@@ -1,12 +1,12 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
-using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class TwoWayDisplayBaseMessenger:MessengerBase
+    public class TwoWayDisplayBaseMessenger : MessengerBase
     {
         private readonly TwoWayDisplayBase _display;
 
@@ -51,65 +51,47 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     currentInput = feedbackEventArgs.StringValue
                 })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+            );            
         }
 
 
         private void PowerIsOnFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     powerState = feedbackEventArgs.BoolValue
                 })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+            );
         }
 
         private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isWarming = feedbackEventArgs.BoolValue
                 })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+            );            
         }
 
         private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isCooling = feedbackEventArgs.BoolValue
                 })
-            };
+            );
 
-            AppServerController.SendMessageObject(messageObj);
+            
         }
 
         #endregion
     }
 
-    public class TwoWayDisplayBaseStateMessage: DeviceStateMessageBase
+    public class TwoWayDisplayBaseStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("powerState", NullValueHandling = NullValueHandling.Ignore)]
         public bool? PowerState { get; set; }

@@ -1,5 +1,4 @@
 ﻿using PepperDash.Core;
-using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -8,17 +7,17 @@ namespace PepperDash.Essentials.Services
 
     public class MobileControlApiService
     {
-        private HttpClient _client;
+        private readonly HttpClient _client;
 
         public MobileControlApiService(string apiUrl)
         {
             var handler = new HttpClientHandler
             {
-                AllowAutoRedirect = false,                
+                AllowAutoRedirect = false,
             };
 
             _client = new HttpClient(handler);
-        }        
+        }
 
         public async Task<AuthorizationResponse> SendAuthorizationRequest(string apiUrl, string grantCode, string systemUuid)
         {
@@ -38,7 +37,7 @@ namespace PepperDash.Essentials.Services
                 return authResponse;
             }
 
-            if(response.StatusCode == System.Net.HttpStatusCode.Moved)
+            if (response.StatusCode == System.Net.HttpStatusCode.Moved)
             {
                 var location = response.Headers.Location;
 
@@ -49,7 +48,7 @@ namespace PepperDash.Essentials.Services
 
             var responseString = await response.Content.ReadAsStringAsync();
 
-            switch(responseString)
+            switch (responseString)
             {
                 case "codeNotFound":
                     authResponse.Reason = $"Authorization failed. Code not found for system UUID {systemUuid}";

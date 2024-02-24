@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Security.Policy;
-using Crestron.SimplSharp.Ssh.Security;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials
 {
@@ -22,7 +20,7 @@ namespace PepperDash.Essentials
         public MobileControlDirectServerPropertiesConfig DirectServer { get; set; }
 
         [JsonProperty("applicationConfig")]
-        public MobileControlApplicationConfig ApplicationConfig{get; set;}
+        public MobileControlApplicationConfig ApplicationConfig { get; set; }
 
         [JsonProperty("enableApiServer")]
         public bool EnableApiServer { get; set; }
@@ -37,7 +35,7 @@ namespace PepperDash.Essentials
 
 #if SERIES4
             EnableApiServer = true; // default to true
-            ApplicationConfig = null;                 
+            ApplicationConfig = null;
 #endif
         }
     }
@@ -69,7 +67,7 @@ namespace PepperDash.Essentials
 
         [JsonProperty("port")]
         public int Port { get; set; }
-        
+
     }
 
     public class MobileControlRoomBridgePropertiesConfig

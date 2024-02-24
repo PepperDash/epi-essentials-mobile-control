@@ -9,7 +9,7 @@ namespace PepperDash.Essentials.Touchpanel
 {
     public class ITswZoomControlMessenger : MessengerBase
     {
-        private ITswZoomControl _zoomControl;
+        private readonly ITswZoomControl _zoomControl;
 
         public ITswZoomControlMessenger(string key, string messagePath, Device device) : base(key, messagePath, device)
         {
@@ -26,7 +26,7 @@ namespace PepperDash.Essentials.Touchpanel
 
             appServerController.AddAction($"{MessagePath}/fullStatus", (id, context) => SendFullStatus());
 
-            
+
             appServerController.AddAction($"{MessagePath}/endCall", (id, context) => _zoomControl.EndZoomCall());
 
             _zoomControl.ZoomIncomingCallFeedback.OutputChange += (s, a) =>

@@ -1,5 +1,5 @@
-﻿using System;
-using Crestron.SimplSharpPro.DeviceSupport;
+﻿using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -39,7 +39,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             appServerController.AddAction(MessagePath + "/fullStatus",
                 (id, content) => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource)));
 
-            appServerController.AddAction(MessagePath + "/source",(id, content) =>
+            appServerController.AddAction(MessagePath + "/source", (id, content) =>
             {
                 var c = content.ToObject<SourceSelectMessageContent>();
 
@@ -67,10 +67,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (string.IsNullOrEmpty(sourceKey))
                 sourceKey = "none";
 
-            PostStatusMessage(new
-            {
-                selectedSourceKey = sourceKey
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    selectedSourceKey = sourceKey
+                })
+            );
         }
     }
 }

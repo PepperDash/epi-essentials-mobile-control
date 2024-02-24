@@ -1,18 +1,13 @@
 ﻿using Newtonsoft.Json.Linq;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using PepperDash.Essentials.Core;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using PepperDash.Core;
+using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class CoreTwoWayDisplayBaseMessenger : MessengerBase
     {
-        private readonly TwoWayDisplayBase _display;        
+        private readonly TwoWayDisplayBase _display;
 
         public CoreTwoWayDisplayBaseMessenger(string key, string messagePath, Device display)
             : base(key, messagePath, display)
@@ -40,7 +35,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 #endif
         {
             base.CustomRegisterWithAppServer(appServerController);
-            if(_display == null)
+            if (_display == null)
             {
                 Debug.Console(0, this, $"Unable to register TwoWayDisplayBase messenger {Key}");
                 return;
@@ -56,59 +51,39 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     currentInput = feedbackEventArgs.StringValue
-                })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+                }));
         }
 
 
         private void PowerIsOnFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     powerState = feedbackEventArgs.BoolValue
                 })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+            );
         }
 
         private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isWarming = feedbackEventArgs.BoolValue
                 })
-            };
+            );
 
-            AppServerController.SendMessageObject(messageObj);
         }
 
         private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new MobileControlMessage
-            {
-                Type = MessagePath,
-                Content = JToken.FromObject(new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isCooling = feedbackEventArgs.BoolValue
                 })
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+            );            
         }
 
         #endregion

@@ -28,7 +28,6 @@
   <ItemGroup>
     <Compile Include="..\..\3-series\Messengers\AudioCodecBaseMessenger.cs" Link="Messengers\AudioCodecBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\CameraBaseMessenger.cs" Link="Messengers\CameraBaseMessenger.cs" />
-    <Compile Include="..\..\3-series\Messengers\CommMonitorMessenger.cs" Link="Messengers\CommMonitorMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\DevicePresetsModelMessenger.cs" Link="Messengers\DevicePresetsModelMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\DeviceVolumeMessenger.cs" Link="Messengers\DeviceVolumeMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\GenericMessenger.cs" Link="Messengers\GenericMessenger.cs" />

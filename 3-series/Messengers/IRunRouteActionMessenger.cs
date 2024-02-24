@@ -1,8 +1,8 @@
-﻿using System;
-using PepperDash.Essentials.Core;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json;
+using System;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -17,20 +17,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public RunRouteActionMessenger(string key, IRunRouteAction routingDevice, string messagePath)
             : base(key, messagePath, routingDevice as Device)
         {
-            if (routingDevice == null)
-                throw new ArgumentNullException("routingDevice");
+            RoutingDevice = routingDevice ?? throw new ArgumentNullException("routingDevice");
 
-            RoutingDevice = routingDevice;
 
-            var routingSink = RoutingDevice as IRoutingSink;
-
-            if (routingSink != null)
+            if (RoutingDevice is IRoutingSink routingSink)
             {
-                routingSink.CurrentSourceChange += routingSink_CurrentSourceChange;
+                routingSink.CurrentSourceChange += RoutingSink_CurrentSourceChange;
             }
         }
 
-        private void routingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
+        private void RoutingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
         {
             SendRoutingFullMessageObject();
         }
@@ -43,12 +39,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendRoutingFullMessageObject());
 
-            appServerController.AddAction(MessagePath + "/source", (id, content) => 
+            appServerController.AddAction(MessagePath + "/source", (id, content) =>
                 {
                     var c = content.ToObject<SourceSelectMessageContent>();
                     // assume no sourceListKey
                     var sourceListKey = string.Empty;
-                    
+
                     if (!string.IsNullOrEmpty(c.SourceListKey))
                     {
                         // Check for source list in content of message
@@ -56,11 +52,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         sourceListKey = c.SourceListKey;
                     }
 
-                    RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
+                    RoutingDevice.RunRouteAction(c.SourceListItem, sourceListKey);
                 });
 
-            var sinkDevice = RoutingDevice as IRoutingSink;
-            if (sinkDevice != null)
+            if (RoutingDevice is IRoutingSink sinkDevice)
             {
                 sinkDevice.CurrentSourceChange += (o, a) => SendRoutingFullMessageObject();
             }
@@ -71,9 +66,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendRoutingFullMessageObject()
         {
-            var sinkDevice = RoutingDevice as IRoutingSink;
-
-            if (sinkDevice != null)
+            if (RoutingDevice is IRoutingSink sinkDevice)
             {
                 var sourceKey = sinkDevice.CurrentSourceInfoKey;
 

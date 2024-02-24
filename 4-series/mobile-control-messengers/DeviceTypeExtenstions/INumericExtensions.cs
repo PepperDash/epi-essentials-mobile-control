@@ -1,9 +1,7 @@
-﻿using PepperDash.Essentials.Core;
-using PepperDash.Core;
+﻿using PepperDash.Essentials.AppServer.Messengers;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using PepperDash.Essentials.AppServer.Messengers;
 #if SERIES4
-using PepperDash.Essentials.AppServer;
 #endif
 namespace PepperDash.Essentials.Room.MobileControl
 {
@@ -11,7 +9,7 @@ namespace PepperDash.Essentials.Room.MobileControl
     {
         public static void LinkActions(this INumericKeypad dev, IMobileControl3 controller)
         {
-            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
+            var prefix = string.Format(@"/device/{0}/", dev.Key);
 
             controller.AddAction(prefix + "num0", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Digit0(b)));
             controller.AddAction(prefix + "num1", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dev.Digit1(b)));
@@ -30,7 +28,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
         public static void UnlinkActions(this INumericKeypad dev, IMobileControl3 controller)
         {
-            var prefix = string.Format(@"/device/{0}/", ((IKeyed) dev).Key);
+            var prefix = string.Format(@"/device/{0}/", dev.Key);
 
             controller.RemoveAction(prefix + "num0");
             controller.RemoveAction(prefix + "num1");

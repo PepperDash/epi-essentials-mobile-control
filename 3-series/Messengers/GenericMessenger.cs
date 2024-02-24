@@ -1,21 +1,13 @@
 ﻿using PepperDash.Essentials.Core;
-using System;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class GenericMessenger : MessengerBase
     {
-        private EssentialsDevice localDevice;
-
-        public GenericMessenger(string key, EssentialsDevice device, string messagePath):base(key, messagePath, device)
+        public GenericMessenger(string key, EssentialsDevice device, string messagePath) : base(key, messagePath, device)
         {
-            if(device == null)
-            {
-                throw new ArgumentNullException("device");
-            }
-
-            localDevice = device;
         }
 
 #if SERIES4

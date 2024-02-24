@@ -1,14 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json.Linq;
-using static PepperDash.Essentials.AppServer.Messengers.VideoCodecBaseStateMessage.CameraStatus;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class CameraBaseMessenger :MessengerBase 
+    public class CameraBaseMessenger : MessengerBase
     {
         /// <summary>
         /// Device being bridged
@@ -24,32 +23,27 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public CameraBaseMessenger(string key, CameraBase camera, string messagePath)
             : base(key, messagePath, camera)
         {
-            if (camera == null)
-                throw new ArgumentNullException("camera");
+            Camera = camera ?? throw new ArgumentNullException("camera");
 
-            Camera = camera;
 
-            var presetsCamera = Camera as IHasCameraPresets;
-
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
             {
-                presetsCamera.PresetsListHasChanged += presetsCamera_PresetsListHasChanged;
+                presetsCamera.PresetsListHasChanged += PresetsCamera_PresetsListHasChanged;
             }
         }
 
-        private void presetsCamera_PresetsListHasChanged(object sender, EventArgs e)
+        private void PresetsCamera_PresetsListHasChanged(object sender, EventArgs e)
         {
-            var presetsCamera = Camera as IHasCameraPresets;
-
             var presetList = new List<CameraPreset>();
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
                 presetList = presetsCamera.Presets;
 
-            PostStatusMessage(new
-            {
-                presets = presetList
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    presets = presetList
+                })
+            );
         }
 
 #if SERIES4
@@ -62,9 +56,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendCameraFullMessageObject());
 
-            var ptzCamera = Camera as IHasCameraPtzControl;
 
-            if (ptzCamera != null)
+            if (Camera is IHasCameraPtzControl ptzCamera)
             {
                 //  Need to evaluate how to pass through these P&H actions.  Need a method that takes a bool maybe?
                 AppServerController.AddAction(MessagePath + "/cameraUp", (id, content) => HandleCameraPressAndHold(content, (b) =>
@@ -134,7 +127,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/cameraModeAuto", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOn());
 
                 appServerController.AddAction(MessagePath + "/cameraModeManual", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOff());
-                    
+
             }
 
             if (Camera is IHasPowerControl)
@@ -143,19 +136,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 appServerController.AddAction(MessagePath + "/cameraModeManual", (id, content) => (Camera as IHasPowerControl).PowerOn());
             }
 
-            var presetsCamera = Camera as IHasCameraPresets;
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
             {
                 for (int i = 1; i <= 6; i++)
                 {
                     var preset = i;
-                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, (id, content) => {
+                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, (id, content) =>
+                    {
                         var msg = content.ToObject<MobileControlSimpleContent<int>>();
 
                         presetsCamera.PresetSelect(msg.Value);
                     });
-                        
+
                 }
             }
         }
@@ -180,22 +173,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendCameraFullMessageObject()
         {
-            var presetsCamera = Camera as IHasCameraPresets;
-
             var presetList = new List<CameraPreset>();
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
                 presetList = presetsCamera.Presets;
 
-            PostStatusMessage(new
-            {
-                cameraManualSupported = Camera is IHasCameraControls,
-                cameraAutoSupported = Camera is IHasCameraAutoMode,
-                cameraOffSupported = Camera is IHasCameraOff,
-                cameraMode = GetCameraMode(),
-                hasPresets = Camera is IHasCameraPresets,
-                presets = presetList
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    cameraManualSupported = Camera is IHasCameraControls,
+                    cameraAutoSupported = Camera is IHasCameraAutoMode,
+                    cameraOffSupported = Camera is IHasCameraOff,
+                    cameraMode = GetCameraMode(),
+                    hasPresets = Camera is IHasCameraPresets,
+                    presets = presetList
+                })
+            );
         }
 
         /// <summary>

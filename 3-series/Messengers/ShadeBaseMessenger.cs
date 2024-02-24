@@ -1,14 +1,14 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Shades;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class IShadesOpenCloseStopMessenger : MessengerBase
     {
-        private IShadesOpenCloseStop device;
+        private readonly IShadesOpenCloseStop device;
 
         public IShadesOpenCloseStopMessenger(string key, IShadesOpenCloseStop shades, string messagePath)
             : base(key, messagePath, shades as Device)
@@ -56,7 +56,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-        void ShadeIsOpenFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
+        private void ShadeIsOpenFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
         {
             var state = new ShadeBaseStateMessage
             {
@@ -66,11 +66,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             PostStatusMessage(state);
         }
 
-        void ShadeIsClosedFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
+        private void ShadeIsClosedFeedback_OutputChange(object sender, Core.FeedbackEventArgs e)
         {
-            var state = new ShadeBaseStateMessage();
-
-            state.IsClosed = e.BoolValue;
+            var state = new ShadeBaseStateMessage
+            {
+                IsClosed = e.BoolValue
+            };
 
             PostStatusMessage(state);
         }

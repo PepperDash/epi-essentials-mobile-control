@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
-using PepperDash.Essentials.Room.Config;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core;
-using Newtonsoft.Json;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Room.Config;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class RoomEventScheduleMessenger:MessengerBase
+    public class RoomEventScheduleMessenger : MessengerBase
     {
         private readonly IRoomEventSchedule _room;
 
@@ -35,7 +35,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 SendFullStatus(events);
             });
 
-            _room.ScheduledEventsChanged += (sender, args) =>  SendFullStatus(args.ScheduledEvents);
+            _room.ScheduledEventsChanged += (sender, args) => SendFullStatus(args.ScheduledEvents);
         }
 
         #endregion
@@ -60,19 +60,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-        private void SendFullStatus(List<ScheduledEventConfig> events) 
+        private void SendFullStatus(List<ScheduledEventConfig> events)
         {
 
-                var message = new RoomEventScheduleStateMessage
-                {
-                    ScheduleEvents = events,
-                };
+            var message = new RoomEventScheduleStateMessage
+            {
+                ScheduleEvents = events,
+            };
 
-                PostStatusMessage(message);
+            PostStatusMessage(message);
         }
     }
 
-    public class RoomEventScheduleStateMessage:DeviceStateMessageBase
+    public class RoomEventScheduleStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("scheduleEvents")]
         public List<ScheduledEventConfig> ScheduleEvents { get; set; }

@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using Crestron.SimplSharpPro.DeviceSupport;
+﻿using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Devices.Common.Codec;
-using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using Newtonsoft.Json.Linq;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using PepperDash.Essentials.Devices.Common.Codec;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class SIMPLVtcMessenger : MessengerBase
     {
         private readonly BasicTriList _eisc;
@@ -36,7 +36,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             JoinMap = new SIMPLVtcJoinMap(1001);
 
-            _currentCallItem = new CodecActiveCallItem {Type = eCodecCallType.Video, Id = "-video-"};
+            _currentCallItem = new CodecActiveCallItem { Type = eCodecCallType.Video, Id = "-video-" };
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var asc = appServerController;
             _eisc.SetStringSigAction(JoinMap.HookState.JoinNumber, s =>
             {
-                _currentCallItem.Status = (eCodecCallStatus) Enum.Parse(typeof (eCodecCallStatus), s, true);
+                _currentCallItem.Status = (eCodecCallStatus)Enum.Parse(typeof(eCodecCallStatus), s, true);
                 PostFullStatus(); // SendCallsList();
             });
 
@@ -70,7 +70,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _eisc.SetStringSigAction(JoinMap.CallDirection.JoinNumber, s =>
             {
-                _currentCallItem.Direction = (eCodecCallDirection) Enum.Parse(typeof (eCodecCallDirection), s, true);
+                _currentCallItem.Direction = (eCodecCallDirection)Enum.Parse(typeof(eCodecCallDirection), s, true);
                 PostCallsList();
             });
 
@@ -96,13 +96,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 PostCallsList();
             });
 
-            _eisc.SetStringSigAction(JoinMap.IncomingCallName.JoinNumber, s => 
+            _eisc.SetStringSigAction(JoinMap.IncomingCallName.JoinNumber, s =>
                 {
-                    if(_incomingCallItem != null)
+                    if (_incomingCallItem != null)
                     {
                         _incomingCallItem.Name = s;
                         PostCallsList();
-                    }          
+                    }
                 });
 
             _eisc.SetStringSigAction(JoinMap.IncomingCallNumber.JoinNumber, s =>
@@ -114,14 +114,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             });
 
-            _eisc.SetBoolSigAction(JoinMap.CameraSupportsAutoMode.JoinNumber, b => PostStatusMessage(new
+            _eisc.SetBoolSigAction(JoinMap.CameraSupportsAutoMode.JoinNumber, b => PostStatusMessage(JToken.FromObject(new
             {
                 cameraSupportsAutoMode = b
-            }));
-            _eisc.SetBoolSigAction(JoinMap.CameraSupportsOffMode.JoinNumber, b => PostStatusMessage(new
+            })));
+            _eisc.SetBoolSigAction(JoinMap.CameraSupportsOffMode.JoinNumber, b => PostStatusMessage(JToken.FromObject(new
             {
                 cameraSupportsOffMode = b
-            }));
+            })));
 
             // Directory insanity
             _eisc.SetUShortSigAction(JoinMap.DirectoryRowCount.JoinNumber, u =>
@@ -137,41 +137,41 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _previousDirectoryLength = u;
             });
 
-            _eisc.SetStringSigAction(JoinMap.DirectoryEntrySelectedName.JoinNumber, s => PostStatusMessage(new
+            _eisc.SetStringSigAction(JoinMap.DirectoryEntrySelectedName.JoinNumber, s => PostStatusMessage(JToken.FromObject(new
             {
                 directoryContactSelected = new
                 {
                     name = _eisc.GetString(JoinMap.DirectoryEntrySelectedName.JoinNumber),
                 }
-            }));
+            })));
 
-            _eisc.SetStringSigAction(JoinMap.DirectoryEntrySelectedNumber.JoinNumber, s => PostStatusMessage(new
+            _eisc.SetStringSigAction(JoinMap.DirectoryEntrySelectedNumber.JoinNumber, s => PostStatusMessage(JToken.FromObject(new
             {
                 directoryContactSelected = new
                 {
                     number = _eisc.GetString(JoinMap.DirectoryEntrySelectedNumber.JoinNumber),
                 }
-            }));
+            })));
 
-            _eisc.SetStringSigAction(JoinMap.DirectorySelectedFolderName.JoinNumber, s => PostStatusMessage(new
+            _eisc.SetStringSigAction(JoinMap.DirectorySelectedFolderName.JoinNumber, s => PostStatusMessage(JToken.FromObject(new
             {
                 directorySelectedFolderName = _eisc.GetString(JoinMap.DirectorySelectedFolderName.JoinNumber)
-            }));
+            })));
 
             _eisc.SetSigTrueAction(JoinMap.CameraModeAuto.JoinNumber, PostCameraMode);
             _eisc.SetSigTrueAction(JoinMap.CameraModeManual.JoinNumber, PostCameraMode);
             _eisc.SetSigTrueAction(JoinMap.CameraModeOff.JoinNumber, PostCameraMode);
 
-            _eisc.SetBoolSigAction(JoinMap.CameraSelfView.JoinNumber, b => PostStatusMessage(new
+            _eisc.SetBoolSigAction(JoinMap.CameraSelfView.JoinNumber, b => PostStatusMessage(JToken.FromObject(new
             {
                 cameraSelfView = b
-            }));
+            })));
 
             _eisc.SetUShortSigAction(JoinMap.CameraNumberSelect.JoinNumber, u => PostSelectedCamera());
 
 
             // Add press and holds using helper action
-            Action<string, uint> addPhAction = (s, u) =>
+            void addPhAction(string s, uint u) =>
                 AppServerController.AddAction(MessagePath + s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
             addPhAction("/cameraUp", JoinMap.CameraTiltUp.JoinNumber);
             addPhAction("/cameraDown", JoinMap.CameraTiltDown.JoinNumber);
@@ -181,7 +181,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addPhAction("/cameraZoomOut", JoinMap.CameraZoomOut.JoinNumber);
 
             // Add straight pulse calls using helper action
-            Action<string, uint> addAction = (s, u) =>
+            void addAction(string s, uint u) =>
                 AppServerController.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
             addAction("/endCallById", JoinMap.EndCall.JoinNumber);
             addAction("/endAllCalls", JoinMap.EndCall.JoinNumber);
@@ -204,7 +204,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addAction("/cameraSelfView", JoinMap.CameraSelfView.JoinNumber);
             addAction("/cameraLayout", JoinMap.CameraLayout.JoinNumber);
 
-            asc.AddAction("/cameraSelect", (id, content) => {
+            asc.AddAction("/cameraSelect", (id, content) =>
+            {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
                 SelectCamera(s.Value);
             });
@@ -310,7 +311,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// 
         private void PostFullStatus()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 calls = GetCurrentCallList(),
                 cameraMode = GetCameraMode(),
@@ -332,7 +333,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 hasCameras = true,
                 showCamerasWhenNotInCall = _eisc.BooleanOutput[503].BoolValue,
                 selectedCamera = GetSelectedCamera(),
-            });
+            }));
         }
 
         /// <summary>
@@ -373,7 +374,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     directoryResults = items
                 }
             };
-            PostStatusMessage(directoryMessage);
+            PostStatusMessage(JToken.FromObject(directoryMessage));
         }
 
         /// <summary>
@@ -381,10 +382,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCameraMode()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 cameraMode = GetCameraMode()
-            });
+            }));
         }
 
         /// <summary>
@@ -402,10 +403,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void PostSelectedCamera()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 selectedCamera = GetSelectedCamera()
-            });
+            }));
         }
 
         /// <summary>
@@ -431,10 +432,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostIsReady()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 isReady = true
-            });
+            }));
         }
 
         /// <summary>
@@ -442,10 +443,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCallsList()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 calls = GetCurrentCallList(),
-            });
+            }));
         }
 
         /// <summary>
@@ -456,7 +457,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var cam = s.Substring(6);
             _eisc.SetUshort(JoinMap.CameraNumberSelect.JoinNumber,
-                (ushort) (cam.ToLower() == "far" ? 100 : UInt16.Parse(cam)));
+                (ushort)(cam.ToLower() == "far" ? 100 : ushort.Parse(cam)));
         }
 
         /// <summary>

@@ -1,15 +1,12 @@
 ﻿using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using PepperDash.Core.Web.RequestHandlers;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.WebApiHandlers
 {
-    public class ActionPathsHandler: WebApiBaseRequestHandler
+    public class ActionPathsHandler : WebApiBaseRequestHandler
     {
         private readonly MobileControlSystemController mcController;
         public ActionPathsHandler(MobileControlSystemController controller) : base(true)
@@ -32,7 +29,7 @@ namespace PepperDash.Essentials.WebApiHandlers
     public class ActionPathsResponse
     {
         [JsonIgnore]
-        private MobileControlSystemController mcController;
+        private readonly MobileControlSystemController mcController;
 
         [JsonProperty("actionPaths")]
         public List<string> ActionPaths => mcController.ActionDictionary.Keys.ToList();
