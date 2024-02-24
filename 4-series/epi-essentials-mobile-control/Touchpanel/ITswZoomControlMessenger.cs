@@ -3,11 +3,7 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace PepperDash.Essentials.Touchpanel
 {
@@ -40,7 +36,7 @@ namespace PepperDash.Essentials.Touchpanel
                     Type = MessagePath,
                     Content = JToken.FromObject(new
                     {
-                        InCall = a.BoolValue,
+                        inCall = a.BoolValue,
                     })
                 };
 
@@ -56,7 +52,7 @@ namespace PepperDash.Essentials.Touchpanel
                     Content = JToken.FromObject(
                         new
                         {
-                            IncomingCall = a.BoolValue,
+                            incomingCall = a.BoolValue,
                         })
                 };
 
@@ -81,7 +77,7 @@ namespace PepperDash.Essentials.Touchpanel
         [JsonProperty("inCall", NullValueHandling = NullValueHandling.Ignore)]
         public bool? InCall { get; set; }
 
-        [JsonProperty("IncomingCall", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("incomingCall", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IncomingCall { get; set; }
     }
 }

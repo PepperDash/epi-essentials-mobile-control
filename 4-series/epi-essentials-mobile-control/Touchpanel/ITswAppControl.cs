@@ -7,8 +7,6 @@ namespace PepperDash.Essentials.Touchpanel
     {
         BoolFeedback AppOpenFeedback { get; }
 
-        StringFeedback AppPackageFeedback { get; }
-
         void HideOpenApp();
 
         void CloseOpenApp();

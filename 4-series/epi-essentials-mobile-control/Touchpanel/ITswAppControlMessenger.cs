@@ -11,10 +11,6 @@ namespace PepperDash.Essentials.Touchpanel
     {
         private ITswAppControl _appControl;
 
-        public ITswAppControlMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
-
         public ITswAppControlMessenger(string key, string messagePath, Device device) : base(key, messagePath, device)
         {
             _appControl = device as ITswAppControl;
@@ -36,27 +32,13 @@ namespace PepperDash.Essentials.Touchpanel
 
             appServerController.AddAction($"{MessagePath}/hideApp", (id, context) => _appControl.HideOpenApp());
 
-            _appControl.AppPackageFeedback.OutputChange += (s, a) =>
-            {
-                var message = new MobileControlMessage
-                {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(new
-                    {
-                        AppPackage = a.StringValue
-                    })
-                };
-
-                appServerController.SendMessageObject(message);
-            };
-
             _appControl.AppOpenFeedback.OutputChange += (s, a) => {
                 var message = new MobileControlMessage
                 {
                     Type = MessagePath,
                     Content = JToken.FromObject(new
-                    {
-                        AppOpen = a.BoolValue
+                    {                        
+                        appOpen = a.BoolValue
                     })
                 };
 
@@ -70,7 +52,6 @@ namespace PepperDash.Essentials.Touchpanel
             var message = new TswAppStateMessage
             {
                 AppOpen = _appControl.AppOpenFeedback.BoolValue,
-                AppPackage = _appControl.AppPackageFeedback.StringValue
             };
 
             PostStatusMessage(message);
@@ -81,8 +62,5 @@ namespace PepperDash.Essentials.Touchpanel
     {
         [JsonProperty("appOpen", NullValueHandling = NullValueHandling.Ignore)]
         public bool? AppOpen { get; set; }
-
-        [JsonProperty("appPackage", NullValueHandling = NullValueHandling.Ignore)]
-        public string AppPackage { get; set; }
     }
 }

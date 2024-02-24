@@ -26,11 +26,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         private readonly StringFeedback AppUrlFeedback;
         private readonly StringFeedback QrCodeUrlFeedback;
         private readonly StringFeedback McServerUrlFeedback;
-        private readonly StringFeedback UserCodeFeedback;
-
-        private readonly StringFeedback _appPackageFeedback;
-
-        public StringFeedback AppPackageFeedback => _appPackageFeedback;
+        private readonly StringFeedback UserCodeFeedback;        
 
         private readonly BoolFeedback _appOpenFeedback;
 
@@ -53,6 +49,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public bool UseDirectServer => localConfig.UseDirectServer;
 
+        public bool ZoomRoomController => localConfig.ZoomRoomController;
+
         public MobileControlTouchpanelController(string key, string name, BasicTriListWithSmartObject panel, MobileControlTouchpanelProperties config):base(key, name, panel, config)
         {
             localConfig = config;
@@ -64,22 +62,24 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             McServerUrlFeedback = new StringFeedback(() => _bridge?.McServerUrl);
             UserCodeFeedback = new StringFeedback(() => _bridge?.UserCode);
 
-            _appOpenFeedback = new BoolFeedback(() =>
+            _appOpenFeedback = new BoolFeedback($"{Key}-appOpen",() =>
             {
                 if (Panel is TswX60BaseClass tsX60)
                 {
-                    return tsX60.ExtenderApplicationControlReservedSigs.CloseOpenApplicationFeedback.BoolValue;
+                    Debug.Console(2, this, $"x60 sending {tsX60.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.BoolValue}");
+                    return !tsX60.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.BoolValue;
                 }
 
                 if (Panel is TswX70Base tsX70)
                 {
-                    return tsX70.ExtenderApplicationControlReservedSigs.CloseOpenApplicationFeedback.BoolValue;
+                    Debug.Console(2, this, $"x70 sending {tsX70.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue}");
+                    return !tsX70.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue;
                 }
 
                 return false;
             });
 
-            _zoomIncomingCallFeedback = new BoolFeedback(() =>
+            _zoomIncomingCallFeedback = new BoolFeedback($"{Key}-zoomIncomingCall",() =>
             {
                 if (Panel is TswX60WithZoomRoomAppReservedSigs tsX60)
                 {
@@ -94,7 +94,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 return false;
             });
 
-            _zoomInCallFeedback = new BoolFeedback(() =>
+            _zoomInCallFeedback = new BoolFeedback($"{Key}-zoomInCall",() =>
             {
                 if (Panel is TswX60WithZoomRoomAppReservedSigs tsX60)
                 {
@@ -124,18 +124,24 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         private void RegisterForExtenders()
         {
             if(Panel is TswXX70Base x70Panel) {
-                x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) => Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) => {
+                    Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    UpdateZoomFeedbacks();
+                };
                 x70Panel.ExtenderApplicationControlReservedSigs.Use();
 
-                x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) => Debug.Console(2, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) => { Debug.Console(2, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    UpdateZoomFeedbacks(); };
                 x70Panel.ExtenderZoomRoomAppReservedSigs.Use();
                 return;
             }
 
             if(Panel is TswX60WithZoomRoomAppReservedSigs x60withZoomApp)
             {
-                x60withZoomApp.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) => Debug.Console(2, this, $"X60 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                x60withZoomApp.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) => Debug.Console(2, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                x60withZoomApp.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) => { Debug.Console(2, this, $"X60 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    UpdateZoomFeedbacks(); };
+                x60withZoomApp.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) => { Debug.Console(2, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    UpdateZoomFeedbacks(); };
 
                 x60withZoomApp.ExtenderZoomRoomAppReservedSigs.Use();
                 x60withZoomApp.ExtenderApplicationControlReservedSigs.Use();                
@@ -144,6 +150,10 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public override bool CustomActivate()
         {
+            if(!(Panel is TswXX70Base) && !(Panel is TswX60WithZoomRoomAppReservedSigs))
+            {
+                return base.CustomActivate();
+            }
             var appMessenger = new ITswAppControlMessenger($"appControlMessenger-{Key}", $"/device/{Key}", this);
 
             var zoomMessenger = new ITswZoomControlMessenger($"zoomControlMessenger-{Key}", $"/device/{Key}", this);
@@ -226,6 +236,14 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         private void UpdateFeedbacks()
         {
             foreach (var feedback in Feedbacks) { feedback.FireUpdate(); }
+        }
+
+        private void UpdateZoomFeedbacks()
+        {            
+            foreach (var feedback in ZoomFeedbacks) {
+                Debug.Console(1, this, $"Updating {feedback.Key}");
+                feedback.FireUpdate();
+            }
         }
 
         public void HideOpenApp()

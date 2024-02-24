@@ -722,11 +722,21 @@ namespace PepperDash.Essentials
         {
             var configuration = new RoomConfiguration
             {
-                Touchpanels = DeviceManager.AllDevices.
+                TouchpanelKeys = DeviceManager.AllDevices.
                 OfType<MobileControlTouchpanelController>()
                 .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
                 .Select(tp => tp.Key).ToList()
             };
+
+            try
+            {
+                var zrcTp = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
+
+                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : room.Key;                
+            } catch
+            {
+                configuration.ZoomRoomControllerKey = room.Key;
+            }
 
             var huddleRoom = room as IEssentialsHuddleSpaceRoom;
             if (huddleRoom != null && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
@@ -927,8 +937,12 @@ namespace PepperDash.Essentials
         [JsonProperty("hasRoutingControls", NullValueHandling = NullValueHandling.Ignore)]
         public bool? HasRoutingControls { get; set; }
 
-        [JsonProperty("touchpanels", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> Touchpanels { get; set; }
+        [JsonProperty("touchpanelKeys", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> TouchpanelKeys { get; set; }
+
+        [JsonProperty("zoomRoomControllerKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string ZoomRoomControllerKey { get; set; }
+
 
         [JsonProperty("videoCodecKey", NullValueHandling = NullValueHandling.Ignore)]
         public string VideoCodecKey { get; set; }
@@ -962,7 +976,7 @@ namespace PepperDash.Essentials
             DisplayKeys = new List<string>();
             EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();
             SourceList = new Dictionary<string, SourceListItem>();
-            Touchpanels = new List<string>();
+            TouchpanelKeys = new List<string>();
         }
 
     }

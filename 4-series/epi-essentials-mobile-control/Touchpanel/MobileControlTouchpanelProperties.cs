@@ -7,5 +7,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
     {
         [JsonProperty("useDirectServer")]
         public bool UseDirectServer { get; set; } = false;
+
+        [JsonProperty("zoomRoomController")]
+        public bool ZoomRoomController { get; set; } = false;
     }
 }
