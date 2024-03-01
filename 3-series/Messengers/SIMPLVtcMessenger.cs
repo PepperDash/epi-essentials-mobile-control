@@ -44,12 +44,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
-        {
-            var asc = appServerController;
+        {            
             _eisc.SetStringSigAction(JoinMap.HookState.JoinNumber, s =>
             {
                 _currentCallItem.Status = (eCodecCallStatus)Enum.Parse(typeof(eCodecCallStatus), s, true);
@@ -172,7 +171,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             // Add press and holds using helper action
             void addPhAction(string s, uint u) =>
-                AppServerController.AddAction(MessagePath + s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
+                AddAction(s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
             addPhAction("/cameraUp", JoinMap.CameraTiltUp.JoinNumber);
             addPhAction("/cameraDown", JoinMap.CameraTiltDown.JoinNumber);
             addPhAction("/cameraLeft", JoinMap.CameraPanLeft.JoinNumber);
@@ -182,7 +181,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             // Add straight pulse calls using helper action
             void addAction(string s, uint u) =>
-                AppServerController.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
+                AddAction(s, (id, content) => _eisc.PulseBool(u, 100));
             addAction("/endCallById", JoinMap.EndCall.JoinNumber);
             addAction("/endAllCalls", JoinMap.EndCall.JoinNumber);
             addAction("/acceptById", JoinMap.IncomingAnswer.JoinNumber);
@@ -204,7 +203,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addAction("/cameraSelfView", JoinMap.CameraSelfView.JoinNumber);
             addAction("/cameraLayout", JoinMap.CameraLayout.JoinNumber);
 
-            asc.AddAction("/cameraSelect", (id, content) =>
+            AddAction("/cameraSelect", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
                 SelectCamera(s.Value);
@@ -216,18 +215,18 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 addAction("/cameraPreset" + (i + 1), JoinMap.CameraPresetStart.JoinNumber + i);
             }
 
-            asc.AddAction(MessagePath + "/isReady", (id, content) => PostIsReady());
+            AddAction("/isReady", (id, content) => PostIsReady());
             // Get status
-            asc.AddAction(MessagePath + "/fullStatus", (id, content) => PostFullStatus());
+            AddAction("/fullStatus", (id, content) => PostFullStatus());
             // Dial on string
-            asc.AddAction(MessagePath + "/dial", (id, content) =>
+            AddAction("/dial", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
 
                 _eisc.SetString(JoinMap.CurrentDialString.JoinNumber, s.Value);
             });
             // Pulse DTMF
-            AppServerController.AddAction(MessagePath + "/dtmf", (id, content) =>
+            AddAction("/dtmf", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
                 var join = JoinMap.Joins[s.Value];
@@ -241,11 +240,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             });
 
             // Directory madness
-            asc.AddAction(MessagePath + "/directoryRoot",
+            AddAction("/directoryRoot",
                 (id, content) => _eisc.PulseBool(JoinMap.DirectoryRoot.JoinNumber));
-            asc.AddAction(MessagePath + "/directoryBack",
+            AddAction("/directoryBack",
                 (id, content) => _eisc.PulseBool(JoinMap.DirectoryFolderBack.JoinNumber));
-            asc.AddAction(MessagePath + "/directoryById", (id, content) =>
+            AddAction("/directoryById", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
                 // the id should contain the line number to forward to simpl
@@ -261,7 +260,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         "/directoryById request contains non-numeric ID incompatible with SIMPL bridge");
                 }
             });
-            asc.AddAction(MessagePath + "/directorySelectContact", (id, content) =>
+            AddAction("/directorySelectContact", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
                 try
@@ -275,9 +274,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Debug.Console(2, this, "Error parsing contact from {0} for path /directorySelectContact", s);
                 }
             });
-            asc.AddAction(MessagePath + "/directoryDialContact",
+            AddAction("/directoryDialContact",
                 (id, content) => _eisc.PulseBool(JoinMap.DirectoryDialSelectedLine.JoinNumber));
-            asc.AddAction(MessagePath + "/getDirectory", (id, content) =>
+            AddAction("/getDirectory", (id, content) =>
             {
                 if (_eisc.GetUshort(JoinMap.DirectoryRowCount.JoinNumber) > 0)
                 {

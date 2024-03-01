@@ -15,9 +15,11 @@ using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Queues;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Essentials.Core.Web;
+using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.SoftCodec;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
+using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Services;
 using PepperDash.Essentials.WebApiHandlers;
@@ -34,15 +36,15 @@ using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDi
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : EssentialsDevice, IMobileControl3
+    public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
 
-        private readonly Dictionary<string, List<Action<string, JToken>>> _actionDictionary =
-            new Dictionary<string, List<Action<string, JToken>>>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, List<IMobileControlAction>> _actionDictionary =
+            new Dictionary<string, List<IMobileControlAction>>(StringComparer.InvariantCultureIgnoreCase);
 
-        public Dictionary<string, List<Action<string, JToken>>> ActionDictionary => _actionDictionary;
+        public Dictionary<string, List<IMobileControlAction>> ActionDictionary => _actionDictionary;
 
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
@@ -210,6 +212,15 @@ namespace PepperDash.Essentials
                 _roomBridges.Add(messenger);
 
                 AddDefaultDeviceMessenger(messenger);
+
+                if(room is IRoomEventSchedule)
+                {
+                    var scheduleMessenger = new RoomEventScheduleMessenger($"{room.Key}-schedule-{Key}",
+
+                    string.Format("/room/{0}/schedule", room.Key), room as IRoomEventSchedule);
+
+                    AddDefaultDeviceMessenger(scheduleMessenger);
+                }
             }
         }
 
@@ -218,32 +229,39 @@ namespace PepperDash.Essentials
         /// </summary>
         private void SetupDefaultDeviceMessengers()
         {
-            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)))
+            bool messengerAdded = false;
+            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).Cast<Device>())
             {
                 Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
 
                 if (device is CameraBase)
-                {
-                    var camDevice = device as CameraBase;
+                {                    
                     Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
-                    var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Key, camDevice,
-                        "/device/" + device.Key);
+                    
+                    var cameraMessenger = new CameraBaseMessenger($"{device.Key}-cameraBase-{Key}", device as CameraBase,
+                        $"/device/{device.Key}");
+
                     AddDefaultDeviceMessenger(cameraMessenger);
 
+                    messengerAdded = true;
                 }
 
                 if (device is BlueJeansPc)
-                {
-                    var softCodecDevice = device as BlueJeansPc;
+                {                    
                     Debug.Console(2, this, "Adding IRunRouteActionMessnger for device: {0}", device.Key);
-                    var routeMessenger = new RunRouteActionMessenger(device.Key + "-" + Key, softCodecDevice,
-                        "/device/" + device.Key);
+
+                    var routeMessenger = new RunRouteActionMessenger($"{device.Key}-runRouteAction-{Key}", device as BlueJeansPc,
+                        $"/device/{device.Key}");
+
                     AddDefaultDeviceMessenger(routeMessenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is ITvPresetsProvider)
                 {
                     var presetsDevice = device as ITvPresetsProvider;
+
                     if (presetsDevice.TvPresets == null)
                     {
                         Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
@@ -251,45 +269,58 @@ namespace PepperDash.Essentials
                     else
                     {
                         Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
-                        var presetsMessenger = new DevicePresetsModelMessenger(device.Key + "-" + Key, string.Format("/device/{0}/presets", device.Key),
+
+                        var presetsMessenger = new DevicePresetsModelMessenger($"{device.Key}-presets-{Key}", $"/device/{device.Key}/presets",
                             presetsDevice);
+
                         AddDefaultDeviceMessenger(presetsMessenger);
 
+                        messengerAdded = true;
                     }
                 }
 
                 if (device is DisplayBase)
-                {
-                    var display = device as DisplayBase;
+                {                  
+
                     Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
 
-                    display.LinkActions(this);
+                    var dbMessenger = new DisplayBaseMessenger($"{device.Key}-displayBase-{Key}", $"/device/{device.Key}", device as DisplayBase);
+
+                    AddDefaultDeviceMessenger(dbMessenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is Core.DisplayBase)
                 {
-                    var display = device as Core.DisplayBase;
                     Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
 
-                    display.LinkActions(this);
+                    var dbMessenger = new CoreDisplayBaseMessenger($"{device.Key}-displayBase-{Key}", $"/device/{device.Key}", device as Core.DisplayBase);
+                    AddDefaultDeviceMessenger(dbMessenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is TwoWayDisplayBase)
                 {
                     var display = device as TwoWayDisplayBase;
                     Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
-                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger(device.Key + "-" + Key,
+                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger($"{device.Key}-twoWayDisplay-{Key}",
                         string.Format("/device/{0}", device.Key), display);
                     AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is Core.TwoWayDisplayBase)
                 {
                     var display = device as Core.TwoWayDisplayBase;
                     Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
-                    var twoWayDisplayMessenger = new CoreTwoWayDisplayBaseMessenger(device.Key + "-" + Key,
+                    var twoWayDisplayMessenger = new CoreTwoWayDisplayBaseMessenger($"{device.Key}-twoWayDisplay-{Key}",
                         string.Format("/device/{0}", device.Key), display);
                     AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is IBasicVolumeWithFeedback)
@@ -297,9 +328,11 @@ namespace PepperDash.Essentials
                     var deviceKey = device.Key;
                     var volControlDevice = device as IBasicVolumeWithFeedback;
                     Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
-                    var messenger = new DeviceVolumeMessenger(deviceKey + "-" + Key + "-volume",
+                    var messenger = new DeviceVolumeMessenger($"{device.Key}-volume-{Key}",
                         string.Format("/device/{0}/volume", deviceKey), volControlDevice);
                     AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is ILightingScenes)
@@ -307,9 +340,11 @@ namespace PepperDash.Essentials
                     var deviceKey = device.Key;
                     var lightingDevice = device as ILightingScenes;
                     Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new ILightingScenesMessenger(deviceKey + "-" + Key,
+                    var messenger = new ILightingScenesMessenger($"{device.Key}-lighting-{Key}",
                         lightingDevice, string.Format("/device/{0}", deviceKey));
                     AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
                 }
 
                 if (device is IShadesOpenCloseStop)
@@ -317,13 +352,113 @@ namespace PepperDash.Essentials
                     var deviceKey = device.Key;
                     var shadeDevice = device as IShadesOpenCloseStop;
                     Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
-                    var messenger = new IShadesOpenCloseStopMessenger(deviceKey + "-" + Key,
+                    var messenger = new IShadesOpenCloseStopMessenger($"{device.Key}-shades-{Key}",
                         shadeDevice, string.Format("/device/{0}", deviceKey));
                     AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
                 }
 
+                if(device is VideoCodecBase codec)
+                {
+                    Debug.Console(2, this, $"Adding VideoCodecBaseMessenger for device: {codec.Key}");
 
-                if (!(device is EssentialsDevice genericDevice))
+                    var messenger = new VideoCodecBaseMessenger($"{codec.Key}-videoCodec-{Key}", codec, $"/device/{codec.Key}");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is AudioCodecBase audioCodec) {
+                    Debug.Console(2, this, $"Adding AudioCodecBaseMessenger for device: {audioCodec.Key}");
+
+                    var messenger = new AudioCodecBaseMessenger($"{audioCodec.Key}-audioCodec-{Key}", audioCodec, $"/device/{audioCodec.Key}");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is ISetTopBoxControls)
+                {
+                    Debug.Console(2, this, $"Adding ISetTopBoxControlMessenger for device: {device.Key}");
+
+                    var messenger = new ISetTopBoxControlsMessenger($"{device.Key}-stb-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IChannel)
+                {
+                    Debug.Console(2, this, $"Adding IChannelMessenger for device: {device.Key}");
+
+                    var messenger = new IChannelMessenger($"{device.Key}-channel-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IColor)
+                {
+                    Debug.Console(2, this, $"Adding IColorMessenger for device: {device.Key}");
+
+                    var messenger = new IColorMessenger($"{device.Key}-color-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IDPad)
+                {
+                    Debug.Console(2, this, $"Adding IDPadMessenger for device: {device.Key}");
+
+                    var messenger = new IDPadMessenger($"{device.Key}-dPad-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is INumericKeypad)
+                {
+                    Debug.Console(2, this, $"Adding INumericKeyapdMessenger for device: {device.Key}");
+
+                    var messenger = new INumericKeypadMessenger($"{device.Key}-numericKeypad-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IHasPowerControl)
+                {
+                    Debug.Console(2, this, $"Adding IHasPowerControlMessenger for device: {device.Key}");
+
+                    var messenger = new IHasPowerMessenger($"{device.Key}-powerControl-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is ITransport)
+                {
+                    Debug.Console(2, this, $"Adding ITransportMessenger for device: {device.Key}");
+
+                    var messenger = new IChannelMessenger($"{device.Key}-transport-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }               
+
+
+                if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
                     continue;
                 }
@@ -666,12 +801,31 @@ namespace PepperDash.Essentials
 
         public void PrintActionDictionaryPaths(object o)
         {
-            Debug.Console(0, this, "ActionDictionary Contents:");
+            CrestronConsole.ConsoleCommandResponse("ActionDictionary Contents:\r\n");
+
+            foreach(var (messengerKey, actionPath) in GetActionDictionaryPaths())
+            {
+                CrestronConsole.ConsoleCommandResponse($"<{messengerKey}> {actionPath}\r\n");
+            }
+        }
+
+        public List<(string, string)> GetActionDictionaryPaths()
+        {
+            var paths = new List<(string, string)>();
 
             foreach (var item in _actionDictionary)
             {
-                Debug.Console(0, this, "{0}", item.Key);
+                var messengers = item.Value.Select(a => a.Messenger).Cast<MessengerBase>();
+                foreach (var messenger in messengers)
+                {
+                    foreach (var actionPath in messenger.GetActionPaths())
+                    {                       
+                        paths.Add((messenger.Key, $"{item.Key}{actionPath}"));
+                    }
+                }
             }
+
+            return paths;
         }
 
         /// <summary>
@@ -679,20 +833,27 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="key">The path of the API command</param>
         /// <param name="action">The action to be triggered by the commmand</param>
-        public void AddAction(string key, Action<string, JToken> action)
+        public void AddAction<T>(T messenger, Action<string, string, JToken> action) where T:IMobileControlMessenger
         {
-            if (_actionDictionary.TryGetValue(key, out List<Action<string, JToken>> actionList))
+            if (_actionDictionary.TryGetValue(messenger.MessagePath, out List<IMobileControlAction> actionList))
             {
-                actionList.Add(action);
+                
+                if(actionList.Any(a => a.Messenger.GetType() == messenger.GetType() && a.Messenger.DeviceKey == messenger.DeviceKey))
+                {
+                    Debug.Console(0, this, $"Messenger of type {messenger.GetType().Name} already exists. Skipping actions for {messenger.Key}");
+                    return;
+                }
+
+                actionList.Add(new MobileControlAction(messenger, action)); 
                 return;
             }
 
-            actionList = new List<Action<string, JToken>>
+            actionList = new List<IMobileControlAction>
             {
-                action
+                new MobileControlAction(messenger, action)
             };
 
-            _actionDictionary.Add(key, actionList);
+            _actionDictionary.Add(messenger.MessagePath, actionList);
         }
 
         /// <summary>
@@ -1377,17 +1538,19 @@ Mobile Control Direct Server Infromation:
                         Debug.Console(1, this, "Received close message from server.");
                         break;
                     default:
-                        List<Action<string, JToken>> handlers;
+                        var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key));
 
-                        if (!_actionDictionary.TryGetValue(message.Type, out handlers))
+                        if (handlersKv.Key == null)
                         {
                             Debug.Console(1, this, "-- Warning: Incoming message has no registered handler");
                             break;
                         }
 
+                        var handlers = handlersKv.Value;
+
                         foreach (var handler in handlers)
                         {
-                            Task.Run(() => handler(message.ClientId, message.Content));
+                            Task.Run(() => handler.Action(message.Type, message.ClientId, message.Content));
                         }
 
                         break;

@@ -15,7 +15,7 @@ namespace PepperDash.Essentials.Touchpanel
             _appControl = device as ITswAppControl;
         }
 
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
         {
             if (_appControl == null)
             {
@@ -23,27 +23,20 @@ namespace PepperDash.Essentials.Touchpanel
                 return;
             }
 
-            appServerController.AddAction($"{MessagePath}/fullStatus", (id, context) => SendFullStatus());
+            AddAction($"/fullStatus", (id, context) => SendFullStatus());
 
-            appServerController.AddAction($"{MessagePath}/openApp", (id, context) => _appControl.OpenApp());
+            AddAction($"/openApp", (id, context) => _appControl.OpenApp());
 
-            appServerController.AddAction($"{MessagePath}/closeApp", (id, context) => _appControl.CloseOpenApp());
+            AddAction($"/closeApp", (id, context) => _appControl.CloseOpenApp());
 
-            appServerController.AddAction($"{MessagePath}/hideApp", (id, context) => _appControl.HideOpenApp());
+            AddAction($"/hideApp", (id, context) => _appControl.HideOpenApp());
 
             _appControl.AppOpenFeedback.OutputChange += (s, a) =>
             {
-                var message = new MobileControlMessage
+                PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(new
-                    {
-                        appOpen = a.BoolValue
-                    })
-                };
-
-                appServerController.SendMessageObject(message);
-
+                    appOpen = a.BoolValue
+                }));
             };
         }
 

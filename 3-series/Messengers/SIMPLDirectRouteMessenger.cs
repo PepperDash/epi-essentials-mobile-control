@@ -27,7 +27,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         #region Overrides of MessengerBase
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 controller)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController controller)
 #endif
@@ -43,14 +43,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 })
                 ));
 
-            controller.AddAction(MessagePath + "/programAudio/selectSource", (id, content) =>
+            AddAction("/programAudio/selectSource", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 _eisc.StringInput[JoinMap.SourceForDestinationAudio.JoinNumber].StringValue = msg.Value;
             });
 
-            controller.AddAction(MessagePath + "/fullStatus", (id, content) =>
+            AddAction("/fullStatus", (id, content) =>
             {
                 foreach (var dest in DestinationList)
                 {
@@ -76,7 +76,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 );
             });
 
-            controller.AddAction(MessagePath + "/advancedSharingMode", (id, content) =>
+            AddAction("/advancedSharingMode", (id, content) =>
             {
                 var b = content.ToObject<MobileControlSimpleContent<bool>>();
 
@@ -108,13 +108,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _eisc.SetStringSigAction((uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order),
                     s => UpdateSourceForDestination(s, key));
 
-                AppServerController.AddAction(string.Format("{0}/{1}/selectSource", MessagePath, key), (id, content) =>
+                AddAction($"/{key}/selectSource", (id, content) =>
                 {
                     var s = content.ToObject<MobileControlSimpleContent<string>>();
 
                     _eisc.StringInput[(uint)(JoinMap.SourceForDestinationJoinStart.JoinNumber + dest.Order)].StringValue = s.Value;
                 });
-
             }
         }
 

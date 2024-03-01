@@ -40,14 +40,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         #region Overrides of MessengerBase
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendPresets());
+            AddAction("/fullStatus", (id, content) => SendPresets());
 
-            appServerController.AddAction(MessagePath + "/recall", (id, content) =>
+            AddAction("/recall", (id, content) =>
             {
                 var p = content.ToObject<PresetChannelMessage>();
 
@@ -61,7 +61,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 RecallPreset(dev, p.Preset.Channel);
             });
 
-            appServerController.AddAction(MessagePath + "/save", (id, content) =>
+            AddAction("/save", (id, content) =>
             {
                 var presets = content.ToObject<List<PresetChannel>>();
 

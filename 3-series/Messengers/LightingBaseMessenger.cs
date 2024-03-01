@@ -31,16 +31,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
 
-            appServerController.AddAction(string.Format("{0}/selectScene", MessagePath), (id, content) =>
+            AddAction("/selectScene", (id, content) =>
             {
                 var s = content.ToObject<LightingScene>();
                 Device.SelectScene(s);

@@ -16,7 +16,7 @@ namespace PepperDash.Essentials.Touchpanel
             _zoomControl = device as ITswZoomControl;
         }
 
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
         {
             if (_zoomControl == null)
             {
@@ -24,39 +24,27 @@ namespace PepperDash.Essentials.Touchpanel
                 return;
             }
 
-            appServerController.AddAction($"{MessagePath}/fullStatus", (id, context) => SendFullStatus());
+            AddAction($"{MessagePath}/fullStatus", (id, context) => SendFullStatus());
 
 
-            appServerController.AddAction($"{MessagePath}/endCall", (id, context) => _zoomControl.EndZoomCall());
+            AddAction($"{MessagePath}/endCall", (id, context) => _zoomControl.EndZoomCall());
 
             _zoomControl.ZoomIncomingCallFeedback.OutputChange += (s, a) =>
             {
-                var message = new MobileControlMessage
+                PostStatusMessage(JToken.FromObject(new
                 {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(new
-                    {
-                        inCall = a.BoolValue,
-                    })
-                };
-
-                appServerController.SendMessageObject(message);
+                    inCall = a.BoolValue,
+                }));
             };
 
 
             _zoomControl.ZoomInCallFeedback.OutputChange += (s, a) =>
-            {
-                var message = new MobileControlMessage
+            {                
+                PostStatusMessage(JToken.FromObject(
+                new
                 {
-                    Type = MessagePath,
-                    Content = JToken.FromObject(
-                        new
-                        {
-                            incomingCall = a.BoolValue,
-                        })
-                };
-
-                appServerController.SendMessageObject(message);
+                    incomingCall = a.BoolValue,
+                }));
             };
         }
 

@@ -37,21 +37,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
         #region Overrides of MessengerBase
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
+            AddAction("/fullStatus", (id, content) => SendStatus());
 
-            appServerController.AddAction(MessagePath + "/level", (id, content) =>
+            AddAction("/level", (id, content) =>
             {
                 var volume = content.ToObject<MobileControlSimpleContent<ushort>>();
 
                 _localDevice.SetVolume(volume.Value);
             });
 
-            appServerController.AddAction(MessagePath + "/muteToggle", (id, content) =>
+            AddAction("/muteToggle", (id, content) =>
             {
                 var state = content.ToObject<MobileControlSimpleContent<bool>>();
 

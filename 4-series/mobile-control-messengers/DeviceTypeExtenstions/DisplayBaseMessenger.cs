@@ -9,17 +9,24 @@ using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-    public static class DisplayBaseExtensions
+    public class DisplayBaseMessenger: MessengerBase
     {
-        public static void LinkActions(this DisplayBase display, IMobileControl3 controller)
+        private readonly DisplayBase display;
+
+        public DisplayBaseMessenger(string key, string messagePath, DisplayBase device) : base(key, messagePath, device)
         {
-            var prefix = string.Format(@"/device/{0}/", display.Key);
+            display = device;
+        }
 
-            controller.AddAction(prefix + "powerOn", (id, content) => display.PowerOn());
-            controller.AddAction(prefix + "powerOff", (id, content) => display.PowerOff());
-            controller.AddAction(prefix + "powerToggle", (id, content) => display.PowerToggle());
+        protected override void RegisterActions()
+        {
+            base.RegisterActions();            
 
-            controller.AddAction(prefix + "inputSelect", (id, content) =>
+            /*AddAction("/powerOn", (id, content) => display.PowerOn());
+            AddAction("/powerOff", (id, content) => display.PowerOff());
+            AddAction("/powerToggle", (id, content) => display.PowerToggle());*/
+
+            AddAction("/inputSelect", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
 
@@ -34,32 +41,21 @@ namespace PepperDash.Essentials.Room.MobileControl
                 display.ExecuteSwitch(inputPort.Selector);
             });
 
-            controller.AddAction(prefix + "inputs", (id, content) =>
+            AddAction("/inputs", (id, content) =>
             {
                 var inputsList = display.InputPorts.Select(p => p.Key).ToList();
 
                 var messageObject = new MobileControlMessage
                 {
-                    Type = prefix + "inputs",
+                    Type = MessagePath + "/inputs",
                     Content = JToken.FromObject(new
                     {
                         inputKeys = inputsList,
                     })
                 };
 
-                controller.SendMessageObject(messageObject);
+                AppServerController.SendMessageObject(messageObject);
             });
-        }
-
-        public static void UnlinkActions(this DisplayBase display, IMobileControl3 controller)
-        {
-            var prefix = string.Format(@"/device/{0}/", display.Key);
-
-            controller.RemoveAction(prefix + "powerOn");
-            controller.RemoveAction(prefix + "powerOff");
-            controller.RemoveAction(prefix + "powerToggle");
-            controller.RemoveAction(prefix + "inputs");
-            controller.RemoveAction(prefix + "inputSelect");
         }
     }
 }

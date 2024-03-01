@@ -58,7 +58,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
@@ -96,7 +96,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             // Add straight pulse calls
             void addAction(string s, uint u) =>
-                AppServerController.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
+                AddAction(s, (id, content) => _eisc.PulseBool(u, 100));
             addAction("/endCallById", JoinMap.EndCall.JoinNumber);
             addAction("/endAllCalls", JoinMap.EndCall.JoinNumber);
             addAction("/acceptById", JoinMap.IncomingAnswer.JoinNumber);
@@ -113,16 +113,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
 
             // Get status
-            AppServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullStatus());
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
             // Dial on string
-            AppServerController.AddAction(MessagePath + "/dial",
+            AddAction("/dial",
                 (id, content) =>
                 {
                     var msg = content.ToObject<MobileControlSimpleContent<string>>();
                     _eisc.SetString(JoinMap.CurrentDialString.JoinNumber, msg.Value);
                 });
             // Pulse DTMF
-            AppServerController.AddAction(MessagePath + "/dtmf", (id, content) =>
+            AddAction("/dtmf", (id, content) =>
             {
                 var s = content.ToObject<MobileControlSimpleContent<string>>();
 

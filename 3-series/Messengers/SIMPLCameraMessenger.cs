@@ -33,18 +33,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            var asc = appServerController;
-
-            asc.AddAction(MessagePath + "/fullStatus", (id, content) => SendCameraFullMessageObject());
+            AddAction("/fullStatus", (id, content) => SendCameraFullMessageObject());
 
             // Add press and holds using helper action
             void addPhAction(string s, uint u) =>
-                asc.AddAction(MessagePath + s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
+                AddAction(s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
             addPhAction("/cameraUp", _joinMap.TiltUp.JoinNumber);
             addPhAction("/cameraDown", _joinMap.TiltDown.JoinNumber);
             addPhAction("/cameraLeft", _joinMap.PanLeft.JoinNumber);
@@ -53,7 +51,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addPhAction("/cameraZoomOut", _joinMap.ZoomOut.JoinNumber);
 
             void addAction(string s, uint u) =>
-                asc.AddAction(MessagePath + s, (id, content) => _eisc.PulseBool(u, 100));
+                AddAction(s, (id, content) => _eisc.PulseBool(u, 100));
 
             addAction("/cameraModeAuto", _joinMap.CameraModeAuto.JoinNumber);
             addAction("/cameraModeManual", _joinMap.CameraModeManual.JoinNumber);
@@ -87,7 +85,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        public void CustomUnregsiterWithAppServer(IMobileControl3 appServerController)
+        public void CustomUnregsiterWithAppServer(IMobileControl appServerController)
 #else   
         public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
 #endif

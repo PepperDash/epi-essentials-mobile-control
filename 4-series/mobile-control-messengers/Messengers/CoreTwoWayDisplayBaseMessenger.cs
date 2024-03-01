@@ -29,20 +29,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
             if (_display == null)
             {
                 Debug.Console(0, this, $"Unable to register TwoWayDisplayBase messenger {Key}");
                 return;
             }
 
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullStatus());
-
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
+        
             _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
             _display.CurrentInputFeedback.OutputChange += CurrentInputFeedbackOnOutputChange;
             _display.IsCoolingDownFeedback.OutputChange += IsCoolingFeedbackOnOutputChange;

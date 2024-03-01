@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -18,15 +19,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public abstract class MessengerBase: EssentialsDevice
 #endif
     {
-        protected Device _device;
+        protected IKeyName _device;
 
         private readonly List<string> _deviceInterfaces;
+
+        private readonly Dictionary<string, Action<string, JToken>> _actions = new Dictionary<string, Action<string, JToken>>();
+
+        public string DeviceKey => _device?.Key ?? "";
 
         /// <summary>
         /// 
         /// </summary>
 #if SERIES4
-        public IMobileControl3 AppServerController { get; private set; }
+        public IMobileControl AppServerController { get; private set; }
 #else
         public MobileControlSystemController AppServerController { get; private set; }
 #endif
@@ -49,12 +54,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             MessagePath = messagePath;
         }
 
-        protected MessengerBase(string key, string messagePath, Device device)
+        protected MessengerBase(string key, string messagePath, IKeyName device)
             : this(key, messagePath)
         {
             _device = device;
 
-            _deviceInterfaces = GetInterfaces(_device);
+            _deviceInterfaces = GetInterfaces(_device as Device);
         }
 
         /// <summary>
@@ -64,15 +69,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <returns></returns>
         private List<string> GetInterfaces(Device device)
         {
-            var interfaceTypes = device.GetType().GetInterfaces();
-
-            List<string> interfaces = new List<string>();
-
-            foreach (var i in interfaceTypes)
-            {
-                interfaces.Add(i.Name);
-            }
-            return interfaces;
+            return device?.GetType().GetInterfaces().Select((i) => i.Name).ToList() ?? new List<string>();
         }
 
         /// <summary>
@@ -80,13 +77,55 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        public void RegisterWithAppServer(IMobileControl3 appServerController)
+        public void RegisterWithAppServer(IMobileControl appServerController)
 #else
         public void RegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
             AppServerController = appServerController ?? throw new ArgumentNullException("appServerController");
-            CustomRegisterWithAppServer(AppServerController);
+
+            AppServerController.AddAction(this, HandleMessage);
+
+            RegisterActions();
+        }
+
+        private void HandleMessage(string path, string id, JToken content)
+        {
+            // replace base path with empty string. Should leave something like /fullStatus
+            var route = path.Replace(MessagePath, string.Empty); 
+
+            if(!_actions.TryGetValue(route, out var action)) {
+                Debug.Console(1, this, $"No action found for path {path}");
+                return;
+            }
+
+            action(id, content);
+        }
+
+        protected void AddAction(string path, Action<string, JToken> action)
+        {
+            if (_actions.ContainsKey(path))
+            {
+                Debug.Console(0, this, $"Messenger {Key} already has action registered at {path}");
+                return;
+            }
+
+            _actions.Add(path, action);
+        }
+
+        public List<string> GetActionPaths()
+        {
+            return _actions.Keys.ToList();
+        }
+
+        protected void RemoveAction(string path)
+        {
+            if (!_actions.ContainsKey(path))
+            {
+                return;
+            }
+
+            _actions.Remove(path);
         }
 
         /// <summary>
@@ -94,7 +133,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        protected virtual void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected virtual void RegisterActions()
 #else
         protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
@@ -162,7 +201,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             deviceState.Key = _device.Key;
 
-            deviceState.Name = _device.Name;            
+            deviceState.Name = _device.Name;
+
+            deviceState.MessageBasePath = MessagePath;
 
             PostStatusMessage(JToken.FromObject(deviceState), type, clientId);
         }
@@ -204,13 +245,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// The type of the message class
         /// </summary>
         [JsonProperty("messageType")]
-        public string MessageType
-        {
-            get
-            {
-                return this.GetType().Name;
-            }
-        }
+        public string MessageType => GetType().Name;
+
+        [JsonProperty("messageBasePath")]
+        public string MessageBasePath { get; set; }
     }
 
     /// <summary>

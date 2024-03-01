@@ -17,23 +17,23 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), (id, content) => SendFullStatus());
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
 
-            appServerController.AddAction(string.Format("{0}/shadeUp", MessagePath), (id, content) =>
+            AddAction("/shadeUp", (id, content) =>
                 {
 
                     device.Open();
 
                 });
 
-            appServerController.AddAction(string.Format("{0}/shadeDown", MessagePath), (id, content) =>
+            AddAction("/shadeDown", (id, content) =>
                 {
 
                     device.Close();
@@ -43,7 +43,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var stopDevice = device;
             if (stopDevice != null)
             {
-                appServerController.AddAction(string.Format("{0}/stopOrPreset", MessagePath), (id, content) =>
+                AddAction("/stopOrPreset", (id, content) =>
                 {
                     stopDevice.Stop();
                 });

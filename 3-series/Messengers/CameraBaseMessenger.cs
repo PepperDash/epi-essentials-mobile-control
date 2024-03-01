@@ -47,20 +47,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendCameraFullMessageObject());
+            AddAction("/fullStatus", (id, content) => SendCameraFullMessageObject());
 
 
             if (Camera is IHasCameraPtzControl ptzCamera)
             {
                 //  Need to evaluate how to pass through these P&H actions.  Need a method that takes a bool maybe?
-                AppServerController.AddAction(MessagePath + "/cameraUp", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraUp", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -70,7 +70,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     ptzCamera.TiltStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraDown", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraDown", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -80,7 +80,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     ptzCamera.TiltStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraLeft", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraLeft", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -90,7 +90,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraRight", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraRight", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -100,7 +100,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomIn", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraZoomIn", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -110,7 +110,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                     ptzCamera.ZoomStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomOut", (id, content) => HandleCameraPressAndHold(content, (b) =>
+                AddAction("/cameraZoomOut", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
                     {
@@ -124,16 +124,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (Camera is IHasCameraAutoMode)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeAuto", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOn());
+                AddAction("/cameraModeAuto", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOn());
 
-                appServerController.AddAction(MessagePath + "/cameraModeManual", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOff());
+                AddAction("/cameraModeManual", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOff());
 
             }
 
             if (Camera is IHasPowerControl)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeOff", (id, content) => (Camera as IHasPowerControl).PowerOff());
-                appServerController.AddAction(MessagePath + "/cameraModeManual", (id, content) => (Camera as IHasPowerControl).PowerOn());
+                AddAction("/cameraModeOff", (id, content) => (Camera as IHasPowerControl).PowerOff());
+                AddAction("/cameraModeManual", (id, content) => (Camera as IHasPowerControl).PowerOn());
             }
 
 
@@ -142,7 +142,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 for (int i = 1; i <= 6; i++)
                 {
                     var preset = i;
-                    appServerController.AddAction(MessagePath + "/cameraPreset" + i, (id, content) =>
+                    AddAction("/cameraPreset" + i, (id, content) =>
                     {
                         var msg = content.ToObject<MobileControlSimpleContent<int>>();
 

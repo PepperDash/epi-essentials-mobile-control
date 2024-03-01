@@ -32,14 +32,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendRoutingFullMessageObject());
+            AddAction("/fullStatus", (id, content) => SendRoutingFullMessageObject());
 
-            appServerController.AddAction(MessagePath + "/source", (id, content) =>
+            AddAction("/source", (id, content) =>
                 {
                     var c = content.ToObject<SourceSelectMessageContent>();
                     // assume no sourceListKey

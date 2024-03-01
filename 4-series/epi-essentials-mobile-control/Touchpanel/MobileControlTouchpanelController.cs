@@ -166,7 +166,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             var zoomMessenger = new ITswZoomControlMessenger($"zoomControlMessenger-{Key}", $"/device/{Key}", this);
 
-            var mc = DeviceManager.AllDevices.OfType<IMobileControl3>().FirstOrDefault();
+            var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
 
             if (mc == null)
             {

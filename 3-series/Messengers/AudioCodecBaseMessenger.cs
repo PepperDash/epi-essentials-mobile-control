@@ -31,22 +31,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendAtcFullMessageObject());
-            appServerController.AddAction(MessagePath + "/dial", (id, content) =>
+            AddAction("/fullStatus", (id, content) => SendAtcFullMessageObject());
+            AddAction("/dial", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 Codec.Dial(msg.Value);
             });
 
-            appServerController.AddAction(MessagePath + "/endCallById", (id, content) =>
+            AddAction("/endCallById", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
@@ -55,15 +55,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Codec.EndCall(call);
             });
 
-            appServerController.AddAction(MessagePath + "/endAllCalls", (id, content) => Codec.EndAllCalls());
-            appServerController.AddAction(MessagePath + "/dtmf", (id, content) =>
+            AddAction("/endAllCalls", (id, content) => Codec.EndAllCalls());
+            AddAction("/dtmf", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
                 Codec.SendDtmf(msg.Value);
             });
 
-            appServerController.AddAction(MessagePath + "/rejectById", (id, content) =>
+            AddAction("/rejectById", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
@@ -73,7 +73,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Codec.RejectCall(call);
             });
 
-            appServerController.AddAction(MessagePath + "/acceptById", (id, content) =>
+            AddAction("/acceptById", (id, content) =>
             {
                 var msg = content.ToObject<MobileControlSimpleContent<string>>();
                 var call = GetCallWithId(msg.Value);

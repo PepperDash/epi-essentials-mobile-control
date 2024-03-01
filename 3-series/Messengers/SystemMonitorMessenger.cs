@@ -16,11 +16,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public SystemMonitorMessenger(string key, SystemMonitorController sysMon, string messagePath)
             : base(key, messagePath, sysMon)
         {
-            this.systemMonitor = sysMon ?? throw new ArgumentNullException("sysMon");
+            systemMonitor = sysMon ?? throw new ArgumentNullException("sysMon");
 
-            this.systemMonitor.SystemMonitorPropertiesChanged += SysMon_SystemMonitorPropertiesChanged;
+            systemMonitor.SystemMonitorPropertiesChanged += SysMon_SystemMonitorPropertiesChanged;
 
-            foreach (var p in this.systemMonitor.ProgramStatusFeedbackCollection)
+            foreach (var p in systemMonitor.ProgramStatusFeedbackCollection)
             {
                 p.Value.ProgramInfoChanged += ProgramInfoChanged;
             }
@@ -84,12 +84,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            AppServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendFullStatusMessage());
+            AddAction("/fullStatus", (id, content) => SendFullStatusMessage());
         }
     }
 
