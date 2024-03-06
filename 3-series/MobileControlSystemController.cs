@@ -329,7 +329,7 @@ namespace PepperDash.Essentials
                     var volControlDevice = device as IBasicVolumeWithFeedback;
                     Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
                     var messenger = new DeviceVolumeMessenger($"{device.Key}-volume-{Key}",
-                        string.Format("/device/{0}/volume", deviceKey), volControlDevice);
+                        string.Format("/device/{0}", deviceKey), volControlDevice);
                     AddDefaultDeviceMessenger(messenger);
 
                     messengerAdded = true;

@@ -18,9 +18,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             _pushedActionHandlers = new Dictionary<string, Action<string, Action<bool>>>
             {
-                {"true", AddTimer },
+                {"pressed", AddTimer },
                 {"held", ResetTimer },
-                {"false", StopTimer }
+                {"released", StopTimer }
             };
         }
 
@@ -73,17 +73,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         public static void HandlePressAndHold(JToken content, Action<bool> action)
         {
-            var state = content.ToObject<MobileControlSimpleContent<string>>();
+            var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
-            var timerHandler = GetPressAndHoldHandler(state.Value);
+            var timerHandler = GetPressAndHoldHandler(msg.Value);
             if (timerHandler == null)
             {
                 return;
             }
 
-            timerHandler(state.Value, action);
+            timerHandler(msg.Value, action);
 
-            action(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
+            action(msg.Value.Equals("pressed", StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

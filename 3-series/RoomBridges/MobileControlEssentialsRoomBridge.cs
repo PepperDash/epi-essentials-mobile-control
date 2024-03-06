@@ -54,7 +54,7 @@ namespace PepperDash.Essentials
             Room = room;
         }
 
-        public MobileControlEssentialsRoomBridge(string key, string roomKey, IEssentialsRoom room) : base(key, $"/room/{room.Key}", room)
+        public MobileControlEssentialsRoomBridge(string key, string roomKey, IEssentialsRoom room) : base(key, $"/room/{room.Key}", room as Device)
         {
             DefaultRoomKey = roomKey;
 
@@ -129,6 +129,36 @@ namespace PepperDash.Essentials
                 });
 
                 AddAction("/volumes/master/muteToggle", (id, content) => volumeRoom.CurrentVolumeControls.MuteToggle());
+
+                AddAction("/volumes/master/muteOn", (id, content) =>
+                {
+                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                        basicVolumeWithFeedback.MuteOn();
+                });
+
+                AddAction("/volumes/master/muteOff", (id, content) =>
+                {
+                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                        basicVolumeWithFeedback.MuteOff();
+                });
+
+                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                    {
+                        if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                        {
+                            basicVolumeWithFeedback.VolumeUp(b);
+                        }
+                    }
+                ));
+
+                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                {
+                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                    {
+                        basicVolumeWithFeedback.VolumeDown(b);
+                    }
+                }
+                ));
 
                 volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
 
@@ -290,11 +320,12 @@ namespace PepperDash.Essentials
         {
             var state = new RoomStateMessage();
 
-            var volumes = new Volumes
+            var volumes = new Dictionary<string, Volume>
             {
-                Master = new Volume("master")
-                {
-                    PrivacyMuted = e.BoolValue
+                { "master",  new Volume("master")
+                    {
+                        PrivacyMuted = e.BoolValue
+                    } 
                 }
             };
 
@@ -446,9 +477,9 @@ namespace PepperDash.Essentials
         {
             var state = new RoomStateMessage();
 
-            var volumes = new Volumes
+            var volumes = new Dictionary<string, Volume>
             {
-                Master = new Volume("master", e.BoolValue)
+                { "master", new Volume("master", e.BoolValue) }
             };
 
             state.Volumes = volumes;
@@ -461,14 +492,14 @@ namespace PepperDash.Essentials
         /// </summary>
         private void VolumeLevelFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
+
             var state = new
             {
-                volumes = new
+                volumes = new Dictionary<string, Volume>
                 {
-                    master = new Volume("master", e.IntValue)
+                    { "master", new Volume("master", e.IntValue) }
                 }
-            };            
-
+            };
             PostStatusMessage(JToken.FromObject(state));
         }
 
@@ -509,18 +540,20 @@ namespace PepperDash.Essentials
 
             var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
 
-            var volumes = new Volumes();
+            var volumes = new Dictionary<string, Volume>();
             if (room is IHasCurrentVolumeControls rmVc)
             {
                 if (rmVc.CurrentVolumeControls is IBasicVolumeWithFeedback vc)
                 {
-                    volumes.Master = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
-
+                    var volume = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
                     if (room is IPrivacy privacyRoom)
                     {
-                        volumes.Master.HasPrivacyMute = true;
-                        volumes.Master.PrivacyMuted = privacyRoom.PrivacyModeIsOnFeedback.BoolValue;
+                        volume.HasPrivacyMute = true;
+                        volume.PrivacyMuted = privacyRoom.PrivacyModeIsOnFeedback.BoolValue;
                     }
+
+                    volumes.Add("master", volume);
+
                 }
             }
 
@@ -723,7 +756,7 @@ namespace PepperDash.Essentials
         public ShareState Share { get; set; }
 
         [JsonProperty("volumes", NullValueHandling = NullValueHandling.Ignore)]
-        public Volumes Volumes { get; set; }
+        public Dictionary<string, Volume> Volumes { get; set; }
 
         [JsonProperty("isInCall", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IsInCall { get; set; }

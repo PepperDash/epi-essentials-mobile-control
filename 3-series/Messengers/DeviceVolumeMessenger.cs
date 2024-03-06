@@ -60,6 +60,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _localDevice.MuteToggle();
             });
 
+            AddAction("/muteOn", (id, content) =>
+            {
+                _localDevice.MuteOn();
+            });
+
+            AddAction("/muteOff", (id, content) =>
+            {
+                _localDevice.MuteOff();
+            });
+
+            AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => _localDevice.VolumeUp(b)));
+            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => _localDevice.VolumeDown(b)));
+
             _localDevice.MuteFeedback.OutputChange += (sender, args) =>
             {
                 PostStatusMessage(JToken.FromObject(
@@ -86,6 +99,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     )
                 );                
             };
+
+
         }
 
         #endregion

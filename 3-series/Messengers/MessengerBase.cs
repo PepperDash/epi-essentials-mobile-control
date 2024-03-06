@@ -210,7 +210,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 #endif
         protected void PostStatusMessage(JToken content, string type = "", string clientId = null)
         {
-            AppServerController?.SendMessageObject(new MobileControlMessage { Type = string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
+            AppServerController?.SendMessageObject(new MobileControlMessage { Type = !string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
         }
 
         protected void PostEventMessage(DeviceEventMessageBase message)
