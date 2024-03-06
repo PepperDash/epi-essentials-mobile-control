@@ -457,6 +457,16 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }               
 
+                if(device is IHasCurrentSourceInfoChange)
+                {
+                    Debug.Console(2, this, $"Adding IHasCurrentSourceInfoMessenger for device: {device.Key}");
+
+                    var messenger = new IHasCurrentSourceInfoMessenger($"{device.Key}-currentSource-{Key}", $"/device/{device.Key}", device as IHasCurrentSourceInfoChange);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
 
                 if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
