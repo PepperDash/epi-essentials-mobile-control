@@ -1,15 +1,24 @@
-﻿namespace PepperDash.Essentials.AppServer
+﻿using Newtonsoft.Json;
+using PepperDash.Essentials.Core;
+
+namespace PepperDash.Essentials.AppServer
 {
     public class SourceSelectMessageContent
     {
+        [JsonProperty("sourceListItem")]
         public string SourceListItem { get; set; }
+        [JsonProperty("sourceListKey")]
         public string SourceListKey { get; set; }
     }
 
     public class DirectRoute
     {
+        [JsonProperty("sourceKey")]
         public string SourceKey { get; set; }
+        [JsonProperty("destinationKey")]
         public string DestinationKey { get; set; }
+        [JsonProperty("signalType")]
+        public eRoutingSignalType SignalType { get; set; }
     }
 
     /// <summary>

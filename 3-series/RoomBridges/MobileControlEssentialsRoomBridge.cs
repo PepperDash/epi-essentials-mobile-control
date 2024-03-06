@@ -109,7 +109,10 @@ namespace PepperDash.Essentials
                 {
                     var msg = content.ToObject<DirectRoute>();
 
-                    directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey);
+
+                    Debug.Console(2, this, $"Running direct route from {msg.SourceKey} to {msg.DestinationKey} with signal type {msg.SignalType}");
+
+                    directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey, msg.SignalType);
                 });
             }
 
@@ -682,7 +685,7 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(2, this, "Getting default display config");
                 configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
-                configuration.DisplayKeys.Add(defDisplayRoom.DefaultDisplay.Key);
+                configuration.Destinations.Add(eSourceListItemDestinationTypes.defaultDisplay, defDisplayRoom.DefaultDisplay.Key);
             }
 
             if (room is IHasMultipleDisplays multiDisplayRoom)
@@ -697,15 +700,7 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(2, this, "Displays collection exists");
 
-                    foreach (var display in multiDisplayRoom.Displays)
-                    {
-                        if (display.Value == null)
-                        {
-                            Debug.Console(2, this, "Value for key {0} is null", display.Key);
-                            continue;
-                        }
-                        configuration.DisplayKeys.Add(display.Value.Key);
-                    }
+                    configuration.Destinations = multiDisplayRoom.Displays.ToDictionary(kv => kv.Key, kv => kv.Value.Key);
                 }
             }
 
@@ -805,8 +800,8 @@ namespace PepperDash.Essentials
         public string AudioCodecKey { get; set; }
         [JsonProperty("defaultDisplayKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultDisplayKey { get; set; }
-        [JsonProperty("displayKeys", NullValueHandling = NullValueHandling.Ignore)]
-        public List<string> DisplayKeys { get; set; }
+        [JsonProperty("destinations", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<eSourceListItemDestinationTypes, string> Destinations { get; set; }
         [JsonProperty("environmentalDevices", NullValueHandling = NullValueHandling.Ignore)]
         public List<EnvironmentalDeviceConfiguration> EnvironmentalDevices { get; set; }
         [JsonProperty("sourceList", NullValueHandling = NullValueHandling.Ignore)]
@@ -828,7 +823,7 @@ namespace PepperDash.Essentials
 
         public RoomConfiguration()
         {
-            DisplayKeys = new List<string>();
+            Destinations = new Dictionary<eSourceListItemDestinationTypes, string>();
             EnvironmentalDevices = new List<EnvironmentalDeviceConfiguration>();
             SourceList = new Dictionary<string, SourceListItem>();
             TouchpanelKeys = new List<string>();
