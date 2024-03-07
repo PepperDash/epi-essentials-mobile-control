@@ -40,7 +40,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         {
                             PostStatusMessage(JToken.FromObject(new
                             {
-                                currentSourceKey = sourceDevice.CurrentSourceInfoKey,
+                                currentSourceKey = string.IsNullOrEmpty(sourceDevice.CurrentSourceInfoKey) ? string.Empty : sourceDevice.CurrentSourceInfoKey,
                                 currentSource = sourceDevice.CurrentSourceInfo
                             }));
                             break;
@@ -55,7 +55,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("currentSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string CurrentSourceKey { get; set; }
 
-        [JsonProperty("currentSource", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("currentSource")]
         public SourceListItem CurrentSource { get; set; }
     }
 }
