@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.UI;
 using PepperDash.Essentials.Touchpanel;
@@ -15,7 +16,7 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace PepperDash.Essentials.Devices.Common.TouchPanel
 {
-    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl
+    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider
     {
         private readonly MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
@@ -35,6 +36,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         private readonly BoolFeedback _zoomInCallFeedback;
 
+        public event DeviceInfoChangeHandler DeviceInfoChanged;
+
         public BoolFeedback ZoomInCallFeedback => _zoomInCallFeedback;
 
 
@@ -47,6 +50,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         public bool UseDirectServer => localConfig.UseDirectServer;
 
         public bool ZoomRoomController => localConfig.ZoomRoomController;
+
+        public DeviceInfo DeviceInfo => new DeviceInfo();
 
         public MobileControlTouchpanelController(string key, string name, BasicTriListWithSmartObject panel, MobileControlTouchpanelProperties config) : base(key, name, panel, config)
         {
@@ -127,14 +132,33 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
                     UpdateZoomFeedbacks();
                 };
-                x70Panel.ExtenderApplicationControlReservedSigs.Use();
+                
 
                 x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.Console(2, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
                     UpdateZoomFeedbacks();
                 };
+                
+
+                x70Panel.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
+                {
+                    DeviceInfo.MacAddress = x70Panel.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
+                    DeviceInfo.IpAddress = x70Panel.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
+
+                    var handler = DeviceInfoChanged;
+
+                    if(handler == null)
+                    {
+                        return;
+                    }
+
+                    handler(this, new DeviceInfoEventArgs(DeviceInfo));
+                };
+
+                x70Panel.ExtenderApplicationControlReservedSigs.Use();
                 x70Panel.ExtenderZoomRoomAppReservedSigs.Use();
+                x70Panel.ExtenderEthernetReservedSigs.Use();
                 return;
             }
 
@@ -151,8 +175,24 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     UpdateZoomFeedbacks();
                 };
 
+                x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
+                {
+                    DeviceInfo.MacAddress = x60withZoomApp.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
+                    DeviceInfo.IpAddress = x60withZoomApp.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
+
+                    var handler = DeviceInfoChanged;
+
+                    if (handler == null)
+                    {
+                        return;
+                    }
+
+                    handler(this, new DeviceInfoEventArgs(DeviceInfo));
+                };
+
                 x60withZoomApp.ExtenderZoomRoomAppReservedSigs.Use();
                 x60withZoomApp.ExtenderApplicationControlReservedSigs.Use();
+                x60withZoomApp.ExtenderEthernetReservedSigs.Use();
             }
         }
 
@@ -278,7 +318,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 return;
             }
 
-            if (Panel is TswX60WithZoomRoomAppReservedSigs x60Panel)
+            if (Panel is TswX60WithZoomRoomAppReservedSigs)
             {
                 Debug.Console(0, this, $"X60 panel does not support zoom app");
                 return;
@@ -312,6 +352,39 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             {
                 x60Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomEndCall();
                 return;
+            }
+        }
+
+        public void UpdateDeviceInfo()
+        {
+            if (Panel is TswXX70Base x70Panel)
+            {
+                DeviceInfo.MacAddress = x70Panel.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
+                DeviceInfo.IpAddress = x70Panel.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
+
+                var handler = DeviceInfoChanged;
+
+                if (handler == null)
+                {
+                    return;
+                }
+
+                handler(this, new DeviceInfoEventArgs(DeviceInfo));
+            }
+
+            if (Panel is TswX60WithZoomRoomAppReservedSigs x60Panel)
+            {
+                DeviceInfo.MacAddress = x60Panel.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
+                DeviceInfo.IpAddress = x60Panel.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
+
+                var handler = DeviceInfoChanged;
+
+                if (handler == null)
+                {
+                    return;
+                }
+
+                handler(this, new DeviceInfoEventArgs(DeviceInfo));
             }
         }
     }

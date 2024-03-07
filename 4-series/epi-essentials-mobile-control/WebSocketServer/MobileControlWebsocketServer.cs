@@ -168,7 +168,7 @@ namespace PepperDash.Essentials
 
         private static readonly HttpClient LogClient = new HttpClient();
 
-        private string _secretProviderKey
+        private string SecretProviderKey
         {
             get
             {
@@ -485,10 +485,10 @@ namespace PepperDash.Essentials
         private void RetrieveSecret()
         {
             // Add secret provider
-            _secretProvider = new WebSocketServerSecretProvider(_secretProviderKey);
+            _secretProvider = new WebSocketServerSecretProvider(SecretProviderKey);
 
             // Check for existing secrets
-            var secret = _secretProvider.GetSecret(_secretProviderKey);
+            var secret = _secretProvider.GetSecret(SecretProviderKey);
 
             if (secret != null)
             {
@@ -551,7 +551,7 @@ namespace PepperDash.Essentials
 
             var serializedSecret = JsonConvert.SerializeObject(_secret);
 
-            _secretProvider.SetSecret(_secretProviderKey, serializedSecret);
+            _secretProvider.SetSecret(SecretProviderKey, serializedSecret);
         }
 
         /// <summary>

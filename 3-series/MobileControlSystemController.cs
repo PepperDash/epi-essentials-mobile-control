@@ -9,6 +9,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Monitoring;
@@ -462,6 +463,17 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, $"Adding IHasCurrentSourceInfoMessenger for device: {device.Key}");
 
                     var messenger = new IHasCurrentSourceInfoMessenger($"{device.Key}-currentSource-{Key}", $"/device/{device.Key}", device as IHasCurrentSourceInfoChange);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is IDeviceInfoProvider provider)
+                {
+                    Debug.Console(2, this, $"Adding IHasDeviceInfoMessenger for device: {device.Key}");
+
+                    var messenger = new DeviceInfoMessenger($"{device.Key}-deviceInfo-{Key}", $"/device/{device.Key}", provider);
 
                     AddDefaultDeviceMessenger(messenger);
 
