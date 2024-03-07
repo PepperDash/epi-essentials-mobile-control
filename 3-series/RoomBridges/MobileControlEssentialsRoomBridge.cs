@@ -98,9 +98,12 @@ namespace PepperDash.Essentials
             if (Room is IRunRouteAction routeRoom)
                 AddAction("/source", (id, content) =>
                 {
+
                     var msg = content.ToObject<SourceSelectMessageContent>();
 
-                    routeRoom.RunRouteAction(msg.SourceListItem, string.Empty);
+                    Debug.Console(2, this, "Received request to route to source: {0} on list: {1}", msg.SourceListItemKey, msg.SourceListKey);
+
+                    routeRoom.RunRouteAction(msg.SourceListItemKey, msg.SourceListKey);
                 });
 
             if (Room is IRunDirectRouteAction directRouteRoom)

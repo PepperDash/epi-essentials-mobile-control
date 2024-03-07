@@ -200,7 +200,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             {
                 var msg = content.ToObject<SourceSelectMessageContent>();
 
-                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, msg.SourceListItem);
+                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, msg.SourceListItemKey);
                 Eisc.PulseBool(JoinMap.SourceHasChanged.JoinNumber);
             });
 

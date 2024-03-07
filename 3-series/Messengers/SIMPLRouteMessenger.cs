@@ -43,7 +43,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var c = content.ToObject<SourceSelectMessageContent>();
 
-                _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem);
+                _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItemKey);
             });
         }
 

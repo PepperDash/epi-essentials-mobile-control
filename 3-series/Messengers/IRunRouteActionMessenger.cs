@@ -52,7 +52,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         sourceListKey = c.SourceListKey;
                     }
 
-                    RoutingDevice.RunRouteAction(c.SourceListItem, sourceListKey);
+                    RoutingDevice.RunRouteAction(c.SourceListItemKey, sourceListKey);
                 });
 
             if (RoutingDevice is IRoutingSink sinkDevice)
