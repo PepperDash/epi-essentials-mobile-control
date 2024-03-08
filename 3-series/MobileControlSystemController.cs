@@ -9,6 +9,7 @@ using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.CrestronIO;
 using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Lighting;
@@ -463,6 +464,17 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, $"Adding IHasCurrentSourceInfoMessenger for device: {device.Key}");
 
                     var messenger = new IHasCurrentSourceInfoMessenger($"{device.Key}-currentSource-{Key}", $"/device/{device.Key}", device as IHasCurrentSourceInfoChange);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is ISwitchedOutput)
+                {
+                    Debug.Console(2, this, $"Adding ISwitchedOutputMessenger for device: {device.Key}");
+
+                    var messenger = new ISwitchedOutputMessenger($"{device.Key}-switchedOutput-{Key}", device as ISwitchedOutput, $"/device/{device.Key}");
 
                     AddDefaultDeviceMessenger(messenger);
 
