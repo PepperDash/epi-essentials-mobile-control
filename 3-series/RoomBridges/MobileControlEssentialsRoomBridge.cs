@@ -21,6 +21,12 @@ using ShadeBase = PepperDash.Essentials.Devices.Common.Shades.ShadeBase;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
 using Crestron.SimplSharp;
 using Volume = PepperDash.Essentials.Room.MobileControl.Volume;
+using PepperDash.Essentials.Core.CrestronIO;
+using PepperDash.Essentials.Core.Lighting;
+using PepperDash.Essentials.Core.Shades;
+
+
+
 
 
 #if SERIES4
@@ -171,6 +177,8 @@ namespace PepperDash.Essentials
                 // Registers for initial volume events, if possible
                 if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
                 {
+                    Debug.Console(2, this, "Registering for volume feedback events");
+
                     currentVolumeDevice.MuteFeedback.OutputChange += MuteFeedback_OutputChange;
                     currentVolumeDevice.VolumeLevelFeedback.OutputChange += VolumeLevelFeedback_OutputChange;
                 }
@@ -588,8 +596,10 @@ namespace PepperDash.Essentials
         /// <returns></returns>
         private RoomConfiguration GetRoomConfiguration(IEssentialsRoom room)
         {
+
             var configuration = new RoomConfiguration
             {
+                ShutdownPromptSeconds = room.ShutdownPromptSeconds,
                 TouchpanelKeys = DeviceManager.AllDevices.
                 OfType<MobileControlTouchpanelController>()
                 .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
@@ -660,15 +670,19 @@ namespace PepperDash.Essentials
 
                 if (envRoom.HasEnvironmentalControlDevices)
                 {
+                    Debug.Console(2, this, "**************************** Room Has {0} Environmental Control Devices", envRoom.EnvironmentalControlDevices.Count);
+
                     foreach (var dev in envRoom.EnvironmentalControlDevices)
                     {
+                        Debug.Console(2, this, "Adding environmental device: {0}", dev.Key);
+
                         EEnvironmentalDeviceTypes type = EEnvironmentalDeviceTypes.None;
 
-                        if (dev is Devices.Common.Lighting.LightingBase)
+                        if (dev is ILightingScenes || dev is Devices.Common.Lighting.LightingBase)
                         {
                             type = EEnvironmentalDeviceTypes.Lighting;
                         }
-                        else if (dev is ShadeBase)
+                        else if (dev is ShadeBase || dev is IShadesOpenCloseStop || dev is IShadesOpenClosePreset)
                         {
                             type = EEnvironmentalDeviceTypes.Shade;
                         }
@@ -676,6 +690,12 @@ namespace PepperDash.Essentials
                         {
                             type = EEnvironmentalDeviceTypes.ShadeController;
                         }
+                        else if (dev is ISwitchedOutput)
+                        {
+                            type = EEnvironmentalDeviceTypes.Relay;
+                        }
+
+                        Debug.Console(2, this, "Environmental Device Type: {0}", type);
 
                         var envDevice = new EnvironmentalDeviceConfiguration(dev.Key, type);
 
@@ -775,6 +795,9 @@ namespace PepperDash.Essentials
     /// </summary>
     public class RoomConfiguration
     {
+        [JsonProperty("shutdownPromptSeconds", NullValueHandling = NullValueHandling.Ignore)]
+        public int? ShutdownPromptSeconds { get; set; }
+
         [JsonProperty("hasVideoConferencing", NullValueHandling = NullValueHandling.Ignore)]
         public bool? HasVideoConferencing { get; set; }
         [JsonProperty("videoCodecIsZoomRoom", NullValueHandling = NullValueHandling.Ignore)]
@@ -856,6 +879,7 @@ namespace PepperDash.Essentials
         Lighting,
         Shade,
         ShadeController,
+        Relay,
     }
 
     public class ApiTouchPanelToken

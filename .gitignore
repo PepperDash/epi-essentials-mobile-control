@@ -362,3 +362,4 @@ MigrationBackup/
 
 # Build Outputs
 output/
+/exampleConfigs/essentials-mc-test-configurationFile.json
