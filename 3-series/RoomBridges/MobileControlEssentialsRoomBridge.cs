@@ -749,6 +749,14 @@ namespace PepperDash.Essentials
                 }
             }
 
+            var destinationList = ConfigReader.ConfigObject.GetDestinationListForKey(room.DestinationListKey);
+
+            if(destinationList != null)
+            {
+                configuration.DestinationList = destinationList;
+            }
+            
+
             return configuration;
         }
     }
@@ -832,6 +840,10 @@ namespace PepperDash.Essentials
         public List<EnvironmentalDeviceConfiguration> EnvironmentalDevices { get; set; }
         [JsonProperty("sourceList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, SourceListItem> SourceList { get; set; }
+
+        [JsonProperty("destinationList", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string,  DestinationListItem> DestinationList { get; set;}
+
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultPresentationSourceKey { get; set; }
 
