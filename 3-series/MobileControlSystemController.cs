@@ -492,6 +492,28 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }
 
+                if(device is ILevelControls levelControls)
+                {
+                    Debug.Console(2, this, $"Adding LevelControlsMessenger for device: {device.Key}");
+
+                    var messenger = new LevelControlsMessenger($"{device.Key}-levelControls-{Key}", $"/device/{device.Key}", levelControls);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is IHasInputs inputs)
+                {
+                    Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                    var messenger = new InputsMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
                 if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
                     continue;

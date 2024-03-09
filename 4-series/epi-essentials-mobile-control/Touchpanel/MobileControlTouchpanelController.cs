@@ -146,6 +146,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     DeviceInfo.MacAddress = x70Panel.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
                     DeviceInfo.IpAddress = x70Panel.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
 
+                    Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
+
                     var handler = DeviceInfoChanged;
 
                     if(handler == null)
@@ -176,9 +178,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 };
 
                 x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
-                {
+                {                    
                     DeviceInfo.MacAddress = x60withZoomApp.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
                     DeviceInfo.IpAddress = x60withZoomApp.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
+
+                    Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
 
                     var handler = DeviceInfoChanged;
 
@@ -386,6 +390,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
                 handler(this, new DeviceInfoEventArgs(DeviceInfo));
             }
+
+            Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
         }
     }
 
