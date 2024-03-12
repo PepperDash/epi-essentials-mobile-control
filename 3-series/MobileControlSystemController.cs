@@ -497,7 +497,7 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(2, this, $"Adding LevelControlsMessenger for device: {device.Key}");
 
-                    var messenger = new LevelControlsMessenger($"{device.Key}-levelControls-{Key}", $"/device/{device.Key}", levelControls);
+                    var messenger = new ILevelControlsMessenger($"{device.Key}-levelControls-{Key}", $"/device/{device.Key}", levelControls);
 
                     AddDefaultDeviceMessenger(messenger);
 
@@ -508,7 +508,7 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
 
-                    var messenger = new InputsMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs);
+                    var messenger = new IHasInputsMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs);
 
                     AddDefaultDeviceMessenger(messenger);
 
@@ -519,7 +519,7 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(2, this, $"Adding MatrixRouteMessenger for device: {device.Key}");
 
-                    var messenger = new MatrixRouteMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", router);
+                    var messenger = new IMatrixRouteMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", router);
 
                     AddDefaultDeviceMessenger(messenger);
 

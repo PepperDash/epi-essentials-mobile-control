@@ -12,10 +12,10 @@ using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class MatrixRouteMessenger : MessengerBase
+    public class IMatrixRouteMessenger : MessengerBase
     {
         private IMatrixRouting matrixDevice;
-        public MatrixRouteMessenger(string key, string messagePath, IMatrixRouting device) : base(key, messagePath, device as Device)
+        public IMatrixRouteMessenger(string key, string messagePath, IMatrixRouting device) : base(key, messagePath, device as Device)
         {
             matrixDevice = device;
         }

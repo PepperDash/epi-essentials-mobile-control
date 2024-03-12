@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class InputsMessenger : MessengerBase
+    public class IHasInputsMessenger : MessengerBase
     {
         private IHasInputs inputs;
-        public InputsMessenger(string key, string messagePath, IHasInputs device) : base(key, messagePath, device as Device)
+        public IHasInputsMessenger(string key, string messagePath, IHasInputs device) : base(key, messagePath, device as Device)
         {
             inputs = device;
         }
@@ -27,7 +27,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var message = new InputsStateMesage
                 {
                     CurrentInputKey = inputs.Inputs.FirstOrDefault(x => x.Value.IsSelected).Key,
-                    Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv => new Input { IsSelected = kv.Value.IsSelected })
+                    Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv => 
+                        new Input { IsSelected = kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
                 };
             });
 
@@ -65,9 +66,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public Dictionary<string, Input> Inputs { get; set; }
     }
 
-    public class Input
+    public class Input: IKeyName
     {
         [JsonProperty("isSelected", NullValueHandling = NullValueHandling.Ignore)]
         public bool? IsSelected { get; set; }
+
+        [JsonProperty("key")]
+        public string Key { get; set; }
+        [JsonProperty("name")]
+        public string Name { get; set; }
     }
 }
