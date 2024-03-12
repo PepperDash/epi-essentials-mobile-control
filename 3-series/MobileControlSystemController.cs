@@ -15,6 +15,7 @@ using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Monitoring;
 using PepperDash.Essentials.Core.Queues;
+using PepperDash.Essentials.Core.Routing;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Essentials.Core.Web;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
@@ -508,6 +509,17 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
 
                     var messenger = new InputsMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is IMatrixRouting router)
+                {
+                    Debug.Console(2, this, $"Adding MatrixRouteMessenger for device: {device.Key}");
+
+                    var messenger = new MatrixRouteMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", router);
 
                     AddDefaultDeviceMessenger(messenger);
 
