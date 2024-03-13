@@ -30,6 +30,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv => 
                         new Input { IsSelected = kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
                 };
+
+                PostStatusMessage(message);
             });
 
             foreach (var input in inputs.Inputs)
@@ -44,13 +46,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 localInput.InputUpdated += (sender, args) =>
                 {
-                    PostStatusMessage(JToken.FromObject(new
+                    var existingInput = inputs.Inputs.FirstOrDefault((i) => i.Key == localInput.Key);
+
+
+                    PostStatusMessage(JToken.FromObject(new InputsStateMesage()
                     {
-                        currentInputKey = localInput.IsSelected ? localInput.Key : null,
-                        inputs = new Dictionary<string, Input>
-                        {
-                            {localInput.Key, new Input{IsSelected = localInput.IsSelected } }
-                        }
+                        CurrentInputKey = localInput.IsSelected ? localInput.Key : null,
+                        Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv =>
+                            new Input { IsSelected = kv.Key == localInput.Key ? localInput.IsSelected : kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
                     }));
                 };
             }

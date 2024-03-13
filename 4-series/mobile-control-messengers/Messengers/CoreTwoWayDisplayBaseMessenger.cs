@@ -21,7 +21,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new TwoWayDisplayBaseStateMessage
             {
-                PowerState = _display.PowerIsOnFeedback.BoolValue,
+                //PowerState = _display.PowerIsOnFeedback.BoolValue,
                 CurrentInput = _display.CurrentInputFeedback.StringValue
             };
 

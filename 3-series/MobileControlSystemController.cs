@@ -267,7 +267,7 @@ namespace PepperDash.Essentials
 
                     if (presetsDevice.TvPresets == null)
                     {
-                        Debug.Console(0, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
+                        Debug.Console(2, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
                     }
                     else
                     {
@@ -446,6 +446,16 @@ namespace PepperDash.Essentials
 
                     AddDefaultDeviceMessenger(messenger);
 
+                    messengerAdded = true;
+                }
+
+                if (device is IHasPowerControlWithFeedback powerControl)
+                {
+                    var deviceKey = device.Key;
+                    Debug.Console(2, this, "Adding IHasPowerControlWithFeedbackMessenger for device: {0}", deviceKey);
+                    var messenger = new IHasPowerControlWithFeedbackMessenger($"{device.Key}-powerControl-{Key}",
+                                               string.Format("/device/{0}", deviceKey), powerControl);
+                    AddDefaultDeviceMessenger(messenger);
                     messengerAdded = true;
                 }
 
