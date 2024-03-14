@@ -524,11 +524,13 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }
 
-                if(device is IHasInputs inputs)
+                // This will work if TKey and TSelector are both string types.
+                // Otherwise plugin device needs to instantiate ISelectableItemsMessenger and add it to the controller.
+                if(device is IHasInputs<string, string> inputs)
                 {
                     Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
 
-                    var messenger = new IHasInputsMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs);
+                    var messenger = new ISelectableItemsMessenger<string>($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs.Inputs);
 
                     AddDefaultDeviceMessenger(messenger);
 
