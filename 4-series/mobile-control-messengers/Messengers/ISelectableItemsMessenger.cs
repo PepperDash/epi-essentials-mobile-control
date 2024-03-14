@@ -13,9 +13,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public class ISelectableItemsMessenger<TKey> : MessengerBase
     {
         private ISelectableItems<TKey> itemDevice;
-        public ISelectableItemsMessenger(string key, string messagePath, ISelectableItems<TKey> device) : base(key, messagePath, device as Device)
+
+        private readonly string _propName;
+        public ISelectableItemsMessenger(string key, string messagePath, ISelectableItems<TKey> device, string propName) : base(key, messagePath, device as Device)
         {
             itemDevice = device;
+            _propName = propName;
         }
 
         protected override void RegisterActions()
@@ -24,15 +27,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/fullStatus", (id, context) =>
             {
-                PostStatusMessage(JToken.FromObject(itemDevice));
+                SendFullStatus();
             });
 
             itemDevice.ItemsUpdated += (sender, args) =>
             {
-                PostStatusMessage(JToken.FromObject(new
-                {
-                    currentItem = itemDevice.Items.FirstOrDefault(x => x.Value.IsSelected).Key.ToString(),
-                }));
+                SendFullStatus();
             };
 
             foreach (var input in itemDevice.Items)
@@ -47,9 +47,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 localItem.ItemUpdated += (sender, args) =>
                 {
-                    PostStatusMessage(JToken.FromObject(itemDevice));
+                    SendFullStatus();
                 };
             }
+        }
+
+        private void SendFullStatus()
+        {
+            var stateObject = new JObject();
+            stateObject[_propName] = JToken.FromObject(itemDevice);
+            PostStatusMessage(stateObject);
         }
     }
 

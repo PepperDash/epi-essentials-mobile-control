@@ -530,7 +530,7 @@ namespace PepperDash.Essentials
                 {
                     Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
 
-                    var messenger = new ISelectableItemsMessenger<string>($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs.Inputs);
+                    var messenger = new ISelectableItemsMessenger<string>($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs.Inputs, "inputs");
 
                     AddDefaultDeviceMessenger(messenger);
 
