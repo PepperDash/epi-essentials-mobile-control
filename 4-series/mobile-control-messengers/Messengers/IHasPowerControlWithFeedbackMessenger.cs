@@ -39,12 +39,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _powerControl.PowerIsOnFeedback.OutputChange += PowerIsOnFeedback_OutputChange; ;
         }
 
-        private void PowerIsOnFeedback_OutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
+        private void PowerIsOnFeedback_OutputChange(object sender, FeedbackEventArgs args)
         {
             PostStatusMessage(JToken.FromObject(new
-            {
-                powerState = feedbackEventArgs.BoolValue
-            })
+                {
+                    powerState = args.BoolValue
+                })
             );
         }
     }

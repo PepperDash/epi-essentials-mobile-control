@@ -48,8 +48,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     PostStatusMessage(JToken.FromObject(new
                     {
-                        outputs = new Dictionary<string, IRoutingOutputSlot> {
-                        {key, outputSlot} }
+                        outputs = matrixDevice.OutputSlots
+
                     }));
                 };
             }
@@ -63,10 +63,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     PostStatusMessage(JToken.FromObject(new
                     {
-                        inputs = new Dictionary<string, IRoutingInputSlot>
-                        {
-                            {key, inputSlot }
-                        }
+                        inputs = matrixDevice.InputSlots
                     }));
                 };
             }

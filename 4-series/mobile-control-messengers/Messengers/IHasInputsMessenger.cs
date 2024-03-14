@@ -24,7 +24,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/fullStatus", (id, context) =>
             {
-                var message = new InputsStateMesage
+                var message = new InputsStateMessage
                 {
                     CurrentInputKey = inputs.Inputs.FirstOrDefault(x => x.Value.IsSelected).Key,
                     Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv => 
@@ -46,21 +46,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 localInput.InputUpdated += (sender, args) =>
                 {
-                    var existingInput = inputs.Inputs.FirstOrDefault((i) => i.Key == localInput.Key);
+                    //var existingInput = inputs.Inputs.FirstOrDefault((i) => i.Key == localInput.Key);
 
-
-                    PostStatusMessage(JToken.FromObject(new InputsStateMesage()
+                    PostStatusMessage(JToken.FromObject(new
                     {
-                        CurrentInputKey = localInput.IsSelected ? localInput.Key : null,
-                        Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv =>
-                            new Input { IsSelected = kv.Key == localInput.Key ? localInput.IsSelected : kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
+                        currentInputKey = localInput.IsSelected ? localInput.Key : null,
+                        inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv =>
+                            new Input { IsSelected = kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
+                        //Inputs = inputs.Inputs.ToDictionary(kv => kv.Key, kv =>
+                        //    new Input { IsSelected = kv.Key == localInput.Key ? localInput.IsSelected : kv.Value.IsSelected, Key = kv.Value.Key, Name = kv.Value.Name })
                     }));
                 };
             }
         }
     }
 
-    public class InputsStateMesage:DeviceStateMessageBase
+    public class InputsStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("currentInputKey", NullValueHandling = NullValueHandling.Ignore)]
         public string CurrentInputKey {  get; set; }

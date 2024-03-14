@@ -237,6 +237,16 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
 
+
+                if (device is ICommunicationMonitor)
+                {
+                    Debug.Console(2, this, "Adding CommunicationMonitorMessenger for device: {0}", device.Key);
+                    var commMessenger = new ICommunicationMonitorMessenger($"{device.Key}-commMonitor-{Key}",
+                        string.Format("/device/{0}", device.Key), device as ICommunicationMonitor);
+                    AddDefaultDeviceMessenger(commMessenger);
+                    messengerAdded = true;
+                }
+
                 if (device is CameraBase)
                 {                    
                     Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
@@ -453,7 +463,7 @@ namespace PepperDash.Essentials
                 {
                     var deviceKey = device.Key;
                     Debug.Console(2, this, "Adding IHasPowerControlWithFeedbackMessenger for device: {0}", deviceKey);
-                    var messenger = new IHasPowerControlWithFeedbackMessenger($"{device.Key}-powerControl-{Key}",
+                    var messenger = new IHasPowerControlWithFeedbackMessenger($"{device.Key}-powerFeedback-{Key}",
                                                string.Format("/device/{0}", deviceKey), powerControl);
                     AddDefaultDeviceMessenger(messenger);
                     messengerAdded = true;
