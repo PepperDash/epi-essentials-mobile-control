@@ -665,7 +665,7 @@ namespace PepperDash.Essentials
 
             if (room is IEnvironmentalControls envRoom)
             {
-                Debug.Console(2, this, "Getting environmental controls config");
+                Debug.Console(2, this, "Getting environmental controls config. RoomHasEnvironmentalControls: {0}", envRoom.HasEnvironmentalControlDevices);
                 configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
 
                 if (envRoom.HasEnvironmentalControlDevices)
@@ -701,6 +701,10 @@ namespace PepperDash.Essentials
 
                         configuration.EnvironmentalDevices.Add(envDevice);
                     }
+                }
+                else
+                {
+                    Debug.Console(2, this, "**************************** Room Has No Environmental Control Devices");
                 }
             }
 

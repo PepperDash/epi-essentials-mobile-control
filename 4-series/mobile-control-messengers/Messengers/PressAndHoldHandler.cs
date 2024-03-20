@@ -54,7 +54,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
 
             if (!_pushedActions.TryGetValue(type, out CTimer cancelTimer)) { return; }
-
+            
+            action(false);
             cancelTimer.Stop();
             _pushedActions.Remove(type);
         }
@@ -75,6 +76,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
+            Debug.Console(2, "HandlePressAndHold msg: {0}", msg.Value);
+
+
             var timerHandler = GetPressAndHoldHandler(msg.Value);
             if (timerHandler == null)
             {
@@ -83,7 +87,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             timerHandler(msg.Value, action);
 
-            action(msg.Value.Equals("pressed", StringComparison.InvariantCultureIgnoreCase));
+            if (msg.Value.Equals("pressed", StringComparison.InvariantCultureIgnoreCase))
+                action(true);
+            else if (msg.Value.Equals("released", StringComparison.InvariantCultureIgnoreCase))
+                action(false);
         }
     }
 }

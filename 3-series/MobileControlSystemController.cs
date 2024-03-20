@@ -41,6 +41,7 @@ namespace PepperDash.Essentials
 {
     public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
+        private bool _initialized = false;
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
 
@@ -677,6 +678,8 @@ namespace PepperDash.Essentials
             Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
 
             _messengers.Add(messenger.Key, messenger);
+
+            messenger.RegisterWithAppServer(this);
         }
 
         private void AddDefaultDeviceMessenger(IMobileControlMessenger messenger)
@@ -695,7 +698,18 @@ namespace PepperDash.Essentials
 
             _defaultMessengers.Add(messenger.Key, messenger);
 
+            if (_initialized)
+            {
+                RegisterMessengerWithServer(messenger);
+            }   
         }
+
+        private void RegisterMessengerWithServer(IMobileControlMessenger messenger)
+        {
+            Debug.Console(2, this, "Registering messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            messenger.RegisterWithAppServer(this);
+        }   
 
         public override void Initialize()
         {
@@ -703,7 +717,7 @@ namespace PepperDash.Essentials
             {
                 try
                 {
-                    messenger.Value.RegisterWithAppServer(this);
+                    RegisterMessengerWithServer(messenger.Value);
                 }
                 catch (Exception ex)
                 {
@@ -717,7 +731,7 @@ namespace PepperDash.Essentials
             {
                 try
                 {
-                    messenger.Value.RegisterWithAppServer(this);
+                    RegisterMessengerWithServer(messenger.Value);
                 }
                 catch (Exception ex)
                 {
@@ -733,6 +747,8 @@ namespace PepperDash.Essentials
             {
                 return;
             }
+
+            _initialized = true;
 
             RegisterSystemToServer();
         }

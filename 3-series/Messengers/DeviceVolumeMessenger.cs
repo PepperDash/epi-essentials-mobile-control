@@ -70,7 +70,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _localDevice.MuteOff();
             });
 
-            AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => _localDevice.VolumeUp(b)));
+            AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => 
+            {
+                Debug.Console(2, this, "volumeUp: {0}", b);
+                _localDevice.VolumeUp(b);
+             }));
+
+
+
             AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => _localDevice.VolumeDown(b)));
 
             _localDevice.MuteFeedback.OutputChange += (sender, args) =>
