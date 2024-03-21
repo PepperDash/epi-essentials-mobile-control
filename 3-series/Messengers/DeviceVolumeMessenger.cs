@@ -128,6 +128,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public bool? Muted { get; set; }
 
         [JsonProperty("label", NullValueHandling = NullValueHandling.Ignore)]
-        public string? Label { get; set; }
+        public string Label { get; set; }
     }
 }
