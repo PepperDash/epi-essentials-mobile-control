@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
@@ -134,6 +135,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public string RawValue { get; set; }
 
         [JsonProperty("units", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(StringEnumConverter))]
         public eVolumeLevelUnits? Units { get; set; }
     }
 
