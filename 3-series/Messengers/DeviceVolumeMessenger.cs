@@ -134,16 +134,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("rawValue", NullValueHandling = NullValueHandling.Ignore)]
         public string RawValue { get; set; }
 
-        [JsonProperty("units", NullValueHandling = NullValueHandling.Ignore)]
         [JsonConverter(typeof(StringEnumConverter))]
+        [JsonProperty("units", NullValueHandling = NullValueHandling.Ignore)]
         public eVolumeLevelUnits? Units { get; set; }
-    }
-
-    public enum eVolumeLevelUnits
-    {
-        dB,
-        Percent,
-        Relative,
-        Absolute
     }
 }
