@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -16,7 +17,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
         public DeviceVolumeMessenger(string key, string messagePath, IBasicVolumeWithFeedback device)
-            : base(key, messagePath, device as Device)
+            : base(key, messagePath, device as PepperDash.Core.Device)
         {
             _localDevice = device;
         }
@@ -31,6 +32,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                     Muted = _localDevice.MuteFeedback.BoolValue,
                 }
             };
+
+            if (_localDevice is IBasicVolumeWithFeedbackAdvanced volumeAdvanced)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "************************DeviceVolumeMessenger - SendStatus - VolumeAdvanced device detected. Adding RawValue and Units to message.");
+                messageObj.Volume.RawValue = volumeAdvanced.RawVolumeLevel.ToString();
+                messageObj.Volume.Units = volumeAdvanced.Units;
+            }
 
             PostStatusMessage(messageObj);
         }
@@ -73,7 +81,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => 
             {
-                Debug.Console(2, this, "volumeUp: {0}", b);
                 _localDevice.VolumeUp(b);
              }));
 
