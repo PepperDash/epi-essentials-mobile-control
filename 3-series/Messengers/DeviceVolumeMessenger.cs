@@ -35,7 +35,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             if (_localDevice is IBasicVolumeWithFeedbackAdvanced volumeAdvanced)
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "************************DeviceVolumeMessenger - SendStatus - VolumeAdvanced device detected. Adding RawValue and Units to message.");
                 messageObj.Volume.RawValue = volumeAdvanced.RawVolumeLevel.ToString();
                 messageObj.Volume.Units = volumeAdvanced.Units;
             }
@@ -103,16 +102,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _localDevice.VolumeLevelFeedback.OutputChange += (sender, args) =>
             {
-                PostStatusMessage(JToken.FromObject(
-                        new
-                        {
-                            volume = new
-                            {
-                                level = args.IntValue
-                            }
-                        }
-                    )
-                );                
+                var rawValue = "";
+                if (_localDevice is IBasicVolumeWithFeedbackAdvanced volumeAdvanced)
+                {
+                    rawValue = volumeAdvanced.RawVolumeLevel.ToString();
+                }
+
+                var message = new
+                {
+                    volume = new
+                    {
+                        level = args.IntValue,
+                        rawValue
+                    }
+                };
+
+                PostStatusMessage(JToken.FromObject(message));                
             };
 
 
