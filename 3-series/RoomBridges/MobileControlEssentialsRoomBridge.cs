@@ -606,6 +606,8 @@ namespace PepperDash.Essentials
                 .Select(tp => tp.Key).ToList()
             };
 
+            
+
             try
             {
                 var zrcTp = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
@@ -663,6 +665,13 @@ namespace PepperDash.Essentials
                 }
             }
 
+
+            if (room is IHasMatrixRouting matrixRoutingRoom)
+            {
+                Debug.Console(2, this, "Getting matrix routing config");
+                configuration.MatrixRoutingKey = matrixRoutingRoom.MatrixRoutingDeviceKey;
+            }
+
             if (room is IEnvironmentalControls envRoom)
             {
                 Debug.Console(2, this, "Getting environmental controls config. RoomHasEnvironmentalControls: {0}", envRoom.HasEnvironmentalControlDevices);
@@ -670,29 +679,29 @@ namespace PepperDash.Essentials
 
                 if (envRoom.HasEnvironmentalControlDevices)
                 {
-                    Debug.Console(2, this, "**************************** Room Has {0} Environmental Control Devices", envRoom.EnvironmentalControlDevices.Count);
+                    Debug.Console(2, this, "Room Has {0} Environmental Control Devices.", envRoom.EnvironmentalControlDevices.Count);
 
                     foreach (var dev in envRoom.EnvironmentalControlDevices)
                     {
                         Debug.Console(2, this, "Adding environmental device: {0}", dev.Key);
 
-                        EEnvironmentalDeviceTypes type = EEnvironmentalDeviceTypes.None;
+                        eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
 
                         if (dev is ILightingScenes || dev is Devices.Common.Lighting.LightingBase)
                         {
-                            type = EEnvironmentalDeviceTypes.Lighting;
+                            type = eEnvironmentalDeviceTypes.Lighting;
                         }
                         else if (dev is ShadeBase || dev is IShadesOpenCloseStop || dev is IShadesOpenClosePreset)
                         {
-                            type = EEnvironmentalDeviceTypes.Shade;
+                            type = eEnvironmentalDeviceTypes.Shade;
                         }
                         else if (dev is IShades)
                         {
-                            type = EEnvironmentalDeviceTypes.ShadeController;
+                            type = eEnvironmentalDeviceTypes.ShadeController;
                         }
                         else if (dev is ISwitchedOutput)
                         {
-                            type = EEnvironmentalDeviceTypes.Relay;
+                            type = eEnvironmentalDeviceTypes.Relay;
                         }
 
                         Debug.Console(2, this, "Environmental Device Type: {0}", type);
@@ -836,6 +845,8 @@ namespace PepperDash.Essentials
         public string VideoCodecKey { get; set; }
         [JsonProperty("audioCodecKey", NullValueHandling = NullValueHandling.Ignore)]
         public string AudioCodecKey { get; set; }
+        [JsonProperty("matrixRoutingKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string MatrixRoutingKey { get; set; }
         [JsonProperty("defaultDisplayKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultDisplayKey { get; set; }
         [JsonProperty("destinations", NullValueHandling = NullValueHandling.Ignore)]
@@ -880,16 +891,16 @@ namespace PepperDash.Essentials
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty("deviceType", NullValueHandling = NullValueHandling.Ignore)]
-        public EEnvironmentalDeviceTypes DeviceType { get; private set; }
+        public eEnvironmentalDeviceTypes DeviceType { get; private set; }
 
-        public EnvironmentalDeviceConfiguration(string key, EEnvironmentalDeviceTypes type)
+        public EnvironmentalDeviceConfiguration(string key, eEnvironmentalDeviceTypes type)
         {
             DeviceKey = key;
             DeviceType = type;
         }
     }
 
-    public enum EEnvironmentalDeviceTypes
+    public enum eEnvironmentalDeviceTypes
     {
         None,
         Lighting,

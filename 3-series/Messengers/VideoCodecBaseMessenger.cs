@@ -673,10 +673,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <returns></returns>
         protected VideoCodecBaseStateMessage GetStatus()
         {
-            var status = new VideoCodecBaseStateMessage
-            {
-                CommMonitor = GetCommunicationMonitorState()
-            };
+            var status = new VideoCodecBaseStateMessage();
+
 
             if (Codec is IHasCodecCameras camerasCodec)
             {

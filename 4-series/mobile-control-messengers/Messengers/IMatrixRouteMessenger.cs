@@ -3,12 +3,7 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Routing;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Remoting.Channels;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -36,7 +31,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var request = content.ToObject<MatrixRouteRequest>();
 
-                matrixDevice.Route(request.inputKey, request.outputKey, request.RouteType);
+                matrixDevice.Route(request.InputKey, request.OutputKey, request.RouteType);
             });
 
             foreach(var output in matrixDevice.OutputSlots)
@@ -73,19 +68,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public class  MatrixStateMessage:DeviceStateMessageBase
     {
         [JsonProperty("outputs")]
-        public Dictionary<string, IRoutingOutputSlot> Outputs;
+        public Dictionary<string, RoutingOutputSlotBase> Outputs;
 
         [JsonProperty("inputs")]
-        public Dictionary<string, IRoutingInputSlot> Inputs;
+        public Dictionary<string, RoutingInputSlotBase> Inputs;
     }
 
     public class MatrixRouteRequest
     {
         [JsonProperty("outputKey")]
-        public string outputKey { get; set; }
+        public string OutputKey { get; set; }
 
         [JsonProperty("inputKey")]
-        public string inputKey { get; set; }
+        public string InputKey { get; set; }
 
         [JsonProperty("routeType")]
         public eRoutingSignalType RouteType { get; set; }
