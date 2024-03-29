@@ -61,6 +61,6 @@
     <Folder Include="SIMPLJoinMaps\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2423" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2424" />
   </ItemGroup>
 </Project>

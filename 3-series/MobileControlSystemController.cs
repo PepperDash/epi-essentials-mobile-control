@@ -538,17 +538,6 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }
 
-                if(device is IMatrixRouting router)
-                {
-                    Debug.Console(2, this, $"Adding MatrixRouteMessenger for device: {device.Key}");
-
-                    var messenger = new IMatrixRouteMessenger($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", router);
-
-                    AddDefaultDeviceMessenger(messenger);
-
-                    messengerAdded = true;
-                }
-
                 if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
                     continue;
