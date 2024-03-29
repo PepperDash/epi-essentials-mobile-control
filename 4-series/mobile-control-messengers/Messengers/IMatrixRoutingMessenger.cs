@@ -15,10 +15,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// </summary>
     /// <typeparam name="TInput">Type that implments IRoutingInputSlot</typeparam>
     /// <typeparam name="TOutput">Type that implments IRoutingOutputSlot</typeparam>
-    public class IMatrixRouteMessenger<TInput, TOutput> : MessengerBase
+    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase
     {
         private IMatrixRouting<IRoutingInputSlot, IRoutingOutputSlot> matrixDevice;
-        public IMatrixRouteMessenger(string key, string messagePath, IMatrixRouting<IRoutingInputSlot, IRoutingOutputSlot> device) : base(key, messagePath, device as Device)
+        public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting<IRoutingInputSlot, IRoutingOutputSlot> device) : base(key, messagePath, device as Device)
         {
             matrixDevice = device;
         }
