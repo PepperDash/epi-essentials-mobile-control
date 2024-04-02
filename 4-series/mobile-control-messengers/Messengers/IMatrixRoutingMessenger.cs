@@ -32,7 +32,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 try
                 {
-                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, "InputCount: {inputCount}, OutputCount: {outputCount}", matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "InputCount: {inputCount}, OutputCount: {outputCount}", this, matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
                     PostStatusMessage(new MatrixStateMessage<TInput, TOutput>
                     {
                         Outputs = matrixDevice.OutputSlots,
