@@ -82,7 +82,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class  MatrixStateMessage:DeviceStateMessageBase
+    public class  MatrixStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("outputs")]
         public Dictionary<string, IRoutingOutputSlot> Outputs;
