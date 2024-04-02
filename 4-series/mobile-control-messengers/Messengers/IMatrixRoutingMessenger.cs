@@ -15,10 +15,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// </summary>
     /// <typeparam name="TInput">Type that implments IRoutingInputSlot</typeparam>
     /// <typeparam name="TOutput">Type that implments IRoutingOutputSlot</typeparam>
-    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase
+    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase where TInput: IRoutingInputSlot where TOutput : IRoutingOutputSlot
     {
-        private IMatrixRouting<IRoutingInputSlot, IRoutingOutputSlot> matrixDevice;
-        public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting<IRoutingInputSlot, IRoutingOutputSlot> device) : base(key, messagePath, device as Device)
+        private readonly IMatrixRouting<TInput, TOutput> matrixDevice;
+        public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting<TInput, TOutput> device) : base(key, messagePath, device as Device)
         {
             matrixDevice = device;
         }
@@ -33,7 +33,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 try
                 {
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, "InputCount: {inputCount}, OutputCount: {outputCount}", matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
-                    PostStatusMessage(new MatrixStateMessage
+                    PostStatusMessage(new MatrixStateMessage<TInput, TOutput>
                     {
                         Outputs = matrixDevice.OutputSlots,
                         Inputs = matrixDevice.InputSlots,
@@ -82,13 +82,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class  MatrixStateMessage : DeviceStateMessageBase
+    public class  MatrixStateMessage<TInput, TOutput> : DeviceStateMessageBase where TInput:IRoutingInputSlot where TOutput:IRoutingOutputSlot
     {
         [JsonProperty("outputs")]
-        public Dictionary<string, IRoutingOutputSlot> Outputs;
+        public Dictionary<string, TOutput> Outputs;
 
         [JsonProperty("inputs")]
-        public Dictionary<string, IRoutingInputSlot> Inputs;
+        public Dictionary<string, TInput> Inputs;
     }
 
     public class MatrixRouteRequest
