@@ -69,6 +69,7 @@ jobs:
         path: CHANGELOG.md
     - name: Upload Release
       id: create_release
+      if: steps.get_version.outputs.newVersion == 'true'
       uses: ncipollo/release-action@v1
       with:
         allowUpdates: true 
