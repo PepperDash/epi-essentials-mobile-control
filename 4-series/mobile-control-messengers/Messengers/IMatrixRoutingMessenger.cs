@@ -6,6 +6,7 @@ using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Routing;
 using System.Collections.Generic;
 using System.Linq;
+using Serilog.Events;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -15,7 +16,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// </summary>
     /// <typeparam name="TInput">Type that implments IRoutingInputSlot</typeparam>
     /// <typeparam name="TOutput">Type that implments IRoutingOutputSlot</typeparam>
-    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase where TInput: IRoutingInputSlot where TOutput : IRoutingOutputSlot
+    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase where TInput: IRoutingInputSlot where TOutput : IRoutingOutputSlot<TInput>
     {
         private readonly IMatrixRouting<TInput, TOutput> matrixDevice;
         public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting<TInput, TOutput> device) : base(key, messagePath, device as Device)
@@ -29,15 +30,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/fullStatus", (id, content) =>
             {
-
                 try
                 {
-                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "InputCount: {inputCount}, OutputCount: {outputCount}", this, matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
-                    PostStatusMessage(new MatrixStateMessage<TInput, TOutput>
+                    Debug.LogMessage(LogEventLevel.Verbose, "InputCount: {inputCount}, OutputCount: {outputCount}", this, matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
+                    var message = new MatrixStateMessage<TInput, TOutput>
                     {
                         Outputs = matrixDevice.OutputSlots,
                         Inputs = matrixDevice.InputSlots,
-                    });
+                    };
+
+                    
+                    PostStatusMessage(message);
                 }
                 catch (System.Exception e)
                 {
@@ -82,7 +85,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class  MatrixStateMessage<TInput, TOutput> : DeviceStateMessageBase where TInput:IRoutingInputSlot where TOutput:IRoutingOutputSlot
+    public class  MatrixStateMessage<TInput, TOutput> : DeviceStateMessageBase where TInput:IRoutingInputSlot where TOutput:IRoutingOutputSlot<TInput>
     {
         [JsonProperty("outputs")]
         public Dictionary<string, TOutput> Outputs;

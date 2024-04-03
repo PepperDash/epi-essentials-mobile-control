@@ -154,6 +154,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             message.Name = _device.Name;
 
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Message to send: {@message}", this, message);
+
             PostStatusMessage(JToken.FromObject(message),MessagePath, clientId);
         }
 
