@@ -32,6 +32,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WebSocketSharp;
+using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
@@ -217,11 +218,13 @@ namespace PepperDash.Essentials
 
                 AddDefaultDeviceMessenger(messenger);
 
-                if(room is IRoomEventSchedule)
+                Debug.Console(2, this, "Attempting to set up room messengers for room: {0}", room.Key);
+
+                if (room is IRoomEventSchedule)
                 {
                     var scheduleMessenger = new RoomEventScheduleMessenger($"{room.Key}-schedule-{Key}",
 
-                    string.Format("/room/{0}/schedule", room.Key), room as IRoomEventSchedule);
+                    string.Format("/room/{0}", room.Key), room as IRoomEventSchedule);
 
                     AddDefaultDeviceMessenger(scheduleMessenger);
                 }
@@ -234,9 +237,9 @@ namespace PepperDash.Essentials
         private void SetupDefaultDeviceMessengers()
         {
             bool messengerAdded = false;
-            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).Cast<Device>())
+            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).Cast<PepperDash.Core.Device>())
             {
-                Debug.Console(2, this, "Attempting to set up device messenger for device: {0}", device.Key);
+                Debug.Console(2, this, "Attempting to set up device messengers for device: {0}", device.Key);
 
 
                 if (device is ICommunicationMonitor)

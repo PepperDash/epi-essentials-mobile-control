@@ -106,7 +106,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             if (_actions.ContainsKey(path))
             {
-                Debug.Console(0, this, $"Messenger {Key} already has action registered at {path}");
+                //Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Messenger {Key} already has action registered at {path}", this);
                 return;
             }
 
@@ -153,8 +153,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
             message.Key = _device.Key;
 
             message.Name = _device.Name;
-
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Message to send: {@message}", this, message);
 
             PostStatusMessage(JToken.FromObject(message),MessagePath, clientId);
         }

@@ -7,6 +7,7 @@ using PepperDash.Essentials.Core.Routing;
 using System.Collections.Generic;
 using System.Linq;
 using Serilog.Events;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -33,10 +34,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 try
                 {
                     Debug.LogMessage(LogEventLevel.Verbose, "InputCount: {inputCount}, OutputCount: {outputCount}", this, matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
-                    var message = new MatrixStateMessage<TInput, TOutput>
+                    var message = new MatrixStateMessage<TInput>
                     {
-                        Outputs = matrixDevice.OutputSlots,
-                        Inputs = matrixDevice.InputSlots,
+                        Outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput<TInput>(kvp.Value)),
+                        Inputs = matrixDevice.InputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingInput(kvp.Value)),
                     };
 
                     
@@ -85,13 +86,76 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class  MatrixStateMessage<TInput, TOutput> : DeviceStateMessageBase where TInput:IRoutingInputSlot where TOutput:IRoutingOutputSlot<TInput>
+    public class  MatrixStateMessage<TInput> : DeviceStateMessageBase where TInput : IRoutingInputSlot
     {
         [JsonProperty("outputs")]
-        public Dictionary<string, TOutput> Outputs;
+        public Dictionary<string, RoutingOutput<TInput>> Outputs;
 
         [JsonProperty("inputs")]
-        public Dictionary<string, TInput> Inputs;
+        public Dictionary<string, RoutingInput> Inputs;
+    }
+
+    public class RoutingInput
+    {
+        private IRoutingInputSlot _input;
+
+        [JsonProperty("txDeviceKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string TxDeviceKey => _input?.TxDeviceKey;
+
+        [JsonProperty("slotNumber", NullValueHandling = NullValueHandling.Ignore)]
+        public int? SlotNumber => _input?.SlotNumber;
+
+        [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        [JsonProperty("supportedSignalTypes", NullValueHandling = NullValueHandling.Ignore)]
+        public eRoutingSignalType? SupportedSignalTypes => _input?.SupportedSignalTypes;
+
+        [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+        public string Name => _input?.Name;
+
+        [JsonProperty("isOnline", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsOnline => _input?.IsOnline.BoolValue;
+
+        [JsonProperty("videoSyncDetected", NullValueHandling = NullValueHandling.Ignore)]
+
+        public bool? VideoSyncDetected  => _input?.VideoSyncDetected;
+
+        [JsonProperty("key", NullValueHandling = NullValueHandling.Ignore)]
+        public string Key => _input?.Key;
+
+        public RoutingInput(IRoutingInputSlot input)
+        {            
+            _input = input;
+        }
+    }
+
+    public class RoutingOutput<TInput> where TInput : IRoutingInputSlot
+    {
+        private IRoutingOutputSlot<TInput> _output;
+
+
+        public RoutingOutput(IRoutingOutputSlot<TInput> output)
+        {
+            _output = output;
+        }
+
+        [JsonProperty("rxDeviceKey")]
+        public string RxDeviceKey => _output.RxDeviceKey;
+
+        [JsonProperty("currentRoutes")]
+        public Dictionary<string, RoutingInput> CurrentRoutes => _output.CurrentRoutes.ToDictionary(kvp => kvp.Key.ToString(), kvp => new RoutingInput(kvp.Value));
+
+        [JsonProperty("slotNumber")]
+        public int SlotNumber => _output.SlotNumber;
+
+        [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        [JsonProperty("supportedSignalTypes")]
+        public eRoutingSignalType SupportedSignalTypes => _output.SupportedSignalTypes;
+
+        [JsonProperty("name")]
+        public string Name => _output.Name;
+
+        [JsonProperty("key")]
+        public string Key => _output.Key;
     }
 
     public class MatrixRouteRequest

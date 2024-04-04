@@ -27,8 +27,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            AddAction(MessagePath + "/save", (id, content) => SaveScheduledEvents(content.ToObject<List<ScheduledEventConfig>>()));
-            AddAction(MessagePath + "/fullStatus", (id, content) =>
+            AddAction("/saveScheduledEvents", (id, content) => SaveScheduledEvents(content.ToObject<List<ScheduledEventConfig>>()));
+            AddAction("/status", (id, content) =>
             {
                 var events = _room.GetScheduledEvents();
 

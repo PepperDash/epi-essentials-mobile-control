@@ -607,7 +607,6 @@ namespace PepperDash.Essentials
             };
 
             
-
             try
             {
                 var zrcTp = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
@@ -617,6 +616,11 @@ namespace PepperDash.Essentials
             catch
             {
                 configuration.ZoomRoomControllerKey = room.Key;
+            }
+
+            if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
+            {
+                configuration.HelpMessage = propertiesConfig.PropertiesConfig.HelpMessageForDisplay;
             }
 
             if (room is IEssentialsHuddleSpaceRoom huddleRoom && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
@@ -670,6 +674,7 @@ namespace PepperDash.Essentials
             {
                 Debug.Console(2, this, "Getting matrix routing config");
                 configuration.MatrixRoutingKey = matrixRoutingRoom.MatrixRoutingDeviceKey;
+                configuration.EndpointKeys = matrixRoutingRoom.EndpointKeys;
             }
 
             if (room is IEnvironmentalControls envRoom)
@@ -847,6 +852,9 @@ namespace PepperDash.Essentials
         public string AudioCodecKey { get; set; }
         [JsonProperty("matrixRoutingKey", NullValueHandling = NullValueHandling.Ignore)]
         public string MatrixRoutingKey { get; set; }
+        [JsonProperty("endpointKeys", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> EndpointKeys { get; set; }
+
         [JsonProperty("defaultDisplayKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultDisplayKey { get; set; }
         [JsonProperty("destinations", NullValueHandling = NullValueHandling.Ignore)]
