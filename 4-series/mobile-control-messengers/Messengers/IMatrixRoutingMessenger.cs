@@ -65,7 +65,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     PostStatusMessage(JToken.FromObject(new
                     {
-                        outputs = matrixDevice.OutputSlots
+                        outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput<TInput>(kvp.Value))
                     }));
                 };
             }
@@ -79,7 +79,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     PostStatusMessage(JToken.FromObject(new
                     {
-                        inputs = matrixDevice.InputSlots
+                        inputs = matrixDevice.InputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingInput(kvp.Value))
                     }));
                 };
             }
