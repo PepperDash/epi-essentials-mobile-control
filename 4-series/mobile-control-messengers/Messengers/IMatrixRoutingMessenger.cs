@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Org.BouncyCastle.Utilities.IO;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Routing;
@@ -13,14 +12,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 {
     /// <summary>
     /// Messenger for devices that implment IMatrixRouting
-    /// NOTE:  MUST BE INSTANTIATED BY THE IMatrixRouting DEVICE.  CANNOT BE CREATED AUTOMATICALLY. Requires types to be specified.
     /// </summary>
-    /// <typeparam name="TInput">Type that implments IRoutingInputSlot</typeparam>
-    /// <typeparam name="TOutput">Type that implments IRoutingOutputSlot</typeparam>
-    public class IMatrixRoutingMessenger<TInput, TOutput> : MessengerBase where TInput: IRoutingInputSlot where TOutput : IRoutingOutputSlot<TInput>
+    public class IMatrixRoutingMessenger: MessengerBase
     {
-        private readonly IMatrixRouting<TInput, TOutput> matrixDevice;
-        public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting<TInput, TOutput> device) : base(key, messagePath, device as Device)
+        private readonly IMatrixRouting matrixDevice;
+        public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting device) : base(key, messagePath, device as Device)
         {
             matrixDevice = device;
         }
@@ -34,16 +30,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 try
                 {
                     Debug.LogMessage(LogEventLevel.Verbose, "InputCount: {inputCount}, OutputCount: {outputCount}", this, matrixDevice.InputSlots.Count, matrixDevice.OutputSlots.Count);
-                    var message = new MatrixStateMessage<TInput>
+                    var message = new MatrixStateMessage
                     {
-                        Outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput<TInput>(kvp.Value)),
+                        Outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput(kvp.Value)),
                         Inputs = matrixDevice.InputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingInput(kvp.Value)),
                     };
 
                     
                     PostStatusMessage(message);
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     Debug.LogMessage(e, "Exception Getting full status: {@exception}", this, e);
                 }
@@ -65,7 +61,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     PostStatusMessage(JToken.FromObject(new
                     {
-                        outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput<TInput>(kvp.Value))
+                        outputs = matrixDevice.OutputSlots.ToDictionary(kvp => kvp.Key, kvp => new RoutingOutput(kvp.Value))
                     }));
                 };
             }
@@ -86,10 +82,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class  MatrixStateMessage<TInput> : DeviceStateMessageBase where TInput : IRoutingInputSlot
+    public class  MatrixStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("outputs")]
-        public Dictionary<string, RoutingOutput<TInput>> Outputs;
+        public Dictionary<string, RoutingOutput> Outputs;
 
         [JsonProperty("inputs")]
         public Dictionary<string, RoutingInput> Inputs;
@@ -128,12 +124,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
     }
 
-    public class RoutingOutput<TInput> where TInput : IRoutingInputSlot
+    public class RoutingOutput
     {
-        private IRoutingOutputSlot<TInput> _output;
+        private IRoutingOutputSlot _output;
 
 
-        public RoutingOutput(IRoutingOutputSlot<TInput> output)
+        public RoutingOutput(IRoutingOutputSlot output)
         {
             _output = output;
         }

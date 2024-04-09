@@ -541,6 +541,17 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }
 
+                if(device is IMatrixRouting matrix)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Adding IMatrixRoutingMessenger for device: {key}", this, device.Key);
+
+                    var messenger = new IMatrixRoutingMessenger($"{device.Key}-matrixRouting", $"/device/{device.Key}", matrix);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
                 if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
                     continue;
