@@ -131,6 +131,14 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 {
                     Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
                     UpdateZoomFeedbacks();
+
+                    if (!x70Panel.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue)
+                    {
+                        x70Panel.ExtenderButtonToolbarReservedSigs.ShowButtonToolbar();
+                    } else
+                    {
+                        x70Panel.ExtenderButtonToolbarReservedSigs.HideButtonToolbar();
+                    }
                 };
                 
 
@@ -161,6 +169,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x70Panel.ExtenderApplicationControlReservedSigs.Use();
                 x70Panel.ExtenderZoomRoomAppReservedSigs.Use();
                 x70Panel.ExtenderEthernetReservedSigs.Use();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Use();
+
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button2Off();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button3Off();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button4Off();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button5Off();
+
                 return;
             }
 
