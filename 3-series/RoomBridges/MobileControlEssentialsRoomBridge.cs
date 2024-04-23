@@ -621,6 +621,9 @@ namespace PepperDash.Essentials
             if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
             {
                 configuration.HelpMessage = propertiesConfig.PropertiesConfig.HelpMessageForDisplay;
+
+                if( !string.IsNullOrEmpty(propertiesConfig.PropertiesConfig.Tech.Password))
+                    configuration.TechPassword = propertiesConfig.PropertiesConfig.Tech.Password;
             }
 
             if (room is IEssentialsHuddleSpaceRoom huddleRoom && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
@@ -873,6 +876,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("helpMessage", NullValueHandling = NullValueHandling.Ignore)]
         public string HelpMessage { get; set; }
+
+        [JsonProperty("techPassword", NullValueHandling = NullValueHandling.Ignore)]
+        public string TechPassword { get; set; }
 
         [JsonProperty("uiBehavior", NullValueHandling = NullValueHandling.Ignore)]
         public EssentialsRoomUiBehaviorConfig UiBehavior { get; set; }
