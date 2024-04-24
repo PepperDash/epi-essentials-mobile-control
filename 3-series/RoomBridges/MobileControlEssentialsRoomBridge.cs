@@ -621,9 +621,6 @@ namespace PepperDash.Essentials
             if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
             {
                 configuration.HelpMessage = propertiesConfig.PropertiesConfig.HelpMessageForDisplay;
-
-                if( !string.IsNullOrEmpty(propertiesConfig.PropertiesConfig.Tech.Password))
-                    configuration.TechPassword = propertiesConfig.PropertiesConfig.Tech.Password;
             }
 
             if (room is IEssentialsHuddleSpaceRoom huddleRoom && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
