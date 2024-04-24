@@ -228,6 +228,16 @@ namespace PepperDash.Essentials
 
                     AddDefaultDeviceMessenger(scheduleMessenger);
                 }
+
+                if (room is ITechPassword)
+                {
+                    var techPasswordMessenger = new ITechPasswordMessenger($"{room.Key}-techPassword-{Key}",
+                        string.Format("/room/{0}", room.Key), room as ITechPassword);
+
+                    AddDefaultDeviceMessenger(techPasswordMessenger);
+                }
+
+
             }
         }
 
