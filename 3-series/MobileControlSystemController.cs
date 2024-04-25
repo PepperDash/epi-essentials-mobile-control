@@ -236,8 +236,6 @@ namespace PepperDash.Essentials
 
                     AddDefaultDeviceMessenger(techPasswordMessenger);
                 }
-
-
             }
         }
 
@@ -988,6 +986,11 @@ namespace PepperDash.Essentials
         }
 
         public MobileControlBridgeBase GetRoomBridge(string key)
+        {
+            return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
+        }
+
+        public IMobileControlRoomMessenger GetRoomMessenger(string key)
         {
             return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
