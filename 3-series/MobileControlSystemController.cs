@@ -1381,7 +1381,7 @@ Mobile Control Direct Server Infromation:
         {
             Debug.Console(1, this, "Sending initial join message");
 
-            var touchPanels = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
+            var touchPanels = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
             {
                 return new
                 {

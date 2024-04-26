@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 
@@ -31,13 +32,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var response = content.ToObject<int>();
 
                 _room.SetShutdownPromptSeconds(response);
+
+                SendFullStatus();
             });
+
+            AddAction("/shutdownStart", (id, content) => _room.StartShutdown(eShutdownType.Manual));
+
+            AddAction("/shutdownEnd", (id, content) => _room.ShutdownPromptTimer.Finish());
+
+            AddAction("/shutdownCancel", (id, content) => _room.ShutdownPromptTimer.Cancel());
+
 
             _room.ShutdownPromptTimer.HasStarted += (sender, args) =>
             {
                 var status = new IShutdownPromptTimerEventMessage
                 {
-                    TimerStarted = true
+                    EventType = "timerStarted",
                 };
 
                 PostEventMessage(status);
@@ -47,7 +57,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var status = new IShutdownPromptTimerEventMessage
                 {
-                    TimerFinished = true
+                    EventType = "timerFinished",
                 };
 
                 PostEventMessage(status);
@@ -57,7 +67,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var status = new IShutdownPromptTimerEventMessage
                 {
-                    TimerCancelled = true
+                    EventType = "timerCancelled",
                 };
 
                 PostEventMessage(status);
@@ -67,8 +77,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 var status = new
                 {
-                    timeRemaining = _room.ShutdownPromptTimer.TimeRemainingFeedback.StringValue
+                    timeRemaining = _room.ShutdownPromptTimer.TimeRemainingFeedback.StringValue,
+                    percentageRemaining = _room.ShutdownPromptTimer.PercentFeedback.UShortValue
                 };
+
+                PostStatusMessage(JToken.FromObject(status));
             };
         }
 
@@ -78,6 +91,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             {
                 ShutdownPromptSeconds = _room.ShutdownPromptTimer.SecondsToCount,
                 TimeRemaining = _room.ShutdownPromptTimer.TimeRemainingFeedback.StringValue,
+                PercentageRemaining = _room.ShutdownPromptTimer.PercentFeedback.UShortValue
             };
 
             PostStatusMessage(status);
@@ -90,20 +104,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("secondsRemaining")]
         public string TimeRemaining { get; set; }
 
+        [JsonProperty("percentageRemaining")]
+        public int PercentageRemaining { get; set; }
+
         [JsonProperty("shutdownPromptSeconds")]
         public int ShutdownPromptSeconds { get; set; }
     }
 
     public class IShutdownPromptTimerEventMessage : DeviceEventMessageBase
     {
-        [JsonProperty("timerFinished")]
-        public bool TimerFinished { get; set; }
 
-        [JsonProperty("timerStarted")]
-        public bool TimerStarted { get; set; }
-
-        [JsonProperty("timerCancelled")]
-        public bool TimerCancelled { get; set; }
     }
 
 }

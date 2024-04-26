@@ -29,6 +29,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         private readonly MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
 
+        private string _appUrl;
+
         public StringFeedback AppUrlFeedback { get; private set; }
         private readonly StringFeedback QrCodeUrlFeedback;
         private readonly StringFeedback McServerUrlFeedback;
@@ -55,8 +57,6 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public string DefaultRoomKey => _config.DefaultRoomKey;
 
-        public string DeviceKey => localConfig.DeviceKey;
-
         public bool UseDirectServer => localConfig.UseDirectServer;
 
         public bool ZoomRoomController => localConfig.ZoomRoomController;
@@ -69,7 +69,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             AddPostActivationAction(SubscribeForMobileControlUpdates);
 
-            AppUrlFeedback = new StringFeedback(() => _bridge?.AppUrl);
+            AppUrlFeedback = new StringFeedback(() => _appUrl);
             QrCodeUrlFeedback = new StringFeedback(() => _bridge?.QrCodeUrl);
             McServerUrlFeedback = new StringFeedback(() => _bridge?.McServerUrl);
             UserCodeFeedback = new StringFeedback(() => _bridge?.UserCode);
@@ -303,6 +303,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
             _bridge.AppUrlChanged += (s, a) => { Debug.Console(0, this, "AppURL changed"); UpdateFeedbacks(s, a); };
+        }
+
+        public void SetAppUrl(string url)
+        {
+            _appUrl = url;
+            AppUrlFeedback.FireUpdate();
         }
 
         private void UpdateFeedbacks(object sender, EventArgs args)
