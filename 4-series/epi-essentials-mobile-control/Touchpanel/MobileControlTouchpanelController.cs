@@ -16,12 +16,20 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace PepperDash.Essentials.Devices.Common.TouchPanel
 {
-    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider
+    //public interface IMobileControlTouchpanelController 
+    //{
+    //    StringFeedback AppUrlFeedback { get; }
+    //    string DefaultRoomKey { get; }
+    //    string DeviceKey { get; }
+    //}
+
+
+    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider, IMobileControlTouchpanelController
     {
         private readonly MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
 
-        private readonly StringFeedback AppUrlFeedback;
+        public StringFeedback AppUrlFeedback { get; private set; }
         private readonly StringFeedback QrCodeUrlFeedback;
         private readonly StringFeedback McServerUrlFeedback;
         private readonly StringFeedback UserCodeFeedback;
@@ -46,6 +54,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         public FeedbackCollection<Feedback> ZoomFeedbacks { get; private set; }
 
         public string DefaultRoomKey => _config.DefaultRoomKey;
+
+        public string DeviceKey => localConfig.DeviceKey;
 
         public bool UseDirectServer => localConfig.UseDirectServer;
 

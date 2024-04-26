@@ -10,5 +10,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         [JsonProperty("zoomRoomController")]
         public bool ZoomRoomController { get; set; } = false;
+
+
+        /// <summary>
+        /// Key of the device that this UI client will be running on. For example the key of a Cisco codec whose Navigator panel runs this UI client.
+        /// </summary>
+        [JsonProperty("deviceKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string DeviceKey { get; set; }
     }
 }

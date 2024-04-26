@@ -236,6 +236,14 @@ namespace PepperDash.Essentials
 
                     AddDefaultDeviceMessenger(techPasswordMessenger);
                 }
+
+                if (room is IShutdownPromptTimer)
+                {
+                    var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger($"{room.Key}-shutdownPromptTimer-{Key}",
+                                               string.Format("/room/{0}", room.Key), room as IShutdownPromptTimer);
+
+                    AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                }
             }
         }
 

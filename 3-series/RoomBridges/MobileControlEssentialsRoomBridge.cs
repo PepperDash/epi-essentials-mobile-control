@@ -26,9 +26,6 @@ using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 
 
-
-
-
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
