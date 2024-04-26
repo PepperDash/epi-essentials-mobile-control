@@ -73,11 +73,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 PostEventMessage(status);
             };
 
-            _room.ShutdownPromptTimer.TimeRemainingFeedback.OutputChange += (sender, args) =>
+            _room.ShutdownPromptTimer.SecondsRemainingFeedback.OutputChange += (sender, args) =>
             {
                 var status = new
                 {
-                    timeRemaining = _room.ShutdownPromptTimer.TimeRemainingFeedback.StringValue,
+                    secondsRemaining = _room.ShutdownPromptTimer.SecondsRemainingFeedback.IntValue,
                     percentageRemaining = _room.ShutdownPromptTimer.PercentFeedback.UShortValue
                 };
 
@@ -90,7 +90,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             var status = new IShutdownPromptTimerStateMessage
             {
                 ShutdownPromptSeconds = _room.ShutdownPromptTimer.SecondsToCount,
-                TimeRemaining = _room.ShutdownPromptTimer.TimeRemainingFeedback.StringValue,
+                SecondsRemaining = _room.ShutdownPromptTimer.SecondsRemainingFeedback.IntValue,
                 PercentageRemaining = _room.ShutdownPromptTimer.PercentFeedback.UShortValue
             };
 
@@ -102,7 +102,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public class IShutdownPromptTimerStateMessage : DeviceStateMessageBase
     {
         [JsonProperty("secondsRemaining")]
-        public string TimeRemaining { get; set; }
+        public int SecondsRemaining { get; set; }
 
         [JsonProperty("percentageRemaining")]
         public int PercentageRemaining { get; set; }
