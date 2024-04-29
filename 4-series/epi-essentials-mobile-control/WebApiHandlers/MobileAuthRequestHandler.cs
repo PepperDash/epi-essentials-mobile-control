@@ -15,7 +15,7 @@ namespace PepperDash.Essentials.WebApiHandlers
         public MobileAuthRequestHandler(MobileControlSystemController controller) : base(true)
         {
             mcController = controller;
-        }
+        }        
 
         protected override async Task HandlePost(HttpCwsContext context)
         {
@@ -33,9 +33,11 @@ namespace PepperDash.Essentials.WebApiHandlers
 
             var response = await mcController.ApiService.SendAuthorizationRequest(mcController.Host, grantCode.GrantCode, mcController.SystemUuid);
 
-            Debug.Console(1, $"response received");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Response Received: {@response}",null, response);
+
             if (response.Authorized)
             {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "System authorized. Registering with server", null, null);
                 mcController.RegisterSystemToServer();
             }
 
@@ -50,14 +52,7 @@ namespace PepperDash.Essentials.WebApiHandlers
             }
             catch (Exception ex)
             {
-                Debug.Console(0, $"Exception handling MC Auth request: {ex.Message}");
-                Debug.Console(2, $"Stack Trace: {ex.StackTrace}");
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, $"Inner Exception: {ex.InnerException.Message}");
-                    Debug.Console(2, $"Inner Exception Stack Trace: {ex.InnerException.StackTrace}");
-                }
+                Debug.LogMessage(ex, "Error getting authorization: {Exception}", null, ex);
             }
         }
     }
