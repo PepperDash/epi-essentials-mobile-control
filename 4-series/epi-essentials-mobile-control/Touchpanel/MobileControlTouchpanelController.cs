@@ -135,9 +135,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     if (!x70Panel.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue)
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.ShowButtonToolbar();
+                        x70Panel.ExtenderButtonToolbarReservedSigs.Button2On();
                     } else
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.HideButtonToolbar();
+                        x70Panel.ExtenderButtonToolbarReservedSigs.Button2Off();
                     }
                 };
                 
@@ -171,10 +173,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x70Panel.ExtenderEthernetReservedSigs.Use();
                 x70Panel.ExtenderButtonToolbarReservedSigs.Use();
 
-                x70Panel.ExtenderButtonToolbarReservedSigs.Button2Off();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button1Off();
                 x70Panel.ExtenderButtonToolbarReservedSigs.Button3Off();
                 x70Panel.ExtenderButtonToolbarReservedSigs.Button4Off();
                 x70Panel.ExtenderButtonToolbarReservedSigs.Button5Off();
+                x70Panel.ExtenderButtonToolbarReservedSigs.Button6Off();
 
                 return;
             }

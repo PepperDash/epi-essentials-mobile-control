@@ -10,5 +10,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         [JsonProperty("zoomRoomController")]
         public bool ZoomRoomController { get; set; } = false;
+
+        [JsonProperty("buttonToolbarTimeoutInS")]
+        public ushort ButtonToolbarTimoutInS { get; set; } = 0;
     }
 }
