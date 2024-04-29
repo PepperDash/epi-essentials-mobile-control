@@ -16,12 +16,22 @@ using Feedback = PepperDash.Essentials.Core.Feedback;
 
 namespace PepperDash.Essentials.Devices.Common.TouchPanel
 {
-    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider
+    //public interface IMobileControlTouchpanelController 
+    //{
+    //    StringFeedback AppUrlFeedback { get; }
+    //    string DefaultRoomKey { get; }
+    //    string DeviceKey { get; }
+    //}
+
+
+    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider, IMobileControlTouchpanelController
     {
         private readonly MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
 
-        private readonly StringFeedback AppUrlFeedback;
+        private string _appUrl;
+
+        public StringFeedback AppUrlFeedback { get; private set; }
         private readonly StringFeedback QrCodeUrlFeedback;
         private readonly StringFeedback McServerUrlFeedback;
         private readonly StringFeedback UserCodeFeedback;
@@ -59,7 +69,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             AddPostActivationAction(SubscribeForMobileControlUpdates);
 
-            AppUrlFeedback = new StringFeedback(() => _bridge?.AppUrl);
+            AppUrlFeedback = new StringFeedback(() => _appUrl);
             QrCodeUrlFeedback = new StringFeedback(() => _bridge?.QrCodeUrl);
             McServerUrlFeedback = new StringFeedback(() => _bridge?.McServerUrl);
             UserCodeFeedback = new StringFeedback(() => _bridge?.UserCode);
@@ -296,6 +306,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
             _bridge.AppUrlChanged += (s, a) => { Debug.Console(0, this, "AppURL changed"); UpdateFeedbacks(s, a); };
+        }
+
+        public void SetAppUrl(string url)
+        {
+            _appUrl = url;
+            AppUrlFeedback.FireUpdate();
         }
 
         private void UpdateFeedbacks(object sender, EventArgs args)

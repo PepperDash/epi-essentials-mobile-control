@@ -26,9 +26,6 @@ using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 
 
-
-
-
 #if SERIES4
 using PepperDash.Essentials.AppServer;
 #endif
@@ -218,19 +215,19 @@ namespace PepperDash.Essentials
                 AddAction("/activityVideo", (id, content) => defCallRm.RunDefaultCallRoute());
             }
 
-            AddAction("/shutdownStart", (id, content) => Room.StartShutdown(eShutdownType.Manual));
+            //AddAction("/shutdownStart", (id, content) => Room.StartShutdown(eShutdownType.Manual));
 
-            AddAction("/shutdownEnd", (id, content) => Room.ShutdownPromptTimer.Finish());
+            //AddAction("/shutdownEnd", (id, content) => Room.ShutdownPromptTimer.Finish());
 
-            AddAction("/shutdownCancel", (id, content) => Room.ShutdownPromptTimer.Cancel());
+            //AddAction("/shutdownCancel", (id, content) => Room.ShutdownPromptTimer.Cancel());
 
             Room.OnFeedback.OutputChange += OnFeedback_OutputChange;
             Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
             Room.IsWarmingUpFeedback.OutputChange += IsWarmingUpFeedback_OutputChange;
 
-            Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
-            Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
-            Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
+            //Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
+            //Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
+            //Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
 
             AddTechRoomActions();
         }
@@ -248,16 +245,16 @@ namespace PepperDash.Essentials
         {
             foreach (var tp in _touchPanelTokens)
             {
-                var dev = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().FirstOrDefault((tpc) => tpc.Key.Equals(tp.TouchpanelKey, StringComparison.InvariantCultureIgnoreCase));
+                var dev = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().FirstOrDefault((tpc) => tpc.Key.Equals(tp.TouchpanelKey, StringComparison.InvariantCultureIgnoreCase));
 
                 if (dev == null)
                 {
                     continue;
                 }
 
-                var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+                //var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
 
-                var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+                //var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
 
                 UpdateAppUrl($"{userAppUrl}?token={tp.Token}");
             }
@@ -382,47 +379,47 @@ namespace PepperDash.Essentials
             PostStatusMessage(state);
         }
 
-        /// <summary>
-        /// Handler for cancelled shutdown
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
-        {
-            var roomStatus = new {state = "wasCancelled" };
+        ///// <summary>
+        ///// Handler for cancelled shutdown
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
+        //{
+        //    var roomStatus = new {state = "wasCancelled" };
             
-            PostStatusMessage(JToken.FromObject(roomStatus));
-        }
+        //    PostStatusMessage(JToken.FromObject(roomStatus));
+        //}
 
-        /// <summary>
-        /// Handler for when shutdown finishes
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
-        {
-            var roomStatus = new { state= "hasFinished" };            
+        ///// <summary>
+        ///// Handler for when shutdown finishes
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
+        //{
+        //    var roomStatus = new { state= "hasFinished" };            
 
-            PostStatusMessage(JToken.FromObject(roomStatus));
-        }
+        //    PostStatusMessage(JToken.FromObject(roomStatus));
+        //}
 
-        /// <summary>
-        /// Handler for when shutdown starts
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ShutdownPromptTimer_HasStarted(object sender, EventArgs e)
-        {
-            var roomStatus = new
-            {
-                state = "hasStarted",
-                duration = Room.ShutdownPromptTimer.SecondsToCount
-            };
+        ///// <summary>
+        ///// Handler for when shutdown starts
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void ShutdownPromptTimer_HasStarted(object sender, EventArgs e)
+        //{
+        //    var roomStatus = new
+        //    {
+        //        state = "hasStarted",
+        //        duration = Room.ShutdownPromptTimer.SecondsToCount
+        //    };
 
-            PostStatusMessage(JToken.FromObject(roomStatus));
-            // equivalent JS message:
-            //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
-        }
+        //    PostStatusMessage(JToken.FromObject(roomStatus));
+        //    // equivalent JS message:
+        //    //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
+        //}
 
         /// <summary>
         /// 
@@ -599,9 +596,9 @@ namespace PepperDash.Essentials
 
             var configuration = new RoomConfiguration
             {
-                ShutdownPromptSeconds = room.ShutdownPromptSeconds,
+                //ShutdownPromptSeconds = room.ShutdownPromptSeconds,
                 TouchpanelKeys = DeviceManager.AllDevices.
-                OfType<MobileControlTouchpanelController>()
+                OfType<IMobileControlTouchpanelController>()
                 .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
                 .Select(tp => tp.Key).ToList()
             };
@@ -609,7 +606,7 @@ namespace PepperDash.Essentials
             
             try
             {
-                var zrcTp = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
+                var zrcTp = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
 
                 configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : room.Key;
             }
@@ -821,8 +818,8 @@ namespace PepperDash.Essentials
     /// </summary>
     public class RoomConfiguration
     {
-        [JsonProperty("shutdownPromptSeconds", NullValueHandling = NullValueHandling.Ignore)]
-        public int? ShutdownPromptSeconds { get; set; }
+        //[JsonProperty("shutdownPromptSeconds", NullValueHandling = NullValueHandling.Ignore)]
+        //public int? ShutdownPromptSeconds { get; set; }
 
         [JsonProperty("hasVideoConferencing", NullValueHandling = NullValueHandling.Ignore)]
         public bool? HasVideoConferencing { get; set; }
@@ -873,6 +870,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("helpMessage", NullValueHandling = NullValueHandling.Ignore)]
         public string HelpMessage { get; set; }
+
+        [JsonProperty("techPassword", NullValueHandling = NullValueHandling.Ignore)]
+        public string TechPassword { get; set; }
 
         [JsonProperty("uiBehavior", NullValueHandling = NullValueHandling.Ignore)]
         public EssentialsRoomUiBehaviorConfig UiBehavior { get; set; }

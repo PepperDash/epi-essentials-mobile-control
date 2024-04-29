@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Web;
 using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.WebApiHandlers;
@@ -319,7 +320,7 @@ namespace PepperDash.Essentials
         private void AddClientsForTouchpanels()
         {
             var touchpanels = DeviceManager.AllDevices
-                .OfType<MobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
+                .OfType<IMobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
 
 
             var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));

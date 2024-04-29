@@ -228,6 +228,22 @@ namespace PepperDash.Essentials
 
                     AddDefaultDeviceMessenger(scheduleMessenger);
                 }
+
+                if (room is ITechPassword)
+                {
+                    var techPasswordMessenger = new ITechPasswordMessenger($"{room.Key}-techPassword-{Key}",
+                        string.Format("/room/{0}", room.Key), room as ITechPassword);
+
+                    AddDefaultDeviceMessenger(techPasswordMessenger);
+                }
+
+                if (room is IShutdownPromptTimer)
+                {
+                    var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger($"{room.Key}-shutdownPromptTimer-{Key}",
+                                               string.Format("/room/{0}", room.Key), room as IShutdownPromptTimer);
+
+                    AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                }
             }
         }
 
@@ -982,6 +998,11 @@ namespace PepperDash.Essentials
             return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
 
+        public IMobileControlRoomMessenger GetRoomMessenger(string key)
+        {
+            return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -1360,7 +1381,7 @@ Mobile Control Direct Server Infromation:
         {
             Debug.Console(1, this, "Sending initial join message");
 
-            var touchPanels = DeviceManager.AllDevices.OfType<MobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
+            var touchPanels = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
             {
                 return new
                 {

@@ -185,7 +185,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AppServerController?.SendMessageObject(new MobileControlMessage
             {
-                Type = MessagePath,
+                Type = $"/event{MessagePath}",
                 Content = JToken.FromObject(message),
             });   
         }

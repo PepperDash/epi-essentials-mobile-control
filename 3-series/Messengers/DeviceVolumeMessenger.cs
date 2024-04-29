@@ -30,6 +30,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Level = _localDevice.VolumeLevelFeedback.IntValue,
                     Muted = _localDevice.MuteFeedback.BoolValue,
+                    HasMute = true,  // assume all devices have mute for now
                 }
             };
 
@@ -136,6 +137,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         [JsonProperty("level", NullValueHandling = NullValueHandling.Ignore)]
         public int? Level { get; set; }
+
+        [JsonProperty("hasMute", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? HasMute { get; set; }
 
         [JsonProperty("muted", NullValueHandling = NullValueHandling.Ignore)]
         public bool? Muted { get; set; }
