@@ -31,7 +31,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/validateTechPassword", (id, content) =>
             {
-                var password = content.Value<string>("techPassword");
+                var password = content.Value<string>("password");
 
                 _room.ValidateTechPassword(password);
             });
@@ -45,22 +45,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _room.TechPasswordChanged += (sender, args) =>
             {
-                var status = new ITechPasswordEventMessage
-                {
-                    TechPasswordChanged = true
-                };
-
-                PostEventMessage(status);
+                PostEventMessage("passwordChangedSuccessfully");
             };
 
             _room.TechPasswordValidateResult += (sender, args) =>
             {
-                var status = new ITechPasswordEventMessage
+                var evt = new ITechPasswordEventMessage
                 {
-                    TechPasswordIsValid = args.IsValid
+                    IsValid = args.IsValid
                 };
 
-                PostEventMessage(status);
+                PostEventMessage(evt, "passwordValidationResult");
             };
         }
 
@@ -84,11 +79,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
     public class ITechPasswordEventMessage : DeviceEventMessageBase
     {
-        [JsonProperty("techPasswordIsValid", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? TechPasswordIsValid { get; set; }
-
-        [JsonProperty("techPasswordChanged", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? TechPasswordChanged { get; set; }
+        [JsonProperty("isValid", NullValueHandling = NullValueHandling.Ignore)]
+        public bool? IsValid { get; set; }
     }
     
     class SetTechPasswordContent

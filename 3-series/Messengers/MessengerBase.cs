@@ -185,10 +185,35 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AppServerController?.SendMessageObject(new MobileControlMessage
             {
-                Type = $"/event{MessagePath}",
+                Type = $"/event{MessagePath}/{message.EventType}",
                 Content = JToken.FromObject(message),
             });   
         }
+
+        protected void PostEventMessage(DeviceEventMessageBase message, string eventType)
+        {             
+            message.Key = _device.Key;
+        
+            message.Name = _device.Name;
+
+            message.EventType = eventType;
+        
+            AppServerController?.SendMessageObject(new MobileControlMessage
+            {
+                Type = $"/event{MessagePath}/{eventType}",
+                Content = JToken.FromObject(message),
+            });
+        }
+
+        protected void PostEventMessage(string eventType)
+        {
+            AppServerController?.SendMessageObject(new MobileControlMessage
+            {
+                Type = $"/event{MessagePath}/{eventType}",
+                Content = JToken.FromObject(new { }),
+            });
+        }
+
     }
 
     public abstract class DeviceMessageBase

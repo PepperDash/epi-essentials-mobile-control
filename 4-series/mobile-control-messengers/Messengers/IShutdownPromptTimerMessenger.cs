@@ -45,32 +45,18 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _room.ShutdownPromptTimer.HasStarted += (sender, args) =>
             {
-                var status = new IShutdownPromptTimerEventMessage
-                {
-                    EventType = "timerStarted",
-                };
-
-                PostEventMessage(status);
+                PostEventMessage("timerStarted");
             };
 
             _room.ShutdownPromptTimer.HasFinished += (sender, args) =>
             {
-                var status = new IShutdownPromptTimerEventMessage
-                {
-                    EventType = "timerFinished",
-                };
 
-                PostEventMessage(status);
+                PostEventMessage("timerFinished");
             };
 
             _room.ShutdownPromptTimer.WasCancelled += (sender, args) =>
             {
-                var status = new IShutdownPromptTimerEventMessage
-                {
-                    EventType = "timerCancelled",
-                };
-
-                PostEventMessage(status);
+                PostEventMessage("timerCancelled");
             };
 
             _room.ShutdownPromptTimer.SecondsRemainingFeedback.OutputChange += (sender, args) =>
@@ -110,10 +96,4 @@ namespace PepperDash.Essentials.AppServer.Messengers
         [JsonProperty("shutdownPromptSeconds")]
         public int ShutdownPromptSeconds { get; set; }
     }
-
-    public class IShutdownPromptTimerEventMessage : DeviceEventMessageBase
-    {
-
-    }
-
 }
