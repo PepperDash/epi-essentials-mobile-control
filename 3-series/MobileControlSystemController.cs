@@ -580,13 +580,13 @@ namespace PepperDash.Essentials
 
         private void AddWebApiPaths()
         {
-            var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault();
+            var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault(d => d.Key == "essentialsWebApi");
 
             if (apiServer == null)
             {
                 Debug.Console(0, this, "No API Server available");
                 return;
-            }
+            }            
 
             var routes = new List<HttpCwsRoute>
             {
