@@ -229,20 +229,26 @@ namespace PepperDash.Essentials
                     AddDefaultDeviceMessenger(scheduleMessenger);
                 }
 
-                if (room is ITechPassword)
+                /*if (room is ITechPassword)
                 {
                     var techPasswordMessenger = new ITechPasswordMessenger($"{room.Key}-techPassword-{Key}",
                         string.Format("/room/{0}", room.Key), room as ITechPassword);
 
                     AddDefaultDeviceMessenger(techPasswordMessenger);
-                }
+                }*/
 
-                if (room is IShutdownPromptTimer)
+                try
                 {
-                    var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger($"{room.Key}-shutdownPromptTimer-{Key}",
-                                               string.Format("/room/{0}", room.Key), room as IShutdownPromptTimer);
+                    if (room is IShutdownPromptTimer)
+                    {
+                        var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger($"{room.Key}-shutdownPromptTimer-{Key}",
+                                                   string.Format("/room/{0}", room.Key), room as IShutdownPromptTimer);
 
-                    AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                        AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                    }
+                } catch(Exception ex)
+                {
+                    Debug.LogMessage(ex, "Error adding Shutdown prompt messenger: {Exception}", this, ex);
                 }
             }
         }
@@ -584,9 +590,11 @@ namespace PepperDash.Essentials
 
             if (apiServer == null)
             {
-                Debug.Console(0, this, "No API Server available");
+                Debug.Console(0, this, "No API Server available with key essentialsWebApi");
                 return;
-            }            
+            }
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Adding MC Routes to essentialsWebApi", this);
 
             var routes = new List<HttpCwsRoute>
             {
