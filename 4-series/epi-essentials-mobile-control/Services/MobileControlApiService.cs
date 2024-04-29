@@ -23,7 +23,7 @@ namespace PepperDash.Essentials.Services
         {
             var request = new HttpRequestMessage(HttpMethod.Get, $"{apiUrl}/system/{systemUuid}/authorize?grantCode={grantCode}");
 
-            Debug.Console(1, $"Sending authorization request to {request.RequestUri}");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Sending authorization request to {mobileControlApiUrl}", null, request.RequestUri);
 
             var response = await _client.SendAsync(request);
 
@@ -47,6 +47,8 @@ namespace PepperDash.Essentials.Services
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Raw Response from MC: {responseString}", null, responseString);
 
             switch (responseString)
             {

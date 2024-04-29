@@ -53,6 +53,9 @@ namespace PepperDash.Essentials.WebApiHandlers
             catch (Exception ex)
             {
                 Debug.LogMessage(ex, "Error getting authorization: {Exception}", null, ex);
+
+                context.Response.StatusCode = 500;
+                context.Response.StatusDescription = $"Internal Server Error {ex.Message}";
             }
         }
     }
