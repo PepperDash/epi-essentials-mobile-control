@@ -24,16 +24,16 @@ namespace PepperDash.Essentials.Touchpanel
                 return;
             }
 
-            AddAction($"{MessagePath}/fullStatus", (id, context) => SendFullStatus());
+            AddAction($"/fullStatus", (id, context) => SendFullStatus());
 
 
-            AddAction($"{MessagePath}/endCall", (id, context) => _zoomControl.EndZoomCall());
+            AddAction($"/endCall", (id, context) => _zoomControl.EndZoomCall());
 
             _zoomControl.ZoomIncomingCallFeedback.OutputChange += (s, a) =>
             {
                 PostStatusMessage(JToken.FromObject(new
                 {
-                    inCall = a.BoolValue,
+                    incomingCall = a.BoolValue,
                 }));
             };
 
@@ -43,7 +43,7 @@ namespace PepperDash.Essentials.Touchpanel
                 PostStatusMessage(JToken.FromObject(
                 new
                 {
-                    incomingCall = a.BoolValue,
+                    inCall = a.BoolValue,
                 }));
             };
         }
