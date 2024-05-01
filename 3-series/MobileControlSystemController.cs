@@ -26,13 +26,13 @@ using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Services;
 using PepperDash.Essentials.WebApiHandlers;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using WebSocketSharp;
-using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
@@ -1639,7 +1639,7 @@ Mobile Control Direct Server Infromation:
 
             if (!messageText.Contains("/system/heartbeat"))
             {
-                Debug.Console(2, this, "Message RX: {0}", messageText);
+                Debug.LogMessage(LogEventLevel.Debug, "Message RX: {messageText}", this, messageText);
             }
 
             try
@@ -1688,7 +1688,7 @@ Mobile Control Direct Server Infromation:
             }
             catch (Exception err)
             {
-                Debug.Console(1, this, "Unable to parse message: {0}", err);
+                Debug.LogMessage(err, "Unable to parse {message}:{exception}", this, messageText, err);
             }
         }
 
