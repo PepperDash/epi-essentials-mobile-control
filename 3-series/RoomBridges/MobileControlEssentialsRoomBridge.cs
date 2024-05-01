@@ -250,19 +250,19 @@ namespace PepperDash.Essentials
                 if (dev == null)
                 {
                     continue;
-                }
+                }                
 
-                //var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+                //UpdateAppUrl($"{userAppUrl}?token={tp.Token}");
 
-                //var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
-
-                UpdateAppUrl($"{userAppUrl}?token={tp.Token}");
+                dev.SetAppUrl($"{userAppUrl}?token={tp.Token}");
             }
         }
 
         private void OnUserAppUpdated(JToken content)
         {
             var message = content.ToObject<ApiTouchPanelToken>();
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Updating User App URL to {userAppUrl}. Full Message: {@message}", this, message.UserAppUrl, content);
 
             UpdateTouchPanelAppUrls(message.UserAppUrl);
         }
