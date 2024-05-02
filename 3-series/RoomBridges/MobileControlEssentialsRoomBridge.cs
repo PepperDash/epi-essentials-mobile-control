@@ -379,48 +379,6 @@ namespace PepperDash.Essentials
             PostStatusMessage(state);
         }
 
-        ///// <summary>
-        ///// Handler for cancelled shutdown
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new {state = "wasCancelled" };
-            
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //}
-
-        ///// <summary>
-        ///// Handler for when shutdown finishes
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new { state= "hasFinished" };            
-
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //}
-
-        ///// <summary>
-        ///// Handler for when shutdown starts
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_HasStarted(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new
-        //    {
-        //        state = "hasStarted",
-        //        duration = Room.ShutdownPromptTimer.SecondsToCount
-        //    };
-
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //    // equivalent JS message:
-        //    //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
-        //}
-
         /// <summary>
         /// 
         /// </summary>
@@ -602,7 +560,6 @@ namespace PepperDash.Essentials
                 .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
                 .Select(tp => tp.Key).ToList()
             };
-
             
             try
             {
@@ -614,6 +571,12 @@ namespace PepperDash.Essentials
             {
                 configuration.ZoomRoomControllerKey = room.Key;
             }
+
+            // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
+            var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault((rc) => rc.Rooms.Any((r) => r.Key.Equals(room.Key)));
+
+            configuration.RoomCombinerKey = roomCombiner != null ? roomCombiner.Key : null;    
+
 
             if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
             {
@@ -715,7 +678,7 @@ namespace PepperDash.Essentials
                 }
                 else
                 {
-                    Debug.Console(2, this, "**************************** Room Has No Environmental Control Devices");
+                    Debug.Console(2, this, "Room Has No Environmental Control Devices");
                 }
             }
 
@@ -881,6 +844,9 @@ namespace PepperDash.Essentials
         public bool? SupportsAdvancedSharing { get; set; }
         [JsonProperty("userCanChangeShareMode", NullValueHandling = NullValueHandling.Ignore)]
         public bool? UserCanChangeShareMode { get; set; }
+
+        [JsonProperty("roomCombinerKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string RoomCombinerKey { get; set; }
 
         public RoomConfiguration()
         {

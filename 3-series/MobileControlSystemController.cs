@@ -568,6 +568,17 @@ namespace PepperDash.Essentials
                     messengerAdded = true;
                 }
 
+                if(device is IEssentialsRoomCombiner roomCombiner)
+                {
+                    Debug.Console(2, this, $"Adding IEssentialsRoomCombinerMessenger for device: {device.Key}");
+
+                    var messenger = new IEssentialsRoomCombinerMessenger($"{device.Key}-roomCombiner-{Key}", $"/device/{device.Key}", roomCombiner);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
                 if (!(device is EssentialsDevice genericDevice) || messengerAdded)
                 {
                     continue;
