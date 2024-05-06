@@ -38,16 +38,32 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/togglePartitionState", (id, content) =>
             {
-                var partitionKey = content.ToObject<string>();
+                try
+                {
+                    var partitionKey = content.ToObject<string>();
 
-                _roomCombiner.TogglePartitionState(partitionKey);
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Attempting to toggle partition state for partition {partitionKey}", this);
+
+                    _roomCombiner.TogglePartitionState(partitionKey);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Error toggling partition state: {e}", this);
+                }
             });
 
             AddAction("/setRoomCombinationScenario", (id, content) =>
             {
-                var scenarioKey = content.ToObject<string>();
+                try
+                {
+                    var scenarioKey = content.ToObject<string>();
 
-                _roomCombiner.SetRoomCombinationScenario(scenarioKey);
+                    _roomCombiner.SetRoomCombinationScenario(scenarioKey);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Error toggling partition state: {e}", this);
+                }
             });
 
             _roomCombiner.RoomCombinationScenarioChanged += (sender, args) =>
