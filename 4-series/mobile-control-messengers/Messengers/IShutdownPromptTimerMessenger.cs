@@ -45,7 +45,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             _room.ShutdownPromptTimer.HasFinished += (sender, args) =>
             {
-
                 PostEventMessage("timerFinished");
             };
 
