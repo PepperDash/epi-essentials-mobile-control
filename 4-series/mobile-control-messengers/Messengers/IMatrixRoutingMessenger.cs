@@ -13,7 +13,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
     /// <summary>
     /// Messenger for devices that implment IMatrixRouting
     /// </summary>
-    public class IMatrixRoutingMessenger: MessengerBase
+    public class IMatrixRoutingMessenger : MessengerBase
     {
         private readonly IMatrixRouting matrixDevice;
         public IMatrixRoutingMessenger(string key, string messagePath, IMatrixRouting device) : base(key, messagePath, device as Device)

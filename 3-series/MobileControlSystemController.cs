@@ -21,7 +21,6 @@ using PepperDash.Essentials.Core.Web;
 using PepperDash.Essentials.Devices.Common.AudioCodec;
 using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Devices.Common.SoftCodec;
-using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Room.MobileControl;
 using PepperDash.Essentials.Services;
@@ -253,7 +252,7 @@ namespace PepperDash.Essentials
         private void SetupDefaultDeviceMessengers()
         {
             bool messengerAdded = false;
-            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).Cast<PepperDash.Core.Device>())
+            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).OfType<PepperDash.Core.Device>())
             {
                 Debug.Console(2, this, "Attempting to set up device messengers for device: {0}", device.Key);
 
