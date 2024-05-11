@@ -565,12 +565,20 @@ namespace PepperDash.Essentials
             {
                 var zrcTp = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
 
-                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : room.Key;
+                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : null;
             }
             catch
             {
                 configuration.ZoomRoomControllerKey = room.Key;
             }
+
+            if (room is IHasCiscoNavigatorTouchpanel ciscoNavRoom)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Setting CiscoNavigatorKey to: {ciscoNavRoom.CiscoNavigatorTouchpanelKey}", this);
+                configuration.CiscoNavigatorKey = ciscoNavRoom.CiscoNavigatorTouchpanelKey;
+            }
+
+
 
             // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
             var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault((rc) => rc.Rooms.Any((r) => r.Key.Equals(room.Key)));
@@ -705,6 +713,22 @@ namespace PepperDash.Essentials
                 }
             }
 
+            if(room is IHasAccessoryDevices accRoom)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Getting accessory devices config", this);
+
+                if (accRoom.AccessoryDeviceKeys == null)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection is null", this);
+                }
+                else
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection exists", this);
+
+                    configuration.AccessoryDeviceKeys = accRoom.AccessoryDeviceKeys;
+                }   
+            }
+
             var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
             if (sourceList != null)
             {
@@ -805,6 +829,9 @@ namespace PepperDash.Essentials
         [JsonProperty("zoomRoomControllerKey", NullValueHandling = NullValueHandling.Ignore)]
         public string ZoomRoomControllerKey { get; set; }
 
+        [JsonProperty("ciscoNavigatorKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string CiscoNavigatorKey { get; set; }
+
 
         [JsonProperty("videoCodecKey", NullValueHandling = NullValueHandling.Ignore)]
         public string VideoCodecKey { get; set; }
@@ -814,6 +841,9 @@ namespace PepperDash.Essentials
         public string MatrixRoutingKey { get; set; }
         [JsonProperty("endpointKeys", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> EndpointKeys { get; set; }
+
+        [JsonProperty("accessoryDeviceKeys", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> AccessoryDeviceKeys { get; set; }
 
         [JsonProperty("defaultDisplayKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultDisplayKey { get; set; }
@@ -855,7 +885,6 @@ namespace PepperDash.Essentials
             SourceList = new Dictionary<string, SourceListItem>();
             TouchpanelKeys = new List<string>();
         }
-
     }
 
     public class EnvironmentalDeviceConfiguration

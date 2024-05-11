@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System;
 using System.Collections.Generic;
 
 namespace PepperDash.Essentials
@@ -27,6 +28,7 @@ namespace PepperDash.Essentials
 #endif
 
         [JsonProperty("roomBridges")]
+        [Obsolete("No longer necessary")]
         public List<MobileControlRoomBridgePropertiesConfig> RoomBridges { get; set; }
 
         public MobileControlConfig()

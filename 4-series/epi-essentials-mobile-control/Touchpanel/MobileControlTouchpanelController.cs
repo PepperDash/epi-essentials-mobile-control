@@ -305,7 +305,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             _bridge = bridge;
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
-            _bridge.AppUrlChanged += (s, a) => { Debug.Console(0, this, "AppURL changed"); UpdateFeedbacks(s, a); };
+            _bridge.AppUrlChanged += (s, a) => { 
+                Debug.Console(0, this, "AppURL changed");
+                UpdateFeedbacks(s, a); 
+            };
+
+            SetAppUrl(_bridge.AppUrl);
         }
 
         public void SetAppUrl(string url)

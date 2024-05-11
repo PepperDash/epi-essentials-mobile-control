@@ -42,8 +42,6 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     var partitionKey = content.ToObject<string>();
 
-                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Attempting to toggle partition state for partition {partitionKey}", this);
-
                     _roomCombiner.TogglePartitionState(partitionKey);
                 }
                 catch (Exception e)
