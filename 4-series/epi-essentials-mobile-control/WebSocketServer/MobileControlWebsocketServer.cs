@@ -323,10 +323,20 @@ namespace PepperDash.Essentials
                 .OfType<IMobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
 
 
-            var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
+            var touchpanelsToAdd = new List<IMobileControlTouchpanelController>();
 
+            if (_secret != null)
+            {
+                var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
 
-            foreach (var client in newTouchpanels)
+                touchpanelsToAdd.AddRange(newTouchpanels);
+            }
+            else
+            {
+                touchpanelsToAdd.AddRange(touchpanels);
+            }
+
+            foreach (var client in touchpanelsToAdd)
             {
                 var bridge = _parent.GetRoomBridge(client.DefaultRoomKey);
 
@@ -953,8 +963,10 @@ namespace PepperDash.Essentials
             var qp = req.QueryString;
             var token = qp["token"];
 
+            string filePath = path.Split('?')[0];
+
             // remove the token from the path if found
-            string filePath = path.Replace(string.Format("?token={0}", token), "");
+            //string filePath = path.Replace(string.Format("?token={0}", token), "");
 
             // if there's no file suffix strip any extra path data after the base href
             if (filePath != _userAppBaseHref && !filePath.Contains(".") && (!filePath.EndsWith(_userAppBaseHref) || !filePath.EndsWith(_userAppBaseHref += "/")))
