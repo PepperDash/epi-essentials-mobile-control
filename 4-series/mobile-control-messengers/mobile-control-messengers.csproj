@@ -28,7 +28,6 @@
   <ItemGroup>
     <Compile Include="..\..\3-series\Messengers\AudioCodecBaseMessenger.cs" Link="Messengers\AudioCodecBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\CameraBaseMessenger.cs" Link="Messengers\CameraBaseMessenger.cs" />
-    <Compile Include="..\..\3-series\Messengers\CommMonitorMessenger.cs" Link="Messengers\CommMonitorMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\DevicePresetsModelMessenger.cs" Link="Messengers\DevicePresetsModelMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\DeviceVolumeMessenger.cs" Link="Messengers\DeviceVolumeMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\GenericMessenger.cs" Link="Messengers\GenericMessenger.cs" />
@@ -36,7 +35,6 @@
     <Compile Include="..\..\3-series\Messengers\IRunRouteActionMessenger.cs" Link="Messengers\IRunRouteActionMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\LightingBaseMessenger.cs" Link="Messengers\LightingBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\MessengerBase.cs" Link="Messengers\MessengerBase.cs" />
-    <Compile Include="..\..\3-series\Messengers\PropertyCopier.cs" Link="Messengers\PropertyCopier.cs" />
     <Compile Include="..\..\3-series\Messengers\RoomEventScheduleMessenger.cs" Link="Messengers\RoomEventScheduleMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\ShadeBaseMessenger.cs" Link="Messengers\ShadeBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\SIMPLAtcMessenger.cs" Link="Messengers\SIMPLAtcMessenger.cs" />
@@ -48,7 +46,7 @@
     <Compile Include="..\..\3-series\Messengers\SystemMonitorMessenger.cs" Link="Messengers\SystemMonitorMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\TwoWayDisplayBaseMessenger.cs" Link="Messengers\TwoWayDisplayBaseMessenger.cs" />
     <Compile Include="..\..\3-series\Messengers\VideoCodecBaseMessenger.cs" Link="Messengers\VideoCodecBaseMessenger.cs" />
-    <Compile Include="..\..\3-series\Messengers\ZoomRoomMessenger.cs" Link="Messengers\ZoomRoomMessenger.cs" />
+    <Compile Include="..\..\3-series\RoomBridges\MobileControlBridgeBase.cs" Link="Messengers\MobileControlBridgeBase.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRoomJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" Link="SIMPLJoinMaps\MobileControlSIMPLRunDirectRouteActionJoinMap.cs" />
     <Compile Include="..\..\3-series\SIMPLJoinMaps\SIMPLAtcJoinMap.cs" Link="SIMPLJoinMaps\SIMPLAtcJoinMap.cs" />
@@ -60,10 +58,9 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Messengers\" />
     <Folder Include="SIMPLJoinMaps\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2341" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2461" />
   </ItemGroup>
 </Project>

@@ -1,20 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
-using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Room.Config;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class RoomEventScheduleMessenger:MessengerBase
+    public class RoomEventScheduleMessenger : MessengerBase
     {
-        private readonly EssentialsTechRoom _room;
-        public RoomEventScheduleMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
+        private readonly IRoomEventSchedule _room;
 
-        public RoomEventScheduleMessenger(string key, string messagePath, EssentialsTechRoom room)
-            : this(key, messagePath)
+
+        public RoomEventScheduleMessenger(string key, string messagePath, IRoomEventSchedule room)
+            : base(key, messagePath, room as Device)
         {
             _room = room;
         }
@@ -22,20 +22,20 @@ namespace PepperDash.Essentials.AppServer.Messengers
         #region Overrides of MessengerBase
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/save", new Action<List<ScheduledEventConfig>>(SaveScheduledEvents));
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(() =>
+            AddAction("/saveScheduledEvents", (id, content) => SaveScheduledEvents(content.ToObject<List<ScheduledEventConfig>>()));
+            AddAction("/status", (id, content) =>
             {
                 var events = _room.GetScheduledEvents();
 
                 SendFullStatus(events);
-            }));
+            });
 
-            _room.ScheduledEventsChanged += (sender, args) =>  SendFullStatus(args.ScheduledEvents);
+            _room.ScheduledEventsChanged += (sender, args) => SendFullStatus(args.ScheduledEvents);
         }
 
         #endregion
@@ -60,15 +60,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
-        private void SendFullStatus(List<ScheduledEventConfig> events) 
+        private void SendFullStatus(List<ScheduledEventConfig> events)
         {
 
-                var message = new
-                {
-                    scheduleEvents = events,
-                };
+            var message = new RoomEventScheduleStateMessage
+            {
+                ScheduleEvents = events,
+            };
 
-                PostStatusMessage(message);
+            PostStatusMessage(message);
         }
+    }
+
+    public class RoomEventScheduleStateMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("scheduleEvents")]
+        public List<ScheduledEventConfig> ScheduleEvents { get; set; }
     }
 }

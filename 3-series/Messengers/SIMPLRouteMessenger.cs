@@ -1,5 +1,5 @@
-﻿using System;
-using Crestron.SimplSharpPro.DeviceSupport;
+﻿using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 
@@ -31,21 +31,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus",
-                new Action(() => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource))));
+            AddAction("/fullStatus",
+                (id, content) => SendRoutingFullMessageObject(_eisc.GetString(_joinStart + StringJoin.CurrentSource)));
 
-            appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(
-                    c => _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItem)));
+            AddAction("/source", (id, content) =>
+            {
+                var c = content.ToObject<SourceSelectMessageContent>();
+
+                _eisc.SetString(_joinStart + StringJoin.CurrentSource, c.SourceListItemKey);
+            });
         }
 
 #if SERIES4
-        public void CustomUnregsiterWithAppServer(IMobileControl3 appServerController)
+        public void CustomUnregsiterWithAppServer(IMobileControl appServerController)
 #else
         public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
 #endif
@@ -64,10 +67,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             if (string.IsNullOrEmpty(sourceKey))
                 sourceKey = "none";
 
-            PostStatusMessage(new
-            {
-                selectedSourceKey = sourceKey
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    selectedSourceKey = sourceKey
+                })
+            );
         }
     }
 }

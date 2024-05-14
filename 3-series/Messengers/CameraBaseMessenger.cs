@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -20,120 +21,151 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="camera"></param>
         /// <param name="messagePath"></param>
         public CameraBaseMessenger(string key, CameraBase camera, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, camera)
         {
-            if (camera == null)
-                throw new ArgumentNullException("camera");
+            Camera = camera ?? throw new ArgumentNullException("camera");
 
-            Camera = camera;
 
-            var presetsCamera = Camera as IHasCameraPresets;
-
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
             {
-                presetsCamera.PresetsListHasChanged += presetsCamera_PresetsListHasChanged;
+                presetsCamera.PresetsListHasChanged += PresetsCamera_PresetsListHasChanged;
             }
         }
 
-        private void presetsCamera_PresetsListHasChanged(object sender, EventArgs e)
+        private void PresetsCamera_PresetsListHasChanged(object sender, EventArgs e)
         {
-            var presetsCamera = Camera as IHasCameraPresets;
-
             var presetList = new List<CameraPreset>();
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
                 presetList = presetsCamera.Presets;
 
-            PostStatusMessage(new
-            {
-                presets = presetList
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    presets = presetList
+                })
+            );
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendCameraFullMessageObject));
+            AddAction("/fullStatus", (id, content) => SendCameraFullMessageObject());
 
-            var ptzCamera = Camera as IHasCameraPtzControl;
 
-            if (ptzCamera != null)
+            if (Camera is IHasCameraPtzControl ptzCamera)
             {
                 //  Need to evaluate how to pass through these P&H actions.  Need a method that takes a bool maybe?
-                AppServerController.AddAction(MessagePath + "/cameraUp", new PressAndHoldAction(b =>
+                AddAction("/cameraUp", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.TiltUp();
-                    else
-                        ptzCamera.TiltStop();
+                        return;
+                    }
+
+                    ptzCamera.TiltStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraDown", new PressAndHoldAction(b =>
+                AddAction("/cameraDown", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.TiltDown();
-                    else
-                        ptzCamera.TiltStop();
+                        return;
+                    }
+
+                    ptzCamera.TiltStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraLeft", new PressAndHoldAction(b =>
+                AddAction("/cameraLeft", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.PanLeft();
-                    else
-                        ptzCamera.PanStop();
+                        return;
+                    }
+
+                    ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraRight", new PressAndHoldAction(b =>
+                AddAction("/cameraRight", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.PanRight();
-                    else
-                        ptzCamera.PanStop();
+                        return;
+                    }
+
+                    ptzCamera.PanStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomIn", new PressAndHoldAction(b =>
+                AddAction("/cameraZoomIn", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.ZoomIn();
-                    else
-                        ptzCamera.ZoomStop();
+                        return;
+                    }
+
+                    ptzCamera.ZoomStop();
                 }));
-                AppServerController.AddAction(MessagePath + "/cameraZoomOut", new PressAndHoldAction(b =>
+                AddAction("/cameraZoomOut", (id, content) => HandleCameraPressAndHold(content, (b) =>
                 {
                     if (b)
+                    {
                         ptzCamera.ZoomOut();
-                    else
-                        ptzCamera.ZoomStop();
+                        return;
+                    }
+
+                    ptzCamera.ZoomStop();
                 }));
             }
 
             if (Camera is IHasCameraAutoMode)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeAuto",
-                    new Action((Camera as IHasCameraAutoMode).CameraAutoModeOn));
-                appServerController.AddAction(MessagePath + "/cameraModeManual",
-                    new Action((Camera as IHasCameraAutoMode).CameraAutoModeOff));
+                AddAction("/cameraModeAuto", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOn());
+
+                AddAction("/cameraModeManual", (id, content) => (Camera as IHasCameraAutoMode).CameraAutoModeOff());
+
             }
 
             if (Camera is IHasPowerControl)
             {
-                appServerController.AddAction(MessagePath + "/cameraModeOff", new Action((Camera as IHasPowerControl).PowerOff));
-                appServerController.AddAction(MessagePath + "/cameraModeManual", new Action((Camera as IHasPowerControl).PowerOn));
+                AddAction("/cameraModeOff", (id, content) => (Camera as IHasPowerControl).PowerOff());
+                AddAction("/cameraModeManual", (id, content) => (Camera as IHasPowerControl).PowerOn());
             }
 
-            var presetsCamera = Camera as IHasCameraPresets;
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
             {
                 for (int i = 1; i <= 6; i++)
                 {
                     var preset = i;
-                    appServerController.AddAction(MessagePath + "/cameraPreset" + i,
-                        new Action<int>(p => presetsCamera.PresetSelect(preset)));
+                    AddAction("/cameraPreset" + i, (id, content) =>
+                    {
+                        var msg = content.ToObject<MobileControlSimpleContent<int>>();
+
+                        presetsCamera.PresetSelect(msg.Value);
+                    });
+
                 }
             }
+        }
+
+        private void HandleCameraPressAndHold(JToken content, Action<bool> cameraAction)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, cameraAction);
+
+            cameraAction(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
         }
 
         /// <summary>
@@ -141,22 +173,21 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendCameraFullMessageObject()
         {
-            var presetsCamera = Camera as IHasCameraPresets;
-
             var presetList = new List<CameraPreset>();
 
-            if (presetsCamera != null)
+            if (Camera is IHasCameraPresets presetsCamera)
                 presetList = presetsCamera.Presets;
 
-            PostStatusMessage(new
-            {
-                cameraManualSupported = Camera is IHasCameraControls,
-                cameraAutoSupported = Camera is IHasCameraAutoMode,
-                cameraOffSupported = Camera is IHasCameraOff,
-                cameraMode = GetCameraMode(),
-                hasPresets = Camera is IHasCameraPresets,
-                presets = presetList
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    cameraManualSupported = Camera is IHasCameraControls,
+                    cameraAutoSupported = Camera is IHasCameraAutoMode,
+                    cameraOffSupported = Camera is IHasCameraOff,
+                    cameraMode = GetCameraMode(),
+                    hasPresets = Camera is IHasCameraPresets,
+                    presets = presetList
+                })
+            );
         }
 
         /// <summary>

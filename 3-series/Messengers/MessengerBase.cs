@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -18,15 +19,19 @@ namespace PepperDash.Essentials.AppServer.Messengers
     public abstract class MessengerBase: EssentialsDevice
 #endif
     {
-        private Device _device;
+        protected IKeyName _device;
 
-        private List<string> _deviceIntefaces;
+        private readonly List<string> _deviceInterfaces;
+
+        private readonly Dictionary<string, Action<string, JToken>> _actions = new Dictionary<string, Action<string, JToken>>();
+
+        public string DeviceKey => _device?.Key ?? "";
 
         /// <summary>
         /// 
         /// </summary>
 #if SERIES4
-        public IMobileControl3 AppServerController { get; private set; }
+        public IMobileControl AppServerController { get; private set; }
 #else
         public MobileControlSystemController AppServerController { get; private set; }
 #endif
@@ -49,30 +54,22 @@ namespace PepperDash.Essentials.AppServer.Messengers
             MessagePath = messagePath;
         }
 
-        protected MessengerBase(string key, string messagePath, Device device)
+        protected MessengerBase(string key, string messagePath, IKeyName device)
             : this(key, messagePath)
         {
             _device = device;
 
-            _deviceIntefaces = GetInterfaces(_device);
+            _deviceInterfaces = GetInterfaces(_device as Device);
         }
 
         /// <summary>
-        /// Gets the intefaces implmented on the device
+        /// Gets the interfaces implmented on the device
         /// </summary>
         /// <param name="device"></param>
         /// <returns></returns>
         private List<string> GetInterfaces(Device device)
         {
-            var interfaceTypes = device.GetType().GetInterfaces();
-
-            List<string> interfaces = new List<string>();
-
-            foreach (var i in interfaceTypes)
-            {
-                interfaces.Add(i.Name);
-            }
-            return interfaces;
+            return device?.GetType().GetInterfaces().Select((i) => i.Name).ToList() ?? new List<string>();
         }
 
         /// <summary>
@@ -80,16 +77,55 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        public void RegisterWithAppServer(IMobileControl3 appServerController)
+        public void RegisterWithAppServer(IMobileControl appServerController)
 #else
         public void RegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            if (appServerController == null)
-                throw new ArgumentNullException("appServerController");
+            AppServerController = appServerController ?? throw new ArgumentNullException("appServerController");
 
-            AppServerController = appServerController;
-            CustomRegisterWithAppServer(AppServerController);
+            AppServerController.AddAction(this, HandleMessage);
+
+            RegisterActions();
+        }
+
+        private void HandleMessage(string path, string id, JToken content)
+        {
+            // replace base path with empty string. Should leave something like /fullStatus
+            var route = path.Replace(MessagePath, string.Empty); 
+
+            if(!_actions.TryGetValue(route, out var action)) {
+                Debug.Console(1, this, $"No action found for path {path}");
+                return;
+            }
+
+            action(id, content);
+        }
+
+        protected void AddAction(string path, Action<string, JToken> action)
+        {
+            if (_actions.ContainsKey(path))
+            {
+                //Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Messenger {Key} already has action registered at {path}", this);
+                return;
+            }
+
+            _actions.Add(path, action);
+        }
+
+        public List<string> GetActionPaths()
+        {
+            return _actions.Keys.ToList();
+        }
+
+        protected void RemoveAction(string path)
+        {
+            if (!_actions.ContainsKey(path))
+            {
+                return;
+            }
+
+            _actions.Remove(path);
         }
 
         /// <summary>
@@ -97,64 +133,12 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="appServerController"></param>
 #if SERIES4
-        protected virtual void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected virtual void RegisterActions()
 #else
         protected virtual void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            var commMonitor = _device as ICommunicationMonitor;
 
-            if (commMonitor != null)
-            {
-                //Debug.Console(2, this, "Subscribing to CommunicationMonitor.StatusChange on: ", _device.Key);
-                commMonitor.CommunicationMonitor.StatusChange += CommunicationMonitor_StatusChange;
-
-                GetCommunicationMonitorState();
-            }
-        }
-
-        private void CommunicationMonitor_StatusChange(object sender, MonitorStatusChangeEventArgs e)
-        {
-            var message = new DeviceStateMessageBase();
-            message.CommMonitor = GetCommunicationMonitorState();
-
-
-            PostStatusMessage(message);
-        }
-
-        protected CommunicationMonitorState GetCommunicationMonitorState()
-        {
-            var commMonitor = _device as ICommunicationMonitor;
-            if (commMonitor != null)
-            {
-                var state = new CommunicationMonitorState();
-                state.IsOnline = commMonitor.CommunicationMonitor.IsOnline;
-                state.Status = commMonitor.CommunicationMonitor.Status;
-                //Debug.Console(2, this, "******************GetCommunitcationMonitorState() IsOnline: {0} Status: {1}", state.IsOnline, state.Status);
-                return state;
-            }
-            else
-            {
-                //Debug.Console(2, this, "******************Device does not implement ICommunicationMonitor");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Helper for posting status message
-        /// </summary>
-        /// <param name="contentObject">The contents of the content object</param>
-        [Obsolete("Will be removed in next major release, please use overload as substitute")]
-        protected void PostStatusMessage(object contentObject)
-        {
-            if (AppServerController != null)
-            {
-                AppServerController.SendMessageObject(new
-                {
-                    type = MessagePath,
-                    content = contentObject
-                });
-            }
         }
 
         /// <summary>
@@ -162,67 +146,74 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         /// <param name="type"></param>
         /// <param name="message"></param>
-        protected void PostStatusMessage(DeviceStateMessageBase message)
+        protected void PostStatusMessage(DeviceStateMessageBase message, string clientId = null)
         {
-            if (AppServerController != null)
-            {
-                message.SetInterfaces(_deviceIntefaces);
+            message.SetInterfaces(_deviceInterfaces);
 
-                message.Key = _device.Key;
+            message.Key = _device.Key;
 
-                message.Name = _device.Name;
+            message.Name = _device.Name;
 
-                AppServerController.SendMessageObject(new
-                {
-                    type = MessagePath,
-                    content = message,
-                });
-            }
+            PostStatusMessage(JToken.FromObject(message),MessagePath, clientId);
         }
 
-#if SERIES4
-        protected void PostStatusMessage(IMobileControlResponseMessage message)
-
+#if SERIES4 
+        protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
         {
-            if (AppServerController == null)
-            {
-                return;
-            }
+            //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
+            deviceState.SetInterfaces(_deviceInterfaces);
 
-            var deviceState = message.Content as DeviceStateMessageBase;
-            if (deviceState != null)
-            {
-                //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-                deviceState.SetInterfaces(_deviceIntefaces);
+            deviceState.Key = _device.Key;
 
-                deviceState.Key = _device.Key;
+            deviceState.Name = _device.Name;
 
-                deviceState.Name = _device.Name;
-            }
-            //else
-            //{
-            //    Debug.Console(2, this, "*********************Content is not DeviceStateMessageBase");
-            //}
+            deviceState.MessageBasePath = MessagePath;
 
-            AppServerController.SendMessageObject(message);
+            PostStatusMessage(JToken.FromObject(deviceState), type, clientId);
         }
 #endif
+        protected void PostStatusMessage(JToken content, string type = "", string clientId = null)
+        {
+            AppServerController?.SendMessageObject(new MobileControlMessage { Type = !string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
+        }
 
         protected void PostEventMessage(DeviceEventMessageBase message)
         {
-            if (AppServerController != null)
+            message.Key = _device.Key;
+
+            message.Name = _device.Name;
+
+            AppServerController?.SendMessageObject(new MobileControlMessage
             {
-                message.Key = _device.Key;
-
-                message.Name = _device.Name;
-
-                AppServerController.SendMessageObject(new
-                {
-                    type = MessagePath,
-                    content = message,
-                });
-            }
+                Type = $"/event{MessagePath}/{message.EventType}",
+                Content = JToken.FromObject(message),
+            });   
         }
+
+        protected void PostEventMessage(DeviceEventMessageBase message, string eventType)
+        {             
+            message.Key = _device.Key;
+        
+            message.Name = _device.Name;
+
+            message.EventType = eventType;
+        
+            AppServerController?.SendMessageObject(new MobileControlMessage
+            {
+                Type = $"/event{MessagePath}/{eventType}",
+                Content = JToken.FromObject(message),
+            });
+        }
+
+        protected void PostEventMessage(string eventType)
+        {
+            AppServerController?.SendMessageObject(new MobileControlMessage
+            {
+                Type = $"/event{MessagePath}/{eventType}",
+                Content = JToken.FromObject(new { }),
+            });
+        }
+
     }
 
     public abstract class DeviceMessageBase
@@ -243,26 +234,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// The type of the message class
         /// </summary>
         [JsonProperty("messageType")]
-        public string MessageType
-        {
-            get
-            {
-                return this.GetType().Name;
-            }
-        }
+        public string MessageType => GetType().Name;
+
+        [JsonProperty("messageBasePath")]
+        public string MessageBasePath { get; set; }
     }
-    
+
     /// <summary>
     /// Base class for state messages that includes the type of message and the implmented interfaces
     /// </summary>
     public class DeviceStateMessageBase : DeviceMessageBase
     {
-        /// <summary>
-        /// For devices that implement ICommunicationMonitor, reports the online status of the device
-        /// </summary>
-        [JsonProperty("commMonitor", NullValueHandling = NullValueHandling.Ignore)]
-        public CommunicationMonitorState CommMonitor { get; set; }
-
         /// <summary>
         /// The interfaces implmented by the device sending the messsage
         /// </summary>
@@ -287,23 +269,4 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public string EventType { get; set; }
     }
 
-    /// <summary>
-    /// Represents the state of the communication monitor
-    /// </summary>
-    public class CommunicationMonitorState
-    {
-        /// <summary>
-        /// For devices that implement ICommunicationMonitor, reports the online status of the device
-        /// </summary>
-        [JsonProperty("isOnline", NullValueHandling = NullValueHandling.Ignore)]
-        public bool? IsOnline { get; set; }
-
-        /// <summary>
-        /// For devices that implement ICommunicationMonitor, reports the online status of the device
-        /// </summary>
-        [JsonProperty("status", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(StringEnumConverter))]
-        public MonitorStatus Status { get; set; }
-
-    }
 }

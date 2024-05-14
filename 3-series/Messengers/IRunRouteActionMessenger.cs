@@ -1,7 +1,8 @@
-﻿using System;
-using PepperDash.Essentials.Core;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
+using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -14,40 +15,36 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public IRunRouteAction RoutingDevice { get; private set; }
 
         public RunRouteActionMessenger(string key, IRunRouteAction routingDevice, string messagePath)
-            : base(key, messagePath)
+            : base(key, messagePath, routingDevice as Device)
         {
-            if (routingDevice == null)
-                throw new ArgumentNullException("routingDevice");
+            RoutingDevice = routingDevice ?? throw new ArgumentNullException("routingDevice");
 
-            RoutingDevice = routingDevice;
 
-            var routingSink = RoutingDevice as IRoutingSink;
-
-            if (routingSink != null)
+            if (RoutingDevice is IRoutingSink routingSink)
             {
-                routingSink.CurrentSourceChange += routingSink_CurrentSourceChange;
+                routingSink.CurrentSourceChange += RoutingSink_CurrentSourceChange;
             }
         }
 
-        private void routingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
+        private void RoutingSink_CurrentSourceChange(SourceListItem info, ChangeType type)
         {
             SendRoutingFullMessageObject();
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendRoutingFullMessageObject));
+            AddAction("/fullStatus", (id, content) => SendRoutingFullMessageObject());
 
-            appServerController.AddAction(MessagePath + "/source",
-                new Action<SourceSelectMessageContent>(c =>
+            AddAction("/source", (id, content) =>
                 {
+                    var c = content.ToObject<SourceSelectMessageContent>();
                     // assume no sourceListKey
                     var sourceListKey = string.Empty;
-                    
+
                     if (!string.IsNullOrEmpty(c.SourceListKey))
                     {
                         // Check for source list in content of message
@@ -55,11 +52,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
                         sourceListKey = c.SourceListKey;
                     }
 
-                    RoutingDevice.RunRouteAction(c.SourceListItem,sourceListKey);
-                }));
+                    RoutingDevice.RunRouteAction(c.SourceListItemKey, sourceListKey);
+                });
 
-            var sinkDevice = RoutingDevice as IRoutingSink;
-            if (sinkDevice != null)
+            if (RoutingDevice is IRoutingSink sinkDevice)
             {
                 sinkDevice.CurrentSourceChange += (o, a) => SendRoutingFullMessageObject();
             }
@@ -70,20 +66,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendRoutingFullMessageObject()
         {
-            var sinkDevice = RoutingDevice as IRoutingSink;
-
-            if (sinkDevice != null)
+            if (RoutingDevice is IRoutingSink sinkDevice)
             {
                 var sourceKey = sinkDevice.CurrentSourceInfoKey;
 
                 if (string.IsNullOrEmpty(sourceKey))
                     sourceKey = "none";
 
-                PostStatusMessage(new
+                PostStatusMessage(new RoutingStateMessage
                 {
-                    selectedSourceKey = sourceKey
+                    SelectedSourceKey = sourceKey
                 });
             }
         }
+    }
+
+    public class RoutingStateMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("selectedSourceKey")]
+        public string SelectedSourceKey { get; set; }
     }
 }

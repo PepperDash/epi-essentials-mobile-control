@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using Crestron.SimplSharpPro.DeviceSupport;
+﻿using Crestron.SimplSharpPro.DeviceSupport;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Bridges;
-using PepperDash.Essentials.Devices.Common.Cameras;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class SIMPLCameraMessenger : MessengerBase
     {
         private readonly BasicTriList _eisc;
@@ -32,18 +33,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            var asc = appServerController;
-
-            asc.AddAction(MessagePath + "/fullStatus", new Action(SendCameraFullMessageObject));
+            AddAction("/fullStatus", (id, content) => SendCameraFullMessageObject());
 
             // Add press and holds using helper action
-            Action<string, uint> addPhAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new PressAndHoldAction(b => _eisc.SetBool(u, b)));
+            void addPhAction(string s, uint u) =>
+                AddAction(s, (id, content) => HandleCameraPressAndHold(content, b => _eisc.SetBool(u, b)));
             addPhAction("/cameraUp", _joinMap.TiltUp.JoinNumber);
             addPhAction("/cameraDown", _joinMap.TiltDown.JoinNumber);
             addPhAction("/cameraLeft", _joinMap.PanLeft.JoinNumber);
@@ -51,8 +50,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
             addPhAction("/cameraZoomIn", _joinMap.ZoomIn.JoinNumber);
             addPhAction("/cameraZoomOut", _joinMap.ZoomOut.JoinNumber);
 
-            Action<string, uint> addAction = (s, u) =>
-                asc.AddAction(MessagePath + s, new Action(() => _eisc.PulseBool(u, 100)));
+            void addAction(string s, uint u) =>
+                AddAction(s, (id, content) => _eisc.PulseBool(u, 100));
 
             addAction("/cameraModeAuto", _joinMap.CameraModeAuto.JoinNumber);
             addAction("/cameraModeManual", _joinMap.CameraModeManual.JoinNumber);
@@ -70,8 +69,23 @@ namespace PepperDash.Essentials.AppServer.Messengers
             }
         }
 
+        private void HandleCameraPressAndHold(JToken content, Action<bool> cameraAction)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, cameraAction);
+
+            cameraAction(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
+        }
+
 #if SERIES4
-        public void CustomUnregsiterWithAppServer(IMobileControl3 appServerController)
+        public void CustomUnregsiterWithAppServer(IMobileControl appServerController)
 #else   
         public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
 #endif
@@ -118,12 +132,13 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 }
             }
 
-            PostStatusMessage(new
-            {
-                cameraMode = GetCameraMode(),
-                hasPresets = _eisc.GetBool(_joinMap.SupportsPresets.JoinNumber),
-                presets = presetList
-            });
+            PostStatusMessage(JToken.FromObject(new
+                {
+                    cameraMode = GetCameraMode(),
+                    hasPresets = _eisc.GetBool(_joinMap.SupportsPresets.JoinNumber),
+                    presets = presetList
+                })
+            );
         }
 
         /// <summary>
@@ -131,10 +146,10 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void PostCameraMode()
         {
-            PostStatusMessage(new
+            PostStatusMessage(JToken.FromObject(new
             {
                 cameraMode = GetCameraMode()
-            });
+            }));
         }
 
         /// <summary>

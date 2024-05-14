@@ -1,9 +1,8 @@
-﻿using System;
-using PepperDash.Essentials.Core;
+﻿using PepperDash.Essentials.Core;
 
 namespace PepperDash.Essentials.AppServer
 {
-    public class MobileControlSIMPLRunDirectRouteActionJoinMap:JoinMapBaseAdvanced
+    public class MobileControlSIMPLRunDirectRouteActionJoinMap : JoinMapBaseAdvanced
     {
         [JoinName("AdvancedSharingModeFb")]
         public JoinDataComplete AdvancedSharingModeFb =
@@ -57,7 +56,7 @@ namespace PepperDash.Essentials.AppServer
 
         [JoinName("SourceForDestinationAudio")]
         public JoinDataComplete SourceForDestinationAudio =
-            new JoinDataComplete(new JoinData {JoinNumber = 61, JoinSpan = 1},
+            new JoinDataComplete(new JoinData { JoinNumber = 61, JoinSpan = 1 },
                 new JoinMetadata
                 {
                     Description = "Source to Route to Destination & FB",

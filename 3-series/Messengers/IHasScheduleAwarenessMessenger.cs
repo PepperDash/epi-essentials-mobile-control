@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Essentials.Devices.Common.Codec;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.Codec;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -13,41 +13,36 @@ namespace PepperDash.Essentials.AppServer.Messengers
         public IHasScheduleAwareness ScheduleSource { get; private set; }
 
         public IHasScheduleAwarenessMessenger(string key, IHasScheduleAwareness scheduleSource, string messagePath)
-            :base(key, messagePath)
+            : base(key, messagePath, scheduleSource as Device)
         {
-            if (scheduleSource == null)
-            {
-                throw new ArgumentNullException("scheduleSource");
-            }
-
-            ScheduleSource = scheduleSource;
+            ScheduleSource = scheduleSource ?? throw new ArgumentNullException("scheduleSource");
             ScheduleSource.CodecSchedule.MeetingsListHasChanged += new EventHandler<EventArgs>(CodecSchedule_MeetingsListHasChanged);
             ScheduleSource.CodecSchedule.MeetingEventChange += new EventHandler<MeetingEventArgs>(CodecSchedule_MeetingEventChange);
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullScheduleObject));
-
+            AddAction("/schedule/fullStatus", (id, content) => SendFullScheduleObject());
         }
 
-        void CodecSchedule_MeetingEventChange(object sender, MeetingEventArgs e)
+        private void CodecSchedule_MeetingEventChange(object sender, MeetingEventArgs e)
         {
-            PostStatusMessage(new
-            {
-                meetingChange = new
+            PostStatusMessage(JToken.FromObject(new MeetingChangeMessage
                 {
-                    changeType = e.ChangeType.ToString(),
-                    meeting = e.Meeting
-                }
-            });
+                    MeetingChange = new MeetingChange
+                    {
+                        ChangeType = e.ChangeType.ToString(),
+                        Meeting = e.Meeting
+                    }
+                })
+            );
         }
 
-        void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
+        private void CodecSchedule_MeetingsListHasChanged(object sender, EventArgs e)
         {
             SendFullScheduleObject();
         }
@@ -57,11 +52,35 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// </summary>
         private void SendFullScheduleObject()
         {
-            PostStatusMessage(new
-                {
-                    meetings = ScheduleSource.CodecSchedule.Meetings,
-                    meetingWarningMinutes = ScheduleSource.CodecSchedule.MeetingWarningMinutes
-                });
+            PostStatusMessage(new FullScheduleMessage
+            {
+                Meetings = ScheduleSource.CodecSchedule.Meetings,
+                MeetingWarningMinutes = ScheduleSource.CodecSchedule.MeetingWarningMinutes
+            });
         }
+    }
+
+    public class FullScheduleMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("meetings", NullValueHandling = NullValueHandling.Ignore)]
+        public List<Meeting> Meetings { get; set; }
+
+        [JsonProperty("meetingWarningMinutes", NullValueHandling = NullValueHandling.Ignore)]
+        public int MeetingWarningMinutes { get; set; }
+    }
+
+    public class MeetingChangeMessage
+    {
+        [JsonProperty("meetingChange", NullValueHandling = NullValueHandling.Ignore)]
+        public MeetingChange MeetingChange { get; set; }
+    }
+
+    public class MeetingChange
+    {
+        [JsonProperty("changeType", NullValueHandling = NullValueHandling.Ignore)]
+        public string ChangeType { get; set; }
+
+        [JsonProperty("meeting", NullValueHandling = NullValueHandling.Ignore)]
+        public Meeting Meeting { get; set; }
     }
 }

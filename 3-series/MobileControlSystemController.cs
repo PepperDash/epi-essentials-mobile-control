@@ -1,49 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
+﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
-using Crestron.SimplSharp.Net.Https;
 using Crestron.SimplSharp.Reflection;
+using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
+using PepperDash.Essentials.Core.CrestronIO;
+using PepperDash.Essentials.Core.DeviceInfo;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Monitoring;
-using PepperDash.Essentials.Core.Presets;
 using PepperDash.Essentials.Core.Queues;
-using PepperDash.Essentials.Room.Config;
+using PepperDash.Essentials.Core.Routing;
+using PepperDash.Essentials.Core.Shades;
+using PepperDash.Essentials.Core.Web;
+using PepperDash.Essentials.Devices.Common.AudioCodec;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using PepperDash.Essentials.Devices.Common.SoftCodec;
+using PepperDash.Essentials.Devices.Common.TouchPanel;
+using PepperDash.Essentials.Devices.Common.VideoCodec;
 using PepperDash.Essentials.Room.MobileControl;
-using PepperDash.Essentials.Devices.Common.Codec;
+using PepperDash.Essentials.Services;
+using PepperDash.Essentials.WebApiHandlers;
+using Serilog.Events;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using WebSocketSharp;
+using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
-using PepperDash.Essentials.AppServer;
 #endif
 
 namespace PepperDash.Essentials
 {
-    public class MobileControlSystemController : EssentialsDevice, IMobileControl3
+    public class MobileControlSystemController : EssentialsDevice, IMobileControl
     {
-        //WebSocketClient WSClient;
-
+        private bool _initialized = false;
         private const long ServerReconnectInterval = 5000;
         private const long PingInterval = 25000;
-        private const long ButtonHeartbeatInterval = 1000;
 
-        private readonly Dictionary<string, Object> _actionDictionary =
-            new Dictionary<string, Object>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<string, List<IMobileControlAction>> _actionDictionary =
+            new Dictionary<string, List<IMobileControlAction>>(StringComparer.InvariantCultureIgnoreCase);
 
-        private readonly Dictionary<string, CTimer> _pushedActions = new Dictionary<string, CTimer>();
+        public Dictionary<string, List<IMobileControlAction>> ActionDictionary => _actionDictionary;
+
         private readonly GenericQueue _receiveQueue;
         private readonly List<MobileControlBridgeBase> _roomBridges = new List<MobileControlBridgeBase>();
 
 #if SERIES4
-        private readonly Dictionary<string, IMobileControlMessenger> _deviceMessengers = new Dictionary<string, IMobileControlMessenger>(); 
+        private readonly Dictionary<string, IMobileControlMessenger> _messengers = new Dictionary<string, IMobileControlMessenger>();
+
+        private readonly Dictionary<string, IMobileControlMessenger> _defaultMessengers = new Dictionary<string, IMobileControlMessenger>();
 #else
         private readonly Dictionary<string, MessengerBase> _deviceMessengers = new Dictionary<string, MessengerBase>();
 #endif
@@ -55,12 +69,20 @@ namespace PepperDash.Essentials
         private bool _disableReconnect;
         private WebSocket _wsClient2;
 
+        public MobileControlApiService ApiService { get; private set; }
+
+        public List<MobileControlBridgeBase> RoomBridges => _roomBridges;
+
 #if SERIES4
-        private MobileControlWebsocketServer _directServer;
+        private readonly MobileControlWebsocketServer _directServer;
+
+        public MobileControlWebsocketServer DirectServer => _directServer;
 #endif
         private readonly CCriticalSection _wsCriticalSection = new CCriticalSection();
 
         public string SystemUrl; //set only from SIMPL Bridge!
+
+        public bool Connected => _wsClient2 != null && _wsClient2.IsAlive;
 
         public string SystemUuid
         {
@@ -78,7 +100,7 @@ namespace PepperDash.Essentials
                 if (!string.IsNullOrEmpty(SystemUrl))
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "No system_url value defined in config or SIMPL Bridge.  Unable to connect to Mobile Control.");
-                    return String.Empty;
+                    return string.Empty;
                 }
 
                 var result = Regex.Match(SystemUrl, @"https?:\/\/.*\/systems\/(.*)\/#.*");
@@ -117,14 +139,9 @@ namespace PepperDash.Essentials
 
         private DateTime _lastAckMessage;
 
+        public DateTime LastAckMessage => _lastAckMessage;
+
         private CTimer _pingTimer;
-
-        /// <summary>
-        /// Prevents post operations from stomping on each other and getting lost
-        /// </summary>
-        private CEvent _postLockEvent = new CEvent(true, true);
-
-        private CEvent _registerLockEvent = new CEvent(true, true);
 
         private CTimer _serverReconnectTimer;
         private LogLevel _wsLogLevel = LogLevel.Error;
@@ -163,8 +180,438 @@ namespace PepperDash.Essentials
                 Host = "https://" + Host;
             }
 
+            ApiService = new MobileControlApiService(Host);
+
             Debug.Console(0, this, "Mobile UI controller initializing for server:{0}", config.ServerUrl);
 
+            if (Global.Platform == eDevicePlatform.Appliance)
+            {
+                AddConsoleCommands();
+            }
+
+            AddPreActivationAction(() => LinkSystemMonitorToAppServer());
+
+            AddPreActivationAction(() => SetupDefaultDeviceMessengers());
+
+            AddPreActivationAction(() => SetupDefaultRoomMessengers());
+
+            AddPreActivationAction(() => AddWebApiPaths());
+
+            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+
+            ApiOnlineAndAuthorized = new BoolFeedback(() =>
+            {
+                if (_wsClient2 == null)
+                    return false;
+
+                return _wsClient2.IsAlive && IsAuthorized;
+            });
+        }
+
+        private void SetupDefaultRoomMessengers()
+        {
+            foreach (var room in DeviceManager.AllDevices.OfType<IEssentialsRoom>())
+            {
+                var messenger = new MobileControlEssentialsRoomBridge(room);
+
+                _roomBridges.Add(messenger);
+
+                AddDefaultDeviceMessenger(messenger);
+
+                Debug.Console(2, this, "Attempting to set up room messengers for room: {0}", room.Key);
+
+                if (room is IRoomEventSchedule)
+                {
+                    var scheduleMessenger = new RoomEventScheduleMessenger($"{room.Key}-schedule-{Key}",
+
+                    string.Format("/room/{0}", room.Key), room as IRoomEventSchedule);
+
+                    AddDefaultDeviceMessenger(scheduleMessenger);
+                }
+
+                if (room is ITechPassword)
+                {
+                    var techPasswordMessenger = new ITechPasswordMessenger($"{room.Key}-techPassword-{Key}",
+                        string.Format("/room/{0}", room.Key), room as ITechPassword);
+
+                    AddDefaultDeviceMessenger(techPasswordMessenger);
+                }
+
+                if (room is IShutdownPromptTimer)
+                {
+                    var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger($"{room.Key}-shutdownPromptTimer-{Key}",
+                                               string.Format("/room/{0}", room.Key), room as IShutdownPromptTimer);
+
+                    AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set up the messengers for each device type
+        /// </summary>
+        private void SetupDefaultDeviceMessengers()
+        {
+            bool messengerAdded = false;
+            foreach (var device in DeviceManager.AllDevices.Where((d) => !(d is IEssentialsRoom)).Cast<PepperDash.Core.Device>())
+            {
+                Debug.Console(2, this, "Attempting to set up device messengers for device: {0}", device.Key);
+
+
+                if (device is ICommunicationMonitor)
+                {
+                    Debug.Console(2, this, "Adding CommunicationMonitorMessenger for device: {0}", device.Key);
+                    var commMessenger = new ICommunicationMonitorMessenger($"{device.Key}-commMonitor-{Key}",
+                        string.Format("/device/{0}", device.Key), device as ICommunicationMonitor);
+                    AddDefaultDeviceMessenger(commMessenger);
+                    messengerAdded = true;
+                }
+
+                if (device is CameraBase)
+                {                    
+                    Debug.Console(2, this, "Adding CameraBaseMessenger for device: {0}", device.Key);
+                    
+                    var cameraMessenger = new CameraBaseMessenger($"{device.Key}-cameraBase-{Key}", device as CameraBase,
+                        $"/device/{device.Key}");
+
+                    AddDefaultDeviceMessenger(cameraMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is BlueJeansPc)
+                {                    
+                    Debug.Console(2, this, "Adding IRunRouteActionMessnger for device: {0}", device.Key);
+
+                    var routeMessenger = new RunRouteActionMessenger($"{device.Key}-runRouteAction-{Key}", device as BlueJeansPc,
+                        $"/device/{device.Key}");
+
+                    AddDefaultDeviceMessenger(routeMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is ITvPresetsProvider)
+                {
+                    var presetsDevice = device as ITvPresetsProvider;
+
+                    if (presetsDevice.TvPresets == null)
+                    {
+                        Debug.Console(2, this, "TvPresets is null for device: '{0}'. Skipping DevicePresetsModelMessenger", device.Key);
+                    }
+                    else
+                    {
+                        Debug.Console(2, this, "Adding ITvPresetsProvider for device: {0}", device.Key);
+
+                        var presetsMessenger = new DevicePresetsModelMessenger($"{device.Key}-presets-{Key}", $"/device/{device.Key}/presets",
+                            presetsDevice);
+
+                        AddDefaultDeviceMessenger(presetsMessenger);
+
+                        messengerAdded = true;
+                    }
+                }
+
+                if (device is DisplayBase)
+                {                  
+
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    var dbMessenger = new DisplayBaseMessenger($"{device.Key}-displayBase-{Key}", $"/device/{device.Key}", device as DisplayBase);
+
+                    AddDefaultDeviceMessenger(dbMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is Core.DisplayBase)
+                {
+                    Debug.Console(2, this, "Adding actions for device: {0}", device.Key);
+
+                    var dbMessenger = new CoreDisplayBaseMessenger($"{device.Key}-displayBase-{Key}", $"/device/{device.Key}", device as Core.DisplayBase);
+                    AddDefaultDeviceMessenger(dbMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is TwoWayDisplayBase)
+                {
+                    var display = device as TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new TwoWayDisplayBaseMessenger($"{device.Key}-twoWayDisplay-{Key}",
+                        string.Format("/device/{0}", device.Key), display);
+                    AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is Core.TwoWayDisplayBase)
+                {
+                    var display = device as Core.TwoWayDisplayBase;
+                    Debug.Console(2, this, "Adding TwoWayDisplayBase for device: {0}", device.Key);
+                    var twoWayDisplayMessenger = new CoreTwoWayDisplayBaseMessenger($"{device.Key}-twoWayDisplay-{Key}",
+                        string.Format("/device/{0}", device.Key), display);
+                    AddDefaultDeviceMessenger(twoWayDisplayMessenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IBasicVolumeWithFeedback)
+                {
+                    var deviceKey = device.Key;
+                    var volControlDevice = device as IBasicVolumeWithFeedback;
+                    Debug.Console(2, this, "Adding IBasicVolumeControlWithFeedback for device: {0}", deviceKey);
+                    var messenger = new DeviceVolumeMessenger($"{device.Key}-volume-{Key}",
+                        string.Format("/device/{0}", deviceKey), volControlDevice);
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is ILightingScenes)
+                {
+                    var deviceKey = device.Key;
+                    var lightingDevice = device as ILightingScenes;
+                    Debug.Console(2, this, "Adding LightingBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new ILightingScenesMessenger($"{device.Key}-lighting-{Key}",
+                        lightingDevice, string.Format("/device/{0}", deviceKey));
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IShadesOpenCloseStop)
+                {
+                    var deviceKey = device.Key;
+                    var shadeDevice = device as IShadesOpenCloseStop;
+                    Debug.Console(2, this, "Adding ShadeBaseMessenger for device: {0}", deviceKey);
+                    var messenger = new IShadesOpenCloseStopMessenger($"{device.Key}-shades-{Key}",
+                        shadeDevice, string.Format("/device/{0}", deviceKey));
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is VideoCodecBase codec)
+                {
+                    Debug.Console(2, this, $"Adding VideoCodecBaseMessenger for device: {codec.Key}");
+
+                    var messenger = new VideoCodecBaseMessenger($"{codec.Key}-videoCodec-{Key}", codec, $"/device/{codec.Key}");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is AudioCodecBase audioCodec) {
+                    Debug.Console(2, this, $"Adding AudioCodecBaseMessenger for device: {audioCodec.Key}");
+
+                    var messenger = new AudioCodecBaseMessenger($"{audioCodec.Key}-audioCodec-{Key}", audioCodec, $"/device/{audioCodec.Key}");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is ISetTopBoxControls)
+                {
+                    Debug.Console(2, this, $"Adding ISetTopBoxControlMessenger for device: {device.Key}");
+
+                    var messenger = new ISetTopBoxControlsMessenger($"{device.Key}-stb-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IChannel)
+                {
+                    Debug.Console(2, this, $"Adding IChannelMessenger for device: {device.Key}");
+
+                    var messenger = new IChannelMessenger($"{device.Key}-channel-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IColor)
+                {
+                    Debug.Console(2, this, $"Adding IColorMessenger for device: {device.Key}");
+
+                    var messenger = new IColorMessenger($"{device.Key}-color-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IDPad)
+                {
+                    Debug.Console(2, this, $"Adding IDPadMessenger for device: {device.Key}");
+
+                    var messenger = new IDPadMessenger($"{device.Key}-dPad-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is INumericKeypad)
+                {
+                    Debug.Console(2, this, $"Adding INumericKeyapdMessenger for device: {device.Key}");
+
+                    var messenger = new INumericKeypadMessenger($"{device.Key}-numericKeypad-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IHasPowerControl)
+                {
+                    Debug.Console(2, this, $"Adding IHasPowerControlMessenger for device: {device.Key}");
+
+                    var messenger = new IHasPowerMessenger($"{device.Key}-powerControl-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is IHasPowerControlWithFeedback powerControl)
+                {
+                    var deviceKey = device.Key;
+                    Debug.Console(2, this, "Adding IHasPowerControlWithFeedbackMessenger for device: {0}", deviceKey);
+                    var messenger = new IHasPowerControlWithFeedbackMessenger($"{device.Key}-powerFeedback-{Key}",
+                                               string.Format("/device/{0}", deviceKey), powerControl);
+                    AddDefaultDeviceMessenger(messenger);
+                    messengerAdded = true;
+                }
+
+                if (device is ITransport)
+                {
+                    Debug.Console(2, this, $"Adding ITransportMessenger for device: {device.Key}");
+
+                    var messenger = new IChannelMessenger($"{device.Key}-transport-{Key}", $"/device/{device.Key}", device);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }               
+
+                if(device is IHasCurrentSourceInfoChange)
+                {
+                    Debug.Console(2, this, $"Adding IHasCurrentSourceInfoMessenger for device: {device.Key}");
+
+                    var messenger = new IHasCurrentSourceInfoMessenger($"{device.Key}-currentSource-{Key}", $"/device/{device.Key}", device as IHasCurrentSourceInfoChange);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (device is ISwitchedOutput)
+                {
+                    Debug.Console(2, this, $"Adding ISwitchedOutputMessenger for device: {device.Key}");
+
+                    var messenger = new ISwitchedOutputMessenger($"{device.Key}-switchedOutput-{Key}", device as ISwitchedOutput, $"/device/{device.Key}");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is IDeviceInfoProvider provider)
+                {
+                    Debug.Console(2, this, $"Adding IHasDeviceInfoMessenger for device: {device.Key}");
+
+                    var messenger = new DeviceInfoMessenger($"{device.Key}-deviceInfo-{Key}", $"/device/{device.Key}", provider);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is ILevelControls levelControls)
+                {
+                    Debug.Console(2, this, $"Adding LevelControlsMessenger for device: {device.Key}");
+
+                    var messenger = new ILevelControlsMessenger($"{device.Key}-levelControls-{Key}", $"/device/{device.Key}", levelControls);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                // This will work if TKey and TSelector are both string types.
+                // Otherwise plugin device needs to instantiate ISelectableItemsMessenger and add it to the controller.
+                if(device is IHasInputs<string, string> inputs)
+                {
+                    Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                    var messenger = new ISelectableItemsMessenger<string>($"{device.Key}-inputs-{Key}", $"/device/{device.Key}", inputs.Inputs, "inputs");
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if(device is IMatrixRouting matrix)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Adding IMatrixRoutingMessenger for device: {key}", this, device.Key);
+
+                    var messenger = new IMatrixRoutingMessenger($"{device.Key}-matrixRouting", $"/device/{device.Key}", matrix);
+
+                    AddDefaultDeviceMessenger(messenger);
+
+                    messengerAdded = true;
+                }
+
+                if (!(device is EssentialsDevice genericDevice) || messengerAdded)
+                {
+                    continue;
+                }
+
+                Debug.Console(2, this, "Adding GenericMessenger for device: {0}", genericDevice.Key);
+                AddDefaultDeviceMessenger(new GenericMessenger(genericDevice.Key + "-" + Key + "-generic", genericDevice, string.Format("/device/{0}", genericDevice.Key)));
+            }
+        }
+
+        private void AddWebApiPaths()
+        {
+            var apiServer = DeviceManager.AllDevices.OfType<EssentialsWebApi>().FirstOrDefault(d => d.Key == "essentialsWebApi");
+
+            if (apiServer == null)
+            {
+                Debug.Console(0, this, "No API Server available");
+                return;
+            }            
+
+            var routes = new List<HttpCwsRoute>
+            {
+                new HttpCwsRoute($"device/{Key}/authorize")
+                {
+                    Name = "MobileControlAuthorize",
+                    RouteHandler = new MobileAuthRequestHandler(this)
+                },
+                new HttpCwsRoute($"device/{Key}/info")
+                {
+                    Name = "MobileControlInformation",
+                    RouteHandler = new MobileInfoHandler(this)
+                },
+                new HttpCwsRoute($"device/{Key}/actionPaths")
+                {
+                    Name = "MobileControlActionPaths",
+                    RouteHandler = new ActionPathsHandler(this)
+                }
+            };
+
+            apiServer.AddRoute(routes);
+        }
+
+        private void AddConsoleCommands()
+        {
             CrestronConsole.AddNewConsoleCommand(AuthorizeSystem,
                 "mobileauth", "Authorizes system to talk to Mobile Control server",
                 ConsoleAccessLevelEnum.AccessOperator);
@@ -207,36 +654,22 @@ namespace PepperDash.Essentials
 
             CrestronConsole.AddNewConsoleCommand(SetWebsocketDebugLevel, "mobilewsdebug", "Set Websocket debug level",
                 ConsoleAccessLevelEnum.AccessProgrammer);
-
-            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-            // Config Messenger
-            //var cmKey = Key + "-config";
-            //ConfigMessenger = new ConfigMessenger(cmKey, "/config");
-            //ConfigMessenger.RegisterWithAppServer(this);
-
-            ApiOnlineAndAuthorized = new BoolFeedback(() => {
-                if(_wsClient2 == null)
-                    return false;
-
-                return _wsClient2.IsAlive && IsAuthorized;
-            });
         }
 
         public MobileControlConfig Config { get; private set; }
 
         public string Host { get; private set; }
-        //public ConfigMessenger ConfigMessenger { get; private set; }
-        
+
+        public string ClientAppUrl => Config.ClientAppUrl;
 
         private void RoomCombinerOnRoomCombinationScenarioChanged(object sender, EventArgs eventArgs)
         {
-            SendMessageObject(new {type = "/system/roomCombinationChanged"});
+            SendMessageObject(new MobileControlMessage { Type = "/system/roomCombinationChanged" });
         }
 
         public bool CheckForDeviceMessenger(string key)
         {
-            return _deviceMessengers.ContainsKey(key);
+            return _messengers.ContainsKey(key);
         }
 
 #if SERIES4
@@ -245,48 +678,101 @@ namespace PepperDash.Essentials
         public void AddDeviceMessenger(MessengerBase messenger)
 #endif
         {
-            if (_deviceMessengers.ContainsKey(messenger.Key))
+            if (_messengers.ContainsKey(messenger.Key))
             {
                 Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
                 return;
             }
 
-            if(_deviceMessengers.Any((kv) => kv.Value.MessagePath.Equals(messenger.MessagePath, StringComparison.InvariantCulture))) {
-                Debug.Console(1, this, "Messenger with path {0} alread added", messenger.MessagePath);
-                return;
+            if (messenger is IDelayedConfiguration simplMessenger)
+            {
+                simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
+            }
+
+            if (messenger is MobileControlBridgeBase roomBridge)
+            {
+                _roomBridges.Add(roomBridge);
             }
 
             Debug.Console(2, this, "Adding messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
 
-            _deviceMessengers.Add(messenger.Key, messenger);
+            _messengers.Add(messenger.Key, messenger);
 
             messenger.RegisterWithAppServer(this);
         }
 
-        private void CreateMobileControlRoomBridges()
+        private void AddDefaultDeviceMessenger(IMobileControlMessenger messenger)
         {
-            if (Config.RoomBridges.Count == 0)
+            if (_defaultMessengers.ContainsKey(messenger.Key))
             {
-                Debug.Console(0, this, "No Room bridges configured explicitly. Bridges will be created for each configured room.");
+                Debug.Console(1, this, "Default messenger with key {0} already added", messenger.Key);
                 return;
             }
 
-            foreach (var bridge in Config.RoomBridges.Select(bridgeConfig => 
-                new MobileControlEssentialsRoomBridge(bridgeConfig.Key, bridgeConfig.RoomKey, DeviceManager.GetDeviceForKey(bridgeConfig.RoomKey) as Device)))
+            if (messenger is IDelayedConfiguration simplMessenger)
             {
-                AddBridgePostActivationAction(bridge);
-                DeviceManager.AddDevice(bridge);
+                simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
             }
+            Debug.Console(2, this, "Adding default messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            _defaultMessengers.Add(messenger.Key, messenger);
+
+            if (_initialized)
+            {
+                RegisterMessengerWithServer(messenger);
+            }   
+        }
+
+        private void RegisterMessengerWithServer(IMobileControlMessenger messenger)
+        {
+            Debug.Console(2, this, "Registering messenger with key {0} for path {1}", messenger.Key, messenger.MessagePath);
+
+            messenger.RegisterWithAppServer(this);
+        }   
+
+        public override void Initialize()
+        {
+            foreach (var messenger in _messengers)
+            {
+                try
+                {
+                    RegisterMessengerWithServer(messenger.Value);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, this, $"Exception registering paths for {messenger.Key}: {ex.Message}");
+                    Debug.Console(2, this, $"Exception registering paths for {messenger.Key}: {ex.StackTrace}");
+                    continue;
+                }
+            }
+
+            foreach (var messenger in _defaultMessengers)
+            {
+                try
+                {
+                    RegisterMessengerWithServer(messenger.Value);
+                }
+                catch (Exception ex)
+                {
+                    Debug.Console(0, this, $"Exception registering paths for {messenger.Key}: {ex.Message}");
+                    Debug.Console(2, this, $"Exception registering paths for {messenger.Key}: {ex.StackTrace}");
+                    continue;
+                }
+            }
+
+            var simplMessengers = _messengers.OfType<IDelayedConfiguration>().ToList();
+
+            if (simplMessengers.Count > 0)
+            {
+                return;
+            }
+
+            _initialized = true;
+
+            RegisterSystemToServer();
         }
 
         #region IMobileControl Members
-
-        public void CreateMobileControlRoomBridge(EssentialsRoomBase room, IMobileControl parent)
-        {
-            var bridge = new MobileControlEssentialsRoomBridge(room);
-            AddBridgePostActivationAction(bridge);
-            DeviceManager.AddDevice(bridge);
-        }
 
         public static IMobileControl GetAppServer()
         {
@@ -313,7 +799,7 @@ namespace PepperDash.Essentials
                 _wsClient2 = null;
             }
 
-            if (String.IsNullOrEmpty(SystemUuid))
+            if (string.IsNullOrEmpty(SystemUuid))
             {
                 Debug.Console(0, this, Debug.ErrorLogLevel.Error, "System UUID not defined. Unable to connect to Mobile Control");
                 return false;
@@ -330,6 +816,8 @@ namespace PepperDash.Essentials
                         (data, s) => Debug.Console(1, Debug.ErrorLogLevel.Notice, "Message from websocket: {0}", data)
                 }
             };
+
+            _wsClient2.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls11 | System.Security.Authentication.SslProtocols.Tls12;
 
             _wsClient2.OnMessage += HandleMessage;
             _wsClient2.OnOpen += HandleOpen;
@@ -348,29 +836,23 @@ namespace PepperDash.Essentials
                 return;
             }
 
-            var sysMon = DeviceManager.GetDeviceForKey("systemMonitor") as SystemMonitorController;
-
-            var appServer = GetAppServer() as MobileControlSystemController;
-
-            if (sysMon == null || appServer == null)
+            if (!(DeviceManager.GetDeviceForKey("systemMonitor") is SystemMonitorController sysMon))
             {
                 return;
             }
 
-            var key = sysMon.Key + "-" + appServer.Key;
+            var key = sysMon.Key + "-" + Key;
             var messenger = new SystemMonitorMessenger(key, sysMon, "/device/systemMonitor");
 
-            messenger.RegisterWithAppServer(appServer);
-
-            DeviceManager.AddDevice(messenger);
+            AddDeviceMessenger(messenger);
         }
 
-        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
-        {
-            var bridge = new MobileControlEssentialsRoomBridge(room);
-            AddBridgePostActivationAction(bridge);
-            DeviceManager.AddDevice(bridge);
-        }
+        /*        public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+                {
+                    var bridge = new MobileControlEssentialsRoomBridge(room);
+                    AddBridgePostActivationAction(bridge);
+                    DeviceManager.AddDevice(bridge);
+                }     */
 
         #endregion
 
@@ -382,7 +864,7 @@ namespace PepperDash.Essentials
                 return;  // Web socket log level not currently allowed in series4
             }
 
-            if (String.IsNullOrEmpty(cmdparameters))
+            if (string.IsNullOrEmpty(cmdparameters))
             {
                 Debug.Console(0, this, "Current Websocket debug level: {0}", _wsLogLevel);
                 return;
@@ -396,7 +878,7 @@ namespace PepperDash.Essentials
 
             try
             {
-                var debugLevel = (LogLevel) Enum.Parse(typeof (LogLevel), cmdparameters, true);
+                var debugLevel = (LogLevel)Enum.Parse(typeof(LogLevel), cmdparameters, true);
 
                 _wsLogLevel = debugLevel;
 
@@ -404,48 +886,26 @@ namespace PepperDash.Essentials
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
- 
+
 
                 Debug.Console(0, this, "Websocket log level set to {0}", debugLevel);
             }
             catch
             {
-                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}",cmdparameters,
+                Debug.Console(0, this, "{0} is not a valid debug level. Valid options are: {1}, {2}, {3}, {4}, {5}, {6}", cmdparameters,
                     LogLevel.Trace, LogLevel.Debug, LogLevel.Info, LogLevel.Warn, LogLevel.Error, LogLevel.Fatal);
             }
         }
 
-        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
-        {
-            bridge.AddPostActivationAction(() =>
-            {
-                Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(this);
-                AddBridge(bridge);
-            });
-        }
-
-        /// <summary>
-        /// If config rooms is empty or null then go
-        /// </summary>
-        /// <returns></returns>
-        public override bool CustomActivate()
-        {
-            if (ConfigReader.ConfigObject.Rooms != null && ConfigReader.ConfigObject.Rooms.Count != 0)
-            {
-                return base.CustomActivate();
-            }
-
-            if (_roomBridges.OfType<IDelayedConfiguration>().ToList().Count > 0)
-            {
-                return base.CustomActivate();
-            }
-
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Config contains no rooms.  Registering with Server.");
-            RegisterSystemToServer();
-
-            return base.CustomActivate();
-        }
+        /*        private void AddBridgePostActivationAction(MobileControlBridgeBase bridge)
+                {
+                    bridge.AddPostActivationAction(() =>
+                    {
+                        Debug.Console(0, bridge, "Linking to parent controller");
+                        bridge.AddParent(this);
+                        AddBridge(bridge);
+                    });
+                }*/
 
         /// <summary>
         /// Sends message to server to indicate the system is shutting down
@@ -466,12 +926,31 @@ namespace PepperDash.Essentials
 
         public void PrintActionDictionaryPaths(object o)
         {
-            Debug.Console(0, this, "ActionDictionary Contents:");
+            CrestronConsole.ConsoleCommandResponse("ActionDictionary Contents:\r\n");
+
+            foreach(var (messengerKey, actionPath) in GetActionDictionaryPaths())
+            {
+                CrestronConsole.ConsoleCommandResponse($"<{messengerKey}> {actionPath}\r\n");
+            }
+        }
+
+        public List<(string, string)> GetActionDictionaryPaths()
+        {
+            var paths = new List<(string, string)>();
 
             foreach (var item in _actionDictionary)
             {
-                Debug.Console(0, this, "{0}", item.Key);
+                var messengers = item.Value.Select(a => a.Messenger).Cast<MessengerBase>();
+                foreach (var messenger in messengers)
+                {
+                    foreach (var actionPath in messenger.GetActionPaths())
+                    {                       
+                        paths.Add((messenger.Key, $"{item.Key}{actionPath}"));
+                    }
+                }
             }
+
+            return paths;
         }
 
         /// <summary>
@@ -479,17 +958,27 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="key">The path of the API command</param>
         /// <param name="action">The action to be triggered by the commmand</param>
-        public void AddAction(string key, object action)
+        public void AddAction<T>(T messenger, Action<string, string, JToken> action) where T:IMobileControlMessenger
         {
-            if (!_actionDictionary.ContainsKey(key))
+            if (_actionDictionary.TryGetValue(messenger.MessagePath, out List<IMobileControlAction> actionList))
             {
-                _actionDictionary.Add(key, action);
+                
+                if(actionList.Any(a => a.Messenger.GetType() == messenger.GetType() && a.Messenger.DeviceKey == messenger.DeviceKey))
+                {
+                    Debug.Console(0, this, $"Messenger of type {messenger.GetType().Name} already exists. Skipping actions for {messenger.Key}");
+                    return;
+                }
+
+                actionList.Add(new MobileControlAction(messenger, action)); 
+                return;
             }
-            else
+
+            actionList = new List<IMobileControlAction>
             {
-                Debug.Console(1, this,
-                    "Cannot add action with key '{0}' because key already exists in ActionDictionary.", key);
-            }
+                new MobileControlAction(messenger, action)
+            };
+
+            _actionDictionary.Add(messenger.MessagePath, actionList);
         }
 
         /// <summary>
@@ -504,28 +993,12 @@ namespace PepperDash.Essentials
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="bridge"></param>
-        public void AddBridge(MobileControlBridgeBase bridge)
+        public MobileControlBridgeBase GetRoomBridge(string key)
         {
-            _roomBridges.Add(bridge);
-            var b = bridge as IDelayedConfiguration;
-            if (b != null)
-            {
-                Debug.Console(0, this, "Adding room bridge with delayed configuration");
-                b.ConfigurationIsReady += bridge_ConfigurationIsReady;
-            }
-            else
-            {
-                Debug.Console(0, this, "Adding room bridge and sending configuration");
-
-                RegisterSystemToServer();
-            }
+            return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
 
-        public MobileControlBridgeBase GetRoomBridge(string key)
+        public IMobileControlRoomMessenger GetRoomMessenger(string key)
         {
             return _roomBridges.FirstOrDefault((r) => r.RoomKey.Equals(key));
         }
@@ -535,7 +1008,7 @@ namespace PepperDash.Essentials
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void bridge_ConfigurationIsReady(object sender, EventArgs e)
+        private void Bridge_ConfigurationIsReady(object sender, EventArgs e)
         {
             Debug.Console(1, this, "Bridge ready.  Registering");
 
@@ -553,7 +1026,7 @@ namespace PepperDash.Essentials
             {
                 SendInitialMessage();
             }
-               
+
         }
 
         /// <summary>
@@ -563,7 +1036,6 @@ namespace PepperDash.Essentials
         private void ReconnectToServerTimerCallback(object o)
         {
             Debug.Console(1, this, "Attempting to reconnect to server...");
-            //RegisterSystemToServer();
 
             ConnectWebsocketClient();
         }
@@ -587,188 +1059,25 @@ namespace PepperDash.Essentials
             if (string.IsNullOrEmpty(Config.ServerUrl))
             {
                 CrestronConsole.ConsoleCommandResponse(
-                    "Mobile control API address is not set.  Check portal configuration");
+                    "Mobile control API address is not set. Check portal configuration");
                 return;
             }
 
+            var authTask = ApiService.SendAuthorizationRequest(Host, code, SystemUuid);
 
-            try
+            authTask.ContinueWith(t =>
             {
-                string path = string.Format("/api/system/grantcode/{0}/{1}", code, SystemUuid);
-                string url = string.Format("{0}{1}", Host, path);
-                Debug.Console(0, this, "Authorizing to: {0}", url);
+                var response = t.Result;
 
-                if (Host.StartsWith("https:"))
+                if (response.Authorized)
                 {
-                    DispatchHttpsAuthorizationRequest(url);
+                    Debug.Console(0, this, "System authorized, sending config.");
+                    RegisterSystemToServer();
+                    return;
                 }
-                else
-                {
-                    var req = new HttpClientRequest();
-                    req.Url.Parse(url);
 
-                    var c = new HttpClient {AllowAutoRedirect = false};
-                    c.DispatchAsync(req, (r, e) =>
-                    {
-                        CheckHttpDebug(r, e);
-                        if (e == HTTP_CALLBACK_ERROR.COMPLETED)
-                        {
-                            switch (r.Code)
-                            {
-                                case 200:
-                                    Debug.Console(0, "System authorized, sending config.");
-                                    RegisterSystemToServer();
-                                    break;
-                                case 404:
-                                    if (r.ContentString.Contains("codeNotFound"))
-                                    {
-                                        Debug.Console(0, "Authorization failed, code not found for system UUID {0}",
-                                            SystemUuid);
-                                    }
-                                    else if (r.ContentString.Contains("uuidNotFound"))
-                                    {
-                                        Debug.Console(0,
-                                            "Authorization failed, uuid {0} not found. Check Essentials configuration is correct",
-                                            SystemUuid);
-                                    }
-                                    break;
-                                case 301:
-                                {
-                                    var newUrl = r.Header.GetHeaderValue("Location");
-                                    var newHostValue = newUrl.Substring(0,
-                                        newUrl.IndexOf(path, StringComparison.Ordinal));
-                                    Debug.Console(0, this,
-                                        "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                                        newHostValue);
-                                }
-                                    break;
-                                default:
-                                    Debug.Console(0, "http authorization failed, code {0}: {1}", r.Code, r.ContentString);
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            if (r != null)
-                            {
-                                Debug.Console(0, this, "Error in http authorization (A) {0}: {1}", r.Code, e);
-                            }
-                            else
-                            {
-                                Debug.Console(0, this, "Error in http authorization (B) {0}", e);
-                            }
-                        }
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Console(0, this, "Error in authorizing (C): {0}", e.Message);
-            }
-        }
-
-        /// <summary>
-        /// Dispatchs and handles an Https Authorization Request
-        /// </summary>
-        /// <param name="url">Url to dispatch request to</param>
-        private void DispatchHttpsAuthorizationRequest(string url)
-        {
-            var req = new HttpsClientRequest();
-            req.Url.Parse(url);
-
-            var JsonHeader = new HttpsHeader("content-type", "application/json");
-
-            req.ContentString = "SOME STUFF HERE";
-
-            var c = new HttpsClient {HostVerification = false, PeerVerification = false, Verbose = true};
-
-            c.DispatchAsync(req, (r, e) =>
-            {
-                if (e == HTTPS_CALLBACK_ERROR.COMPLETED)
-                {
-                    ProcessAuthorizationResponse(r);
-                }
-                else
-                {
-                    if (r != null)
-                    {
-                        Debug.Console(0, this, "Error in http authorization (A) {0}: {1}", r.Code, e);
-                    }
-                    else
-                    {
-                        Debug.Console(0, this, "Error in http authorization (B) {0}", e);
-                    }
-                }
+                Debug.Console(0, this, response.Reason);
             });
-        }
-
-        private void MyCallBackResponseHandler(HttpsClientResponse r, HTTPS_CALLBACK_ERROR e)
-        {
-            if (r.Code != 200)
-            {
-                Debug.Console(2, this, "Print Error {0}", e);
-            }
-            else
-            {
-                Debug.Console(2, this, "Got valid response {0}", r.Code);
-            }
-
-        }
-
-        /// <summary>
-        /// Processes HttpsClientResponse and registers system to server as necessary
-        /// </summary>
-        /// <param name="r">Response from authorization request</param>
-        private void ProcessAuthorizationResponse(HttpsClientResponse r)
-        {
-            if (r.Code == 200)
-            {
-                Debug.Console(0, "System authorized, sending config.");
-                RegisterSystemToServer();
-            }
-            else if (r.Code == 404 && String.IsNullOrEmpty(r.ContentString))
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "content: {0}", r.ContentString);
-                }
-
-                if (r.ContentString.Contains("codeNotFound"))
-                {
-                    Debug.Console(0, "code not found for system UUID {0}",
-                        SystemUuid);
-                }
-                else if (r.ContentString.Contains("uuidNotFound"))
-                {
-                    Debug.Console(0,
-                        "uuid {0} not found. Check Essentials configuration is correct",
-                        SystemUuid);
-                }
-            }
-            else if (r.Code == 301 && r.Header != null)
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "content {0}", r.ContentString);
-                }
-
-                var newUrl = r.Header.GetHeaderValue("Location");
-                var newHostValue = newUrl.Substring(0,
-                    newUrl.IndexOf(r.ResponseUrl, StringComparison.Ordinal));
-                Debug.Console(0, this,
-                    "ERROR: Mobile control API has moved. Please adjust configuration to \"{0}\"",
-                    newHostValue);
-            }
-            else
-            {
-                Debug.Console(0, "https authorization failed, code {0}", r.Code);
-                if (String.IsNullOrEmpty(r.ContentString))
-                {
-                    Debug.Console(0, "Content {0}", r.ContentString);
-                }
-            }
         }
 
         /// <summary>
@@ -853,6 +1162,7 @@ _directServer.ConnectedUiClientsCount);
 @"
 Client {0}:
 Room Key: {1}
+Touchpanel Key: {6}
 Token: {2}
 Client URL: {3}
 Connected: {4}
@@ -863,7 +1173,7 @@ clientContext.Value.Token.RoomKey,
 clientContext.Key,
 string.Format("{0}{1}", _directServer.UserAppUrlPrefix, clientContext.Key),
 isAlive,
-duration);
+duration, clientContext.Value.Token.TouchpanelKey);
                     clientNo++;
                 }
             }
@@ -880,7 +1190,7 @@ Mobile Control Direct Server Infromation:
         /// <summary>
         /// Registers the room with the server
         /// </summary>
-        private void RegisterSystemToServer()
+        public void RegisterSystemToServer()
         {
 #if SERIES4
             if (!Config.EnableApiServer)
@@ -913,14 +1223,12 @@ Mobile Control Direct Server Infromation:
                 // set to 99999 to let things work on 4-Series
                 if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series4) == eCrestronSeries.Series4)
                 {
-                    _wsClient2.Log.Level = (LogLevel) 99999;
+                    _wsClient2.Log.Level = (LogLevel)99999;
                 }
                 else if ((CrestronEnvironment.ProgramCompatibility & eCrestronSeries.Series3) == eCrestronSeries.Series3)
                 {
                     _wsClient2.Log.Level = _wsLogLevel;
                 }
-
-                //_wsClient2.Log.Level = _wsLogLevel;
 
                 //This version of the websocket client is TLS1.2 ONLY
 
@@ -1007,9 +1315,9 @@ Mobile Control Direct Server Infromation:
             StopServerReconnectTimer();
             StartPingTimer();
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Mobile Control API connected");
-            SendMessageObject(new
+            SendMessageObject(new MobileControlMessage
             {
-                type = "hello"
+                Type = "hello"
             });
         }
 
@@ -1073,14 +1381,23 @@ Mobile Control Direct Server Infromation:
         {
             Debug.Console(1, this, "Sending initial join message");
 
-
-            var msg = new
+            var touchPanels = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().Where(tp => !tp.UseDirectServer).Select((tp) =>
             {
-                type = "join",
-                content = new
+                return new
+                {
+                    touchPanelKey = tp.Key,
+                    roomKey = tp.DefaultRoomKey
+                };
+            });
+
+            var msg = new MobileControlMessage
+            {
+                Type = "join",
+                Content = JToken.FromObject(new
                 {
                     config = GetConfigWithPluginVersion(),
-                }
+                    touchPanels
+                })
             };
 
             SendMessageObject(msg);
@@ -1122,7 +1439,7 @@ Mobile Control Direct Server Infromation:
         /// Sends any object type to server
         /// </summary>
         /// <param name="o"></param>
-        public void SendMessageObject(object o)
+        public void SendMessageObject(IMobileControlMessage o)
         {
 #if SERIES4
             if (Config.EnableApiServer)
@@ -1142,7 +1459,7 @@ Mobile Control Direct Server Infromation:
 #if SERIES4
         public void SendMessageObjectToDirectClient(object o)
         {
-            if(Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
+            if (Config.DirectServer != null && Config.DirectServer.EnableDirectServer && _directServer != null)
             {
                 _transmitToClientsQueue.Enqueue(new MessageToClients(o, _directServer));
             }
@@ -1203,8 +1520,6 @@ Mobile Control Direct Server Infromation:
 
                 HandleConnectFailure();
             }
-
-            
         }
 
         /// <summary>
@@ -1236,9 +1551,9 @@ Mobile Control Direct Server Infromation:
         /// <param name="content"></param>
         private void HandleHeartBeat(JToken content)
         {
-            SendMessageObject(new
+            SendMessageObject(new MobileControlMessage
             {
-                type = "/system/heartbeatAck"
+                Type = "/system/heartbeatAck"
             });
 
             var code = content["userCode"];
@@ -1259,12 +1574,12 @@ Mobile Control Direct Server Infromation:
             var roomKey = content["roomKey"].Value<string>();
 
 
-                SendMessageObject(new MobileControlResponseMessage()
-                {
-                    Type = "/system/roomKey",
-                    ClientId = clientId,
-                    Content = roomKey
-                });
+            SendMessageObject(new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = roomKey
+            });
         }
 
         private void HandleUserCode(JToken content)
@@ -1284,10 +1599,10 @@ Mobile Control Direct Server Infromation:
             }
             catch
             {
-                qrChecksum = new JValue(String.Empty);
+                qrChecksum = new JValue(string.Empty);
             }
 
-            Debug.Console(1, this, "QR checksum: {0}", qrChecksum == null ? String.Empty : qrChecksum.Value<string>());
+            Debug.Console(1, this, "QR checksum: {0}", qrChecksum == null ? string.Empty : qrChecksum.Value<string>());
 
             if (code == null)
             {
@@ -1307,40 +1622,6 @@ Mobile Control Direct Server Infromation:
             action(code.Value<string>(), qrChecksum.Value<string>());
         }
 
-        /// <summary>
-        /// Outputs debug info when enabled
-        /// </summary>
-        /// <param name="r"></param>
-        /// <param name="e"></param>
-        private void CheckHttpDebug(HttpClientResponse r, HTTP_CALLBACK_ERROR e)
-        {
-            if (!_httpDebugEnabled)
-            {
-                return;
-            }
-
-            try
-            {
-                Debug.Console(0, this, "------ Begin HTTP Debug ---------------------------------------");
-                if (r != null)
-                {
-                    Debug.Console(0, this, "HTTP Response URL: {0}", r.ResponseUrl ?? "NONE");
-                    Debug.Console(0, this, "HTTP Response code: {0}", r.Code);
-                    Debug.Console(0, this, "HTTP Response content: \r{0}", r.ContentString);
-                }
-                else
-                {
-                    Debug.Console(0, this, "No HTTP response");
-                }
-                Debug.Console(0, this, "HTTP Response 'error' {0}", e);
-                Debug.Console(0, this, "------ End HTTP Debug -----------------------------------------");
-            }
-            catch (Exception ex)
-            {
-                Debug.Console(0, this, "HttpDebugError: {0}", ex);
-            }
-        }
-
         public void HandleClientMessage(string message)
         {
             _receiveQueue.Enqueue(new ProcessStringMessage(message, ParseStreamRx));
@@ -1349,194 +1630,65 @@ Mobile Control Direct Server Infromation:
         /// <summary>
         /// 
         /// </summary>
-        private void ParseStreamRx(string message)
+        private void ParseStreamRx(string messageText)
         {
-            if (string.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(messageText))
             {
                 return;
             }
 
-            if (!message.Contains("/system/heartbeat"))
+            if (!messageText.Contains("/system/heartbeat"))
             {
-                Debug.Console(2, this, "Message RX: {0}", message);
+                Debug.LogMessage(LogEventLevel.Debug, "Message RX: {messageText}", this, messageText);
             }
 
             try
             {
-                var messageObj = JObject.Parse(message);
+                var message = JsonConvert.DeserializeObject<MobileControlMessage>(messageText);
 
-                var type = messageObj["type"].Value<string>();
-
-                switch (type)
+                switch (message.Type)
                 {
                     case "hello":
                         SendInitialMessage();
                         break;
                     case "/system/heartbeat":
-                        HandleHeartBeat(messageObj["content"]);
+                        HandleHeartBeat(message.Content);
                         break;
                     case "/system/userCode":
-                        HandleUserCode(messageObj["content"]);
+                        HandleUserCode(message.Content);
                         break;
                     case "/system/clientJoined":
-                        HandleClientJoined(messageObj["content"]);
+                        HandleClientJoined(message.Content);
                         break;
                     case "raw":
-                    {
-                        var wrapper = messageObj["content"].ToObject<DeviceActionWrapper>();
+                        var wrapper = message.Content.ToObject<DeviceActionWrapper>();
                         DeviceJsonApi.DoDeviceAction(wrapper);
-                    }
                         break;
                     case "close":
                         Debug.Console(1, this, "Received close message from server.");
                         break;
                     default:
-                        if (_actionDictionary.ContainsKey(type))
-                        {
-                            var action = _actionDictionary[type];
+                        var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key));
 
-                            if (action is Action)
-                            {
-                                (action as Action)();
-                            }
-                            else if (action is PressAndHoldAction)
-                            {
-                                var stateString = messageObj["content"]["state"].Value<string>();
-
-                                // Look for a button press event
-                                if (!string.IsNullOrEmpty(stateString))
-                                {
-                                    switch (stateString)
-                                    {
-                                        case "true":
-                                            {
-                                                if (!_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions.Add(type, new CTimer(o =>
-                                                    {
-                                                        var pressAndHoldAction = action as PressAndHoldAction;
-                                                        if (pressAndHoldAction != null)
-                                                        {
-                                                            pressAndHoldAction(false);
-                                                        }
-                                                        _pushedActions.Remove(type);
-                                                    }, null, ButtonHeartbeatInterval));
-                                                }
-                                                // Maybe add an else to reset the timer
-                                                break;
-                                            }
-                                        case "held":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Reset(ButtonHeartbeatInterval);
-                                                }
-                                                return;
-                                            }
-                                        case "false":
-                                            {
-                                                if (_pushedActions.ContainsKey(type))
-                                                {
-                                                    _pushedActions[type].Stop();
-                                                    _pushedActions.Remove(type);
-                                                }
-                                                break;
-                                            }
-                                    }
-
-                                    (action as PressAndHoldAction)(stateString == "true");
-                                }
-                            }
-                            else if (action is Action<bool>)
-                            {
-                                var stateString = messageObj["content"]["state"].Value<string>();
-
-                                if (!string.IsNullOrEmpty(stateString))
-                                {
-                                    (action as Action<bool>)(stateString.ToLower() == "true");
-                                }
-                            }
-                            else if (action is Action<ushort>)
-                            {
-                                (action as Action<ushort>)(messageObj["content"]["value"].Value<ushort>());
-                            }
-                            else if (action is Action<int>)
-                            {
-                                (action as Action<int>)(messageObj["content"]["value"].Value<int>());
-                            }
-                            else if (action is Action<string>)
-                            {
-                                (action as Action<string>)(messageObj["content"]["value"].Value<string>());
-                            }
-                            else if (action is Action<SourceSelectMessageContent>)
-                            {
-                                (action as Action<SourceSelectMessageContent>)(messageObj["content"]
-                                    .ToObject<SourceSelectMessageContent>());
-                            }
-                            else if (action is ClientSpecificUpdateRequest)
-                            {
-                                var clientId = messageObj["clientId"].ToString();
-
-                                
-                                (action as ClientSpecificUpdateRequest).ResponseMethod(clientId);
-
-                                //if (respObj != null)
-                                //{
-                                //    respObj.ClientId = clientId;
-
-                                //    SendMessageObject(respObj);
-                                //}
-                            }
-                            else if (action is Action<PresetChannelMessage>)
-                            {
-                                (action as Action<PresetChannelMessage>)(
-                                    messageObj["content"].ToObject<PresetChannelMessage>());
-                            }
-                            else if (action is Action<List<PresetChannel>>)
-                            {
-                                (action as Action<List<PresetChannel>>)(
-                                    messageObj["content"].ToObject<List<PresetChannel>>());
-                            }
-                            else if (action is Action<List<ScheduledEventConfig>>)
-                            {
-                                (action as Action<List<ScheduledEventConfig>>)(
-                                    messageObj["content"].ToObject<List<ScheduledEventConfig>>());
-                            }
-                            else if (action is Action<DirectRoute>)
-                            {
-                                (action as Action<DirectRoute>)(messageObj["content"].ToObject<DirectRoute>());
-                            }
-                            else if (action is Action<PepperDash.Essentials.Devices.Common.Codec.Meeting>)
-                            {
-                                (action as Action<Meeting>)(messageObj["content"].ToObject<Meeting>());
-                            }
-                            else if (action is Action<InvitableDirectoryContact>)
-                            {
-                                (action as Action<InvitableDirectoryContact>)(messageObj["content"].ToObject<InvitableDirectoryContact>());
-                            }
-                            else if (action is Action<Invitation>)
-                            {
-                                (action as Action<Invitation>)(messageObj["content"].ToObject<Invitation>());
-                            }
-                            else if (action is Action<Essentials.Core.Lighting.LightingScene>)
-                            {
-                                (action as Action<Essentials.Core.Lighting.LightingScene>)(messageObj["content"].ToObject<Essentials.Core.Lighting.LightingScene>());
-                            }
-                            else if (action is UserCodeChanged)
-                            {
-                                this.HandleUserCode(messageObj["content"], (action as UserCodeChanged).UpdateUserCode);
-                            }
-                        }
-                        else
+                        if (handlersKv.Key == null)
                         {
                             Debug.Console(1, this, "-- Warning: Incoming message has no registered handler");
+                            break;
                         }
+
+                        var handlers = handlersKv.Value;
+
+                        foreach (var handler in handlers)
+                        {
+                            Task.Run(() => handler.Action(message.Type, message.ClientId, message.Content));
+                        }
+
                         break;
                 }
             }
             catch (Exception err)
             {
-                Debug.Console(1, this, "Unable to parse message: {0}", err);
+                Debug.LogMessage(err, "Unable to parse {message}:{exception}", this, messageText, err);
             }
         }
 
@@ -1568,16 +1720,16 @@ Mobile Control Direct Server Infromation:
                     switch (tokens[0].ToLower())
                     {
                         case "get":
-                        {
-                            var resp = new HttpClient().Get(url);
-                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                        }
+                            {
+                                var resp = new HttpClient().Get(url);
+                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                            }
                             break;
                         case "post":
-                        {
-                            var resp = new HttpClient().Post(url, new byte[] {});
-                            CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
-                        }
+                            {
+                                var resp = new HttpClient().Post(url, new byte[] { });
+                                CrestronConsole.ConsoleCommandResponse("RESPONSE:\r{0}\r\r", resp);
+                            }
                             break;
                         default:
                             CrestronConsole.ConsoleCommandResponse("Only get or post supported\r");
@@ -1603,7 +1755,7 @@ Mobile Control Direct Server Infromation:
 
     public class ClientSpecificUpdateRequest
     {
-        public ClientSpecificUpdateRequest(Action<string> action )
+        public ClientSpecificUpdateRequest(Action<string> action)
         {
             ResponseMethod = action;
         }
@@ -1619,21 +1771,5 @@ Mobile Control Direct Server Infromation:
         {
             UpdateUserCode = updateMethod;
         }
-    }
-
-#if SERIES4
-    public class MobileControlResponseMessage: IMobileControlResponseMessage
-#else
-    public class MobileControlResponseMessage
-#endif
-    {
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("clientId")]
-        public object ClientId { get; set; }
-
-        [JsonProperty("content")]
-        public object Content { get; set; }
     }
 }

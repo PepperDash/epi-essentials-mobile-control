@@ -42,7 +42,7 @@ namespace PepperDash.Essentials
                 if (_ws != null && _ws.IsAlive)
                 {
                     var message = JsonConvert.SerializeObject(msgToSend, Formatting.None,
-                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = {new IsoDateTimeConverter()} });
+                        new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
                     Debug.Console(2, "Message TX: {0}", message);
 
@@ -94,26 +94,26 @@ namespace PepperDash.Essentials
         public void Dispatch()
         {
             try
-            {               
+            {
                 //Debug.Console(2, "Message: {0}", msgToSend.ToString());
 
                 if (_server != null)
                 {
                     Debug.Console(2, _server, Debug.ErrorLogLevel.Notice, "Dispatching message type: {0}", msgToSend.GetType());
-                    
+
                     var message = JsonConvert.SerializeObject(msgToSend, Formatting.None,
                     new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Converters = { new IsoDateTimeConverter() } });
 
-                    var clientSpecificMessage = msgToSend as MobileControlResponseMessage;
-                    if (clientSpecificMessage != null)
+                    var clientSpecificMessage = msgToSend as MobileControlMessage;
+                    if (clientSpecificMessage.ClientId != null)
                     {
                         var clientId = clientSpecificMessage.ClientId;
 
-                        Debug.Console(2, _server, "Message TX To Client ID: {0} Message: {1}", clientId,  message);
+                        Debug.Console(2, _server, "Message TX To Client ID: {0} Message: {1}", clientId, message);
 
                         _server.SendMessageToClient(clientId, message);
                     }
-                    else 
+                    else
                     {
                         _server.SendMessageToAllClients(message);
 
@@ -125,7 +125,7 @@ namespace PepperDash.Essentials
                     Debug.Console(1, "Cannot send. No server.");
                 }
             }
-            catch(ThreadAbortException)
+            catch (ThreadAbortException)
             {
                 //Swallowing this exception, as it occurs on shutdown and there's no need to print out a scary stack trace
             }
@@ -134,7 +134,7 @@ namespace PepperDash.Essentials
                 Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the Transmit Processor {0}", ex.Message);
                 Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
 
-                if(ex.InnerException != null)
+                if (ex.InnerException != null)
                 {
                     Debug.Console(0, Debug.ErrorLogLevel.Error, "----\r\n{0}", ex.InnerException.Message);
                     Debug.Console(2, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.InnerException.StackTrace);

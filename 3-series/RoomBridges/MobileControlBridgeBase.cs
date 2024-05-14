@@ -1,10 +1,7 @@
-﻿using System;
-using PepperDash.Essentials.Core;
-
-using PepperDash.Core;
-
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+﻿using PepperDash.Core;
 using PepperDash.Essentials.AppServer.Messengers;
+using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 
 namespace PepperDash.Essentials
@@ -12,7 +9,7 @@ namespace PepperDash.Essentials
     /// <summary>
     /// 
     /// </summary>
-    public abstract class MobileControlBridgeBase : MessengerBase, IMobileControlRoomBridge
+    public abstract class MobileControlBridgeBase : MessengerBase, IMobileControlRoomMessenger
     {
         public event EventHandler<EventArgs> UserCodeChanged;
 
@@ -20,8 +17,11 @@ namespace PepperDash.Essentials
 
         public event EventHandler<EventArgs> ClientJoined;
 
-        public MobileControlSystemController Parent { get; private set; }
+        public event EventHandler<EventArgs> AppUrlChanged;
 
+        public IMobileControl Parent { get; private set; }
+
+        public string AppUrl { get; private set; }
         public string UserCode { get; private set; }
 
         public string QrCodeUrl { get; protected set; }
@@ -39,7 +39,7 @@ namespace PepperDash.Essentials
         {
         }
 
-        protected MobileControlBridgeBase(string key, string messagePath, Device device)
+        protected MobileControlBridgeBase(string key, string messagePath, IKeyName device)
             : base(key, messagePath, device)
         {
         }
@@ -49,11 +49,11 @@ namespace PepperDash.Essentials
         /// as adding actions to parent
         /// </summary>
         /// <param name="parent"></param>
-        public virtual void AddParent(MobileControlSystemController parent)
+        public virtual void AddParent(IMobileControl parent)
         {
             Parent = parent;
 
-            McServerUrl = Parent.Config.ClientAppUrl;
+            McServerUrl = Parent.ClientAppUrl;
 
             RegisterWithAppServer(parent);
         }
@@ -87,6 +87,17 @@ namespace PepperDash.Essentials
             SetUserCode(code);
         }
 
+        public virtual void UpdateAppUrl(string url)
+        {
+            AppUrl = url;
+
+            var handler = AppUrlChanged;
+
+            if (handler == null) return;
+
+            handler(this, new EventArgs());
+        }
+
         /// <summary>
         /// Empty method in base class.  Override this to add functionality
         /// when code changes
@@ -95,7 +106,7 @@ namespace PepperDash.Essentials
         {
             Debug.Console(1, this, "Server user code changed: {0}", UserCode);
 
-            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next());
+            var qrUrl = string.Format($"{Parent.Host}/api/rooms/{Parent.SystemUuid}/{RoomKey}/qr?x={new Random().Next()}");
             QrCodeUrl = qrUrl;
 
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
@@ -105,29 +116,17 @@ namespace PepperDash.Essentials
 
         protected void OnUserCodeChanged()
         {
-            var handler = UserCodeChanged;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
+            UserCodeChanged?.Invoke(this, new EventArgs());
         }
 
         protected void OnUserPromptedForCode()
         {
-            var handler = UserPromptedForCode;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
+            UserPromptedForCode?.Invoke(this, new EventArgs());
         }
 
         protected void OnClientJoined()
         {
-            var handler = ClientJoined;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
+            ClientJoined?.Invoke(this, new EventArgs());
         }
     }
 }

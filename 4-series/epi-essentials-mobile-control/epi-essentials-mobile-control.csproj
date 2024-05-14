@@ -28,7 +28,7 @@
     <DefineConstants>TRACE;SERIES4</DefineConstants>
   </PropertyGroup>  
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2341" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2461" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
@@ -43,7 +43,6 @@
     <Compile Include="..\..\3-series\MobileControlFactory.cs" Link="MobileControlFactory.cs" />
     <Compile Include="..\..\3-series\MobileControlSimplDeviceBridge.cs" Link="MobileControlSimplDeviceBridge.cs" />
     <Compile Include="..\..\3-series\MobileControlSystemController.cs" Link="MobileControlSystemController.cs" />
-    <Compile Include="..\..\3-series\RoomBridges\MobileControlBridgeBase.cs" Link="RoomBridges\MobileControlBridgeBase.cs" />
     <Compile Include="..\..\3-series\RoomBridges\MobileControlEssentialsRoomBridge.cs" Link="RoomBridges\MobileControlEssentialsRoomBridge.cs" />
     <Compile Include="..\..\3-series\RoomBridges\MobileControlSIMPLRoomBridge.cs" Link="RoomBridges\MobileControlSIMPLRoomBridge.cs" />
     <Compile Include="..\..\3-series\RoomBridges\SourceDeviceMapDictionary.cs" Link="RoomBridges\SourceDeviceMapDictionary.cs" />

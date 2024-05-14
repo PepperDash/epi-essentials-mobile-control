@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -12,12 +14,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private readonly ICommunicationMonitor _monitor;
 
-        public CommMonitorMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
-
         public CommMonitorMessenger(string key, string messagePath, ICommunicationMonitor monitor)
-            : this(key, messagePath)
+            : base(key, messagePath, monitor as Device)
         {
             _monitor = monitor;
         }
@@ -26,15 +24,14 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var messageObj = new
             {
-                commMonitor = new {
+                commMonitor = new
+                {
                     online = _monitor.CommunicationMonitor.IsOnline,
                     status = _monitor.CommunicationMonitor.Status.ToString()
                 }
             };
 
-
-
-            PostStatusMessage(messageObj);
+            AppSer(messageObj);
         }
 
         #region Overrides of MessengerBase
@@ -45,23 +42,24 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendStatus));
-            
+            appServerController.AddAction(MessagePath + "/fullStatus", (id, content) => SendStatus());
+
             _monitor.CommunicationMonitor.IsOnlineFeedback.OutputChange += IsOnlineFeedbackOnOutputChange;
             _monitor.CommunicationMonitor.StatusChange += CommunicationMonitorOnStatusChange;
         }
 
         private void CommunicationMonitorOnStatusChange(object sender, MonitorStatusChangeEventArgs monitorStatusChangeEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath + PollStatusPath,
-                content = new
+                Type = MessagePath + PollStatusPath,
+                Content = JToken.FromObject(new
                 {
-                    commMonitor = new {
+                    commMonitor = new
+                    {
                         status = monitorStatusChangeEventArgs.Status.ToString()
                     }
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);
@@ -69,15 +67,16 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void IsOnlineFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
+            var messageObj = new MobileControlMessage
             {
-                type = MessagePath + OnlineStatusPath,
-                content = new
+                Type = MessagePath + OnlineStatusPath,
+                Content = JToken.FromObject(new
                 {
-                    commMonitor = new {
+                    commMonitor = new
+                    {
                         online = feedbackEventArgs.BoolValue
                     }
-                }
+                })
             };
 
             AppServerController.SendMessageObject(messageObj);

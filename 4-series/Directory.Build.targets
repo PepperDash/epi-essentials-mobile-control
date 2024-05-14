@@ -25,14 +25,4 @@
   <Target Name="Clean CPZ" AfterTargets="AfterClean" Condition="$(ProjectType) == 'Program'">
     <Delete Files="$(PackageOutputPath)\$(TargetName).$(Version).cpz"/>
   </Target>
-  <Target Name="SimplSharpNewtonsoft" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
-    <ItemGroup>
-      <ReferencePath Condition="'%(FileName)' == 'Newtonsoft.Json.Compact'">
-        <Aliases>doNotUse</Aliases>
-      </ReferencePath>
-      <ReferencePath Condition="'%(FileName)' == 'SimplSharpNewtonsoft'">
-        <Aliases>doNotUse2</Aliases>
-      </ReferencePath>
-    </ItemGroup>
-  </Target>
 </Project>

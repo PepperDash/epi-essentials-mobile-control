@@ -1,38 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Presets;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class DevicePresetsModelMessenger:MessengerBase
+    public class DevicePresetsModelMessenger : MessengerBase
     {
         private readonly ITvPresetsProvider _presetsDevice;
 
-        public DevicePresetsModelMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-
-        }
-
         public DevicePresetsModelMessenger(string key, string messagePath, ITvPresetsProvider presetsDevice)
-            : this(key, messagePath)
+            : base(key, messagePath, presetsDevice as Device)
         {
             _presetsDevice = presetsDevice;
         }
 
-        private void TvPresetsOnPresetChanged(ISetTopBoxNumericKeypad device, string channel)
-        {
-            throw new NotImplementedException();
-        }
-
         private void SendPresets()
         {
-            PostStatusMessage(new
+            PostStatusMessage(new PresetStateMessage
             {
-                favorites = _presetsDevice.TvPresets.PresetsList
+                Favorites = _presetsDevice.TvPresets.PresetsList
             });
         }
 
@@ -41,34 +31,42 @@ namespace PepperDash.Essentials.AppServer.Messengers
             _presetsDevice.TvPresets.Dial(channel, device);
         }
 
-        private void SavePresets(List<PresetChannel> presets )
+        private void SavePresets(List<PresetChannel> presets)
         {
             _presetsDevice.TvPresets.UpdatePresets(presets);
         }
-       
+
 
         #region Overrides of MessengerBase
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendPresets));
-            appServerController.AddAction(MessagePath + "/recall", new Action<PresetChannelMessage>((p) =>
-            {
-                var dev = DeviceManager.GetDeviceForKey(p.DeviceKey) as ISetTopBoxNumericKeypad;
+            AddAction("/fullStatus", (id, content) => SendPresets());
 
-                if (dev == null)
+            AddAction("/recall", (id, content) =>
+            {
+                var p = content.ToObject<PresetChannelMessage>();
+
+
+                if (!(DeviceManager.GetDeviceForKey(p.DeviceKey) is ISetTopBoxNumericKeypad dev))
                 {
                     Debug.Console(1, "Unable to find device with key {0}", p.DeviceKey);
                     return;
                 }
 
                 RecallPreset(dev, p.Preset.Channel);
-            }));
-            appServerController.AddAction(MessagePath + "/save", new Action<List<PresetChannel>>(SavePresets));
+            });
+
+            AddAction("/save", (id, content) =>
+            {
+                var presets = content.ToObject<List<PresetChannel>>();
+
+                SavePresets(presets);
+            });
 
             _presetsDevice.TvPresets.PresetsSaved += (p) => SendPresets();
         }
@@ -83,5 +81,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         [JsonProperty("deviceKey")]
         public string DeviceKey;
+    }
+
+    public class PresetStateMessage : DeviceStateMessageBase
+    {
+        [JsonProperty("favorites", NullValueHandling = NullValueHandling.Ignore)]
+        public List<PresetChannel> Favorites { get; set; } = new List<PresetChannel>();
     }
 }

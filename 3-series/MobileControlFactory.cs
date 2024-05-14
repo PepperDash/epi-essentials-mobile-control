@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using PepperDash.Core;
+﻿using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Room.MobileControl;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace PepperDash.Essentials
@@ -15,7 +14,7 @@ namespace PepperDash.Essentials
         public MobileControlFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.12.5";
-            TypeNames = new List<string> {"appserver", "mobilecontrol", "webserver" };
+            TypeNames = new List<string> { "appserver", "mobilecontrol", "webserver" };
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
@@ -33,12 +32,12 @@ namespace PepperDash.Essentials
         }
     }
 
-    public class MobileControlSimplFactory : EssentialsPluginDeviceFactory<MobileControlSystemController>
+    public class MobileControlSimplFactory : EssentialsPluginDeviceFactory<MobileControlSIMPLRoomBridge>
     {
         public MobileControlSimplFactory()
         {
             MinimumEssentialsFrameworkVersion = "1.12.5";
-            TypeNames = new List<string> {"mobilecontrolbridge-ddvc01", "mobilecontrolbridge-simpl"};
+            TypeNames = new List<string> { "mobilecontrolbridge-ddvc01", "mobilecontrolbridge-simpl" };
         }
 
         public override EssentialsDevice BuildDevice(DeviceConfig dc)
@@ -57,8 +56,11 @@ namespace PepperDash.Essentials
                     return;
                 }
                 Debug.Console(0, bridge, "Linking to parent controller");
-                bridge.AddParent(parent);
-                parent.AddBridge(bridge);
+
+                /*bridge.AddParent(parent);
+                parent.AddBridge(bridge);*/
+
+                parent.AddDeviceMessenger(bridge);
             });
 
             return bridge;

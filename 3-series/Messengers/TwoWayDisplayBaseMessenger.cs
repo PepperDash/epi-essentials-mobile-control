@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class TwoWayDisplayBaseMessenger:MessengerBase
+    public class TwoWayDisplayBaseMessenger : MessengerBase
     {
-        private const string PowerStatusPath = "/powerStatus";
-        private const string InputStatusPath = "/inputStatus";
-
         private readonly TwoWayDisplayBase _display;
 
         public TwoWayDisplayBaseMessenger(string key, string messagePath) : base(key, messagePath)
@@ -25,26 +24,26 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         public void SendFullStatus()
         {
-            var messageObj = new
+            var messageObj = new TwoWayDisplayBaseStateMessage
             {
-                powerState = _display.PowerIsOnFeedback.BoolValue,
-                currentInput = _display.CurrentInputFeedback.StringValue
+                //PowerState = _display.PowerIsOnFeedback.BoolValue,
+                CurrentInput = _display.CurrentInputFeedback.StringValue
             };
 
             PostStatusMessage(messageObj);
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(MessagePath + "/fullStatus", new Action(SendFullStatus));
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
 
-            _display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
+            //_display.PowerIsOnFeedback.OutputChange += PowerIsOnFeedbackOnOutputChange;
             _display.CurrentInputFeedback.OutputChange += CurrentInputFeedbackOnOutputChange;
             _display.IsCoolingDownFeedback.OutputChange += IsCoolingFeedbackOnOutputChange;
             _display.IsWarmingUpFeedback.OutputChange += IsWarmingFeedbackOnOutputChange;
@@ -52,61 +51,52 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void CurrentInputFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
-            {
-                type = MessagePath,
-                content = new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     currentInput = feedbackEventArgs.StringValue
-                }
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+                })
+            );            
         }
 
 
-        private void PowerIsOnFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
-        {
-            var messageObj = new
-            {
-                type = MessagePath,
-                content = new
-                {
-                    powerState = feedbackEventArgs.BoolValue
-                }
-            };
-
-            AppServerController.SendMessageObject(messageObj);
-        }
+        //private void PowerIsOnFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
+        //{
+        //    PostStatusMessage(JToken.FromObject(new
+        //        {
+        //            powerState = feedbackEventArgs.BoolValue
+        //        })
+        //    );
+        //}
 
         private void IsWarmingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
-            {
-                type = MessagePath,
-                content = new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isWarming = feedbackEventArgs.BoolValue
-                }
-            };
-
-            AppServerController.SendMessageObject(messageObj);
+                })
+            );            
         }
 
         private void IsCoolingFeedbackOnOutputChange(object sender, FeedbackEventArgs feedbackEventArgs)
         {
-            var messageObj = new
-            {
-                type = MessagePath,
-                content = new
+            PostStatusMessage(JToken.FromObject(new
                 {
                     isCooling = feedbackEventArgs.BoolValue
-                }
-            };
+                })
+            );
 
-            AppServerController.SendMessageObject(messageObj);
+            
         }
 
         #endregion
+    }
+
+    public class TwoWayDisplayBaseStateMessage : DeviceStateMessageBase
+    {
+        //[JsonProperty("powerState", NullValueHandling = NullValueHandling.Ignore)]
+        //public bool? PowerState { get; set; }
+
+        [JsonProperty("currentInput", NullValueHandling = NullValueHandling.Ignore)]
+        public string CurrentInput { get; set; }
     }
 }

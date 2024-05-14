@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Crestron.SimplSharp;
+﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharpPro;
 using Crestron.SimplSharpPro.EthernetCommunication;
@@ -11,15 +9,17 @@ using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
-using PepperDash.Essentials.Devices.Common.Codec;
-using PepperDash.Essentials.Devices.Common.Cameras;
-using PepperDash.Essentials.Room.Config;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Devices.Common.Cameras;
+using PepperDash.Essentials.Devices.Common.Codec;
+using PepperDash.Essentials.Room.Config;
+using System;
+using System.Collections.Generic;
 
 
 namespace PepperDash.Essentials.Room.MobileControl
 {
-// ReSharper disable once InconsistentNaming
+    // ReSharper disable once InconsistentNaming
     public class MobileControlSIMPLRoomBridge : MobileControlBridgeBase, IDelayedConfiguration
     {
         private const int SupportedDisplayCount = 10;
@@ -70,7 +70,7 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="name"></param>
         /// <param name="ipId"></param>
         public MobileControlSIMPLRoomBridge(string key, string name, uint ipId)
-            : base(key, "/room/room1")
+            : base(key, "")
         {
             Eisc = new ThreeSeriesTcpIpEthernetIntersystemCommunications(ipId, "127.0.0.2", Global.ControlSystem);
             var reg = Eisc.Register();
@@ -132,16 +132,16 @@ namespace PepperDash.Essentials.Room.MobileControl
             //SetupFunctions();
             //SetupFeedbacks();
 
-            var atcKey = string.Format("atc-{0}-{1}", Key, Parent.Key);
+            var atcKey = string.Format("atc-{0}-{1}", Key, Key);
             _atcMessenger = new SIMPLAtcMessenger(atcKey, Eisc, "/device/audioCodec");
             _atcMessenger.RegisterWithAppServer(Parent);
 
-            var vtcKey = string.Format("atc-{0}-{1}", Key, Parent.Key);
+            var vtcKey = string.Format("atc-{0}-{1}", Key, Key);
             _vtcMessenger = new SIMPLVtcMessenger(vtcKey, Eisc, "/device/videoCodec");
             _vtcMessenger.RegisterWithAppServer(Parent);
 
-            var drKey = String.Format("directRoute-{0}-{1}", Key, Parent.Key);
-            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/room/room1/routing");
+            var drKey = string.Format("directRoute-{0}-{1}", Key, Key);
+            _directRouteMessenger = new SimplDirectRouteMessenger(drKey, Eisc, "/routing");
             _directRouteMessenger.RegisterWithAppServer(Parent);
 
             CrestronConsole.AddNewConsoleCommand(s =>
@@ -160,7 +160,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             return base.CustomActivate();
         }
-        
+
         private void UseEssentialsConfig()
         {
             ConfigIsLoaded = false;
@@ -170,17 +170,13 @@ namespace PepperDash.Essentials.Room.MobileControl
             Debug.Console(0, this, "******* ESSENTIALS CONFIG: \r{0}",
                 JsonConvert.SerializeObject(ConfigReader.ConfigObject, Formatting.Indented));
 
-            var handler = ConfigurationIsReady;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
+            ConfigurationIsReady?.Invoke(this, new EventArgs());
 
             ConfigIsLoaded = true;
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
@@ -194,32 +190,38 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// </summary>
         private void SetupFunctions()
         {
-            Parent.AddAction(@"/room/room1/promptForCode",
-                new Action(() => Eisc.PulseBool(JoinMap.PromptForCode.JoinNumber)));
-            Parent.AddAction(@"/room/room1/clientJoined",
-                new Action(() => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber)));
+            AddAction(@"/promptForCode",
+                (id, content) => Eisc.PulseBool(JoinMap.PromptForCode.JoinNumber));
+            AddAction(@"/clientJoined", (id, content) => Eisc.PulseBool(JoinMap.ClientJoined.JoinNumber));
 
-            Parent.AddAction(@"/room/room1/status", new Action(SendFullStatus));
+            AddAction(@"/status", (id, content) => SendFullStatus());
 
-            Parent.AddAction(@"/room/room1/source", new Action<SourceSelectMessageContent>(c =>
+            AddAction(@"/source", (id, content) =>
             {
-                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, c.SourceListItem);
+                var msg = content.ToObject<SourceSelectMessageContent>();
+
+                Eisc.SetString(JoinMap.CurrentSourceKey.JoinNumber, msg.SourceListItemKey);
                 Eisc.PulseBool(JoinMap.SourceHasChanged.JoinNumber);
-            }));
+            });
 
-            Parent.AddAction(@"/room/room1/defaultsource", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityShare.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityPhone", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityPhoneCall.JoinNumber)));
-            Parent.AddAction(@"/room/room1/activityVideo", new Action(() =>
-                Eisc.PulseBool(JoinMap.ActivityVideoCall.JoinNumber)));
+            AddAction(@"/defaultsource", (id, content) =>
+                Eisc.PulseBool(JoinMap.ActivityShare.JoinNumber));
+            AddAction(@"/activityPhone", (id, content) =>
+                Eisc.PulseBool(JoinMap.ActivityPhoneCall.JoinNumber));
+            AddAction(@"/activityVideo", (id, content) =>
+                Eisc.PulseBool(JoinMap.ActivityVideoCall.JoinNumber));
 
-            Parent.AddAction(@"/room/room1/volumes/master/level", new Action<ushort>(u =>
-                Eisc.SetUshort(JoinMap.MasterVolume.JoinNumber, u)));
-            Parent.AddAction(@"/room/room1/volumes/master/muteToggle", new Action(() =>
-                Eisc.PulseBool(JoinMap.MasterVolume.JoinNumber)));
-            Parent.AddAction(@"/room/room1/volumes/master/privacyMuteToggle", new Action(() =>
-                Eisc.PulseBool(JoinMap.PrivacyMute.JoinNumber)));
+            AddAction(@"/volumes/master/level", (id, content) =>
+            {
+                var value = content["value"].Value<ushort>();
+
+                Eisc.SetUshort(JoinMap.MasterVolume.JoinNumber, value);
+            });
+
+            AddAction(@"/volumes/master/muteToggle", (id, content) =>
+                Eisc.PulseBool(JoinMap.MasterVolume.JoinNumber));
+            AddAction(@"/volumes/master/privacyMuteToggle", (id, content) =>
+                Eisc.PulseBool(JoinMap.PrivacyMute.JoinNumber));
 
 
             // /xyzxyz/volumes/master/muteToggle ---> BoolInput[1]
@@ -230,18 +232,22 @@ namespace PepperDash.Essentials.Room.MobileControl
             for (uint i = volumeStart; i <= volumeEnd; i++)
             {
                 var index = i;
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/level", index), new Action<ushort>(u =>
-                    Eisc.SetUshort(index, u)));
-                Parent.AddAction(string.Format(@"/room/room1/volumes/level-{0}/muteToggle", index), new Action(() =>
-                    Eisc.PulseBool(index)));
+                AddAction(string.Format(@"/volumes/level-{0}/level", index), (id, content) =>
+                {
+                    var value = content["value"].Value<ushort>();
+                    Eisc.SetUshort(index, value);
+                });
+
+                AddAction(string.Format(@"/volumes/level-{0}/muteToggle", index), (id, content) =>
+                    Eisc.PulseBool(index));
             }
 
-            Parent.AddAction(@"/room/room1/shutdownStart", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownStart.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownEnd", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownEnd.JoinNumber)));
-            Parent.AddAction(@"/room/room1/shutdownCancel", new Action(() =>
-                Eisc.PulseBool(JoinMap.ShutdownCancel.JoinNumber)));
+            AddAction(@"/shutdownStart", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownStart.JoinNumber));
+            AddAction(@"/shutdownEnd", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownEnd.JoinNumber));
+            AddAction(@"/shutdownCancel", (id, content) =>
+                Eisc.PulseBool(JoinMap.ShutdownCancel.JoinNumber));
         }
 
 
@@ -258,9 +264,26 @@ namespace PepperDash.Essentials.Room.MobileControl
             foreach (var item in sourceJoinMap)
             {
                 var join = item.Value;
-                Parent.AddAction(string.Format("{0}{1}", prefix, item.Key),
-                    new PressAndHoldAction(b => Eisc.SetBool(join, b)));
+                AddAction(string.Format("{0}{1}", prefix, item.Key), (id, content) =>
+                {
+                    HandlePressAndHoldEisc(content, b => Eisc.SetBool(join, b));
+                });
             }
+        }
+
+        private void HandlePressAndHoldEisc(JToken content, Action<bool> action)
+        {
+            var state = content.ToObject<MobileControlSimpleContent<string>>();
+
+            var timerHandler = PressAndHoldHandler.GetPressAndHoldHandler(state.Value);
+            if (timerHandler == null)
+            {
+                return;
+            }
+
+            timerHandler(state.Value, action);
+
+            action(state.Value.Equals("true", StringComparison.InvariantCultureIgnoreCase));
         }
 
 
@@ -331,7 +354,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Eisc.SetUShortSigAction(index, u => // start at join 2
                 {
                     // need a dict in order to create the level-n property on auxFaders
-                    var dict = new Dictionary<string, object> {{"level-" + index, new {level = u}}};
+                    var dict = new Dictionary<string, object> { { "level-" + index, new { level = u } } };
                     PostStatus(new
                     {
                         volumes = new
@@ -343,7 +366,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 Eisc.SetBoolSigAction(index, b =>
                 {
                     // need a dict in order to create the level-n property on auxFaders
-                    var dict = new Dictionary<string, object> {{"level-" + index, new {muted = b}}};
+                    var dict = new Dictionary<string, object> { { "level-" + index, new { muted = b } } };
                     PostStatus(new
                     {
                         volumes = new
@@ -365,17 +388,17 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             // shutdown things
             Eisc.SetSigTrueAction(JoinMap.ShutdownCancel.JoinNumber, () =>
-                PostMessage("/room/room1/shutdown/", new
+                PostMessage("/shutdown/", new
                 {
                     state = "wasCancelled"
                 }));
             Eisc.SetSigTrueAction(JoinMap.ShutdownEnd.JoinNumber, () =>
-                PostMessage("/room/room1/shutdown/", new
+                PostMessage("/shutdown/", new
                 {
                     state = "hasFinished"
                 }));
             Eisc.SetSigTrueAction(JoinMap.ShutdownStart.JoinNumber, () =>
-                PostMessage("/room/room1/shutdown/", new
+                PostMessage("/shutdown/", new
                 {
                     state = "hasStarted",
                     duration = Eisc.UShortOutput[JoinMap.ShutdownPromptDuration.JoinNumber].UShortValue
@@ -389,7 +412,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             Eisc.SetSigTrueAction(JoinMap.ActivityPhoneCall.JoinNumber, () => UpdateActivity(2));
             Eisc.SetSigTrueAction(JoinMap.ActivityVideoCall.JoinNumber, () => UpdateActivity(3));
 
-            Parent.ApiOnlineAndAuthorized.LinkInputSig(Eisc.BooleanInput[JoinMap.ApiOnlineAndAuthorized.JoinNumber]);
+            AppServerController.ApiOnlineAndAuthorized.LinkInputSig(Eisc.BooleanInput[JoinMap.ApiOnlineAndAuthorized.JoinNumber]);
         }
 
 
@@ -443,9 +466,11 @@ namespace PepperDash.Essentials.Room.MobileControl
             {
                 if (type.ToLower().Equals("simplcameramessenger"))
                 {
-                    var props = new SimplMessengerPropertiesConfig();
-                    props.DeviceKey = key;
-                    props.JoinMapKey = "";
+                    var props = new SimplMessengerPropertiesConfig
+                    {
+                        DeviceKey = key,
+                        JoinMapKey = ""
+                    };
                     var joinStart = 1000 + (i * 100) + 1; // 1001, 1101, 1201, 1301... etc.
                     props.JoinStart = joinStart;
                     devConf.Properties = JToken.FromObject(props);
@@ -465,9 +490,9 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             var co = ConfigReader.ConfigObject;
 
-            if (!String.IsNullOrEmpty(Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue))
+            if (!string.IsNullOrEmpty(Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue))
             {
-                Parent.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
+                ConfigReader.ConfigObject.SystemUrl = Eisc.StringOutput[JoinMap.PortalSystemUrl.JoinNumber].StringValue;
             }
 
             co.Info.RuntimeInfo.AppName = Assembly.GetExecutingAssembly().GetName().Name;
@@ -513,7 +538,7 @@ namespace PepperDash.Essentials.Room.MobileControl
             // This MAY need a check 
             if (Eisc.BooleanOutput[JoinMap.ActivityPhoneCallEnable.JoinNumber].BoolValue)
             {
-                rmProps.AudioCodecKey = "audioCodec"; 
+                rmProps.AudioCodecKey = "audioCodec";
             }
 
             if (Eisc.BooleanOutput[JoinMap.ActivityVideoCallEnable.JoinNumber].BoolValue)
@@ -573,7 +598,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     Debug.Console(1, "Source at join {0} does not have a name", JoinMap.SourceNameJoinStart.JoinNumber + i);
                     break;
                 }
-                    
+
 
                 var icon = Eisc.StringOutput[JoinMap.SourceIconJoinStart.JoinNumber + i].StringValue;
                 var key = Eisc.StringOutput[JoinMap.SourceKeyJoinStart.JoinNumber + i].StringValue;
@@ -591,7 +616,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 {
                     Icon = icon,
                     Name = name,
-                    Order = (int) i + 10,
+                    Order = (int)i + 10,
                     SourceKey = string.IsNullOrEmpty(sourceKey) ? key : sourceKey, // Use the value from the join if defined
                     Type = eSourceListItemType.Route,
                     DisableCodecSharing = disableShare,
@@ -621,7 +646,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     }
                 }
                 else
-                {                 
+                {
                     co.Devices.Add(syntheticDevice);
                 }
             }
@@ -725,16 +750,12 @@ namespace PepperDash.Essentials.Room.MobileControl
             Debug.Console(0, this, "******* CONFIG FROM SIMPL: \r{0}",
                 JsonConvert.SerializeObject(ConfigReader.ConfigObject, Formatting.Indented));
 
-            var handler = ConfigurationIsReady;
-            if (handler != null)
-            {
-                handler(this, new EventArgs());
-            }
+            ConfigurationIsReady?.Invoke(this, new EventArgs());
 
             ConfigIsLoaded = true;
         }
 
-        private DeviceConfig GetSyntheticDestinationDevice(DestinationListItem newDli, string key, string name)
+        private DeviceConfig GetSyntheticDestinationDevice(string key, string name)
         {
             // If not, synthesize the device config
             var devConf = new DeviceConfig
@@ -768,7 +789,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     continue;
                 }
 
-                if (String.IsNullOrEmpty(key))
+                if (string.IsNullOrEmpty(key))
                 {
                     continue;
                 }
@@ -778,9 +799,9 @@ namespace PepperDash.Essentials.Room.MobileControl
                 eRoutingSignalType parsedType;
                 try
                 {
-                    parsedType = (eRoutingSignalType) Enum.Parse(typeof (eRoutingSignalType), routeType, true);
+                    parsedType = (eRoutingSignalType)Enum.Parse(typeof(eRoutingSignalType), routeType, true);
                 }
-                catch 
+                catch
                 {
                     Debug.Console(0, this, "Error parsing destination type: {0}", routeType);
                     parsedType = eRoutingSignalType.AudioVideo;
@@ -789,7 +810,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 var newDli = new DestinationListItem
                 {
                     Name = name,
-                    Order = (int) i,
+                    Order = (int)i,
                     SinkKey = key,
                     SinkType = parsedType,
                 };
@@ -815,7 +836,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
                 var existingDev = co.GetDeviceForKey(key);
 
-                var syntheticDisplay = GetSyntheticDestinationDevice(newDli, key, name);
+                var syntheticDisplay = GetSyntheticDestinationDevice(key, name);
 
                 if (existingDev != null)
                 {
@@ -824,7 +845,6 @@ namespace PepperDash.Essentials.Room.MobileControl
                     if (existingDev.Properties.Value<bool>(_syntheticDeviceKey))
                     {
                         Debug.Console(0, this, "Updating previous device config with new values");
-                        existingDev = syntheticDisplay;
                     }
                     else
                     {
@@ -832,7 +852,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                     }
                 }
                 else
-                {                  
+                {
                     co.Devices.Add(syntheticDisplay);
                 }
             }
@@ -846,7 +866,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                 co.DestinationLists["default"] = newDl;
             }
 
-                _directRouteMessenger.RegisterForDestinationPaths();
+            _directRouteMessenger.RegisterForDestinationPaths();
         }
 
         /// <summary>
@@ -865,7 +885,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                         var props =
                             JsonConvert.DeserializeObject<SimplMessengerPropertiesConfig>(device.Properties.ToString());
 
-                        var messengerKey = string.Format("device-{0}-{1}", Key, Parent.Key);
+                        var messengerKey = string.Format("device-{0}-{1}", Key, Key);
 
                         if (DeviceManager.GetDeviceForKey(messengerKey) != null)
                         {
@@ -919,7 +939,7 @@ namespace PepperDash.Essentials.Room.MobileControl
                             {
                                 var camDevice = dev as CameraBase;
                                 Debug.Console(1, this, "Adding CameraBaseMessenger for device: {0}", dev.Key);
-                                var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Parent.Key, camDevice,
+                                var cameraMessenger = new CameraBaseMessenger(device.Key + "-" + Key, camDevice,
                                     "/device/" + device.Key);
                                 DeviceMessengers.Add(device.Key, cameraMessenger);
                                 DeviceManager.AddDevice(cameraMessenger);
@@ -1020,10 +1040,10 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject">The contents of the content object</param>
         private void PostStatus(object contentObject)
         {
-            Parent.SendMessageObject(new
+            AppServerController.SendMessageObject(new MobileControlMessage
             {
-                type = "/room/room1/status/",
-                content = contentObject
+                Type = "/status/",
+                Content = JToken.FromObject(contentObject)
             });
         }
 
@@ -1034,10 +1054,10 @@ namespace PepperDash.Essentials.Room.MobileControl
         /// <param name="contentObject"></param>
         private void PostMessage(string messageType, object contentObject)
         {
-            Parent.SendMessageObject(new
+            AppServerController.SendMessageObject(new MobileControlMessage
             {
-                type = messageType,
-                content = contentObject
+                Type = messageType,
+                Content = JToken.FromObject(contentObject)
             });
         }
 
@@ -1082,7 +1102,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             };
             return d;
-        } 
+        }
 
         /// <summary>
         /// updates the usercode from server
@@ -1092,7 +1112,7 @@ namespace PepperDash.Essentials.Room.MobileControl
 
             Debug.Console(1, this, "Server user code changed: {0}", UserCode);
 
-            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), "room1" );
+            var qrUrl = string.Format("{0}/api/rooms/{1}/{3}/qr?x={2}", AppServerController.Host, AppServerController.SystemUuid, new Random().Next(), "room1");
             QrCodeUrl = qrUrl;
 
             Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);

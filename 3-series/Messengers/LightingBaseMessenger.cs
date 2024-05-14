@@ -1,55 +1,50 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
+﻿using Newtonsoft.Json;
 using PepperDash.Core;
-using PepperDash.Essentials.Core.Lighting;
-
-using Newtonsoft.Json;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using PepperDash.Essentials.Core.Lighting;
+using System;
+using System.Collections.Generic;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
-    public class LightingBaseMessenger : MessengerBase
+    public class ILightingScenesMessenger : MessengerBase
     {
-        protected LightingBase Device { get; private set; }
+        protected ILightingScenes Device { get; private set; }
 
-        public LightingBaseMessenger(string key, LightingBase device, string messagePath)
-            : base(key, messagePath, device)
+        public ILightingScenesMessenger(string key, ILightingScenes device, string messagePath)
+            : base(key, messagePath, device as Device)
         {
-            if (device == null)
-            {
-                throw new ArgumentNullException("device");
-            }
-
-            Device = device;
+            Device = device ?? throw new ArgumentNullException("device");
             Device.LightingSceneChange += new EventHandler<LightingSceneChangeEventArgs>(LightingDevice_LightingSceneChange);
 
-           
+
         }
 
-        void LightingDevice_LightingSceneChange(object sender, LightingSceneChangeEventArgs e)
+        private void LightingDevice_LightingSceneChange(object sender, LightingSceneChangeEventArgs e)
         {
-            var state = new LightingBaseStateMessage();
-
-            state.CurrentLightingScene = e.CurrentLightingScene;
+            var state = new LightingBaseStateMessage
+            {
+                CurrentLightingScene = e.CurrentLightingScene
+            };
 
             PostStatusMessage(state);
         }
 
 #if SERIES4
-        protected override void CustomRegisterWithAppServer(IMobileControl3 appServerController)
+        protected override void RegisterActions()
 #else
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            base.CustomRegisterWithAppServer(appServerController);
+            base.RegisterActions();
 
-            appServerController.AddAction(string.Format("{0}/fullStatus", MessagePath), new Action(SendFullStatus));
+            AddAction("/fullStatus", (id, content) => SendFullStatus());
 
-            appServerController.AddAction(string.Format("{0}/selectScene", MessagePath), new Action<LightingScene>((s) => Device.SelectScene(s)));
+            AddAction("/selectScene", (id, content) =>
+            {
+                var s = content.ToObject<LightingScene>();
+                Device.SelectScene(s);
+            });
         }
 
 
@@ -57,10 +52,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             Debug.Console(2, "LightingBaseMessenger GetFullStatus");
 
-            var state = new LightingBaseStateMessage();
-
-            state.Scenes = Device.LightingScenes;
-            state.CurrentLightingScene = Device.CurrentLightingScene;
+            var state = new LightingBaseStateMessage
+            {
+                Scenes = Device.LightingScenes,
+                CurrentLightingScene = Device.CurrentLightingScene
+            };
 
             PostStatusMessage(state);
         }
