@@ -33,6 +33,8 @@ namespace PepperDash.Essentials
 
         public string RoomKey { get; set; }
 
+        private string _clientId;
+
         private DateTime _connectionTime;
 
         public TimeSpan ConnectedDuration
@@ -71,6 +73,7 @@ namespace PepperDash.Essentials
             }
 
             var clientId = match.Groups[1].Value;
+            _clientId = clientId;
 
             if (Controller == null)
             {
@@ -123,11 +126,19 @@ namespace PepperDash.Essentials
 
             var bridge = Controller.GetRoomBridge(RoomKey);
 
+            if (bridge == null) return;
+
             SendUserCodeToClient(bridge, clientId);
 
-            bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
+            bridge.UserCodeChanged -= Bridge_UserCodeChanged;
+            bridge.UserCodeChanged += Bridge_UserCodeChanged;
 
             // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
+        }
+
+        private void Bridge_UserCodeChanged(object sender, EventArgs e)
+        {
+            SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, _clientId);
         }
 
         private void SendUserCodeToClient(MobileControlBridgeBase bridge, string clientId)

@@ -2375,8 +2375,17 @@ Mobile Control Direct Server Infromation:
                         Debug.Console(1, this, "Received close message from server.");
                         break;
                     default:
+                        // Incoming message example
+                        // /room/roomA/status
+                        // /room/roomAB/status
+
+                        // ActionDictionary Keys example
+                        // /room/roomA
+                        // /room/roomAB
+
+                        // Can't do direct comparison because it will match /room/roomA with /room/roomA/xxx instead of /room/roomAB/xxx
                         var handlersKv = _actionDictionary.FirstOrDefault(kv =>
-                            message.Type.StartsWith(kv.Key)
+                            message.Type.StartsWith(kv.Key + "/") // adds trailing slash to ensure above case is handled
                         );
 
                         if (handlersKv.Key == null)
