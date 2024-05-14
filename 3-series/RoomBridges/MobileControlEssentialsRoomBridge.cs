@@ -581,7 +581,7 @@ namespace PepperDash.Essentials
 
 
             // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
-            var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault((rc) => rc.Rooms.Any((r) => r.Key.Equals(room.Key)));
+            var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
 
             configuration.RoomCombinerKey = roomCombiner != null ? roomCombiner.Key : null;    
 

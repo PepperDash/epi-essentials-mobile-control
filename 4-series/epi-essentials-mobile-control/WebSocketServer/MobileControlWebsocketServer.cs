@@ -64,35 +64,68 @@ namespace PepperDash.Essentials
 
             var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
 
-            if (match.Success)
+            if (!match.Success)
             {
-                var clientId = match.Groups[1].Value;
-
-                // Inform controller of client joining
-                if (Controller != null)
-                {
-                    var clientJoined = new MobileControlMessage
-                    {
-                        Type = "/system/roomKey",
-                        ClientId = clientId,
-                        Content = RoomKey,
-                    };
-
-                    Controller.SendMessageObjectToDirectClient(clientJoined);
-
-                    var bridge = Controller.GetRoomBridge(RoomKey);
-
-                    SendUserCodeToClient(bridge, clientId);
-
-                    bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
-                }
-                else
-                {
-                    Debug.Console(2, "WebSocket UiClient Controller is null");
-                }
+                _connectionTime = DateTime.Now;
+                return;
             }
 
-            _connectionTime = DateTime.Now;
+            var clientId = match.Groups[1].Value;
+
+            if (Controller == null)
+            {
+                Debug.Console(2, "WebSocket UiClient Controller is null");
+                _connectionTime = DateTime.Now;
+            }
+
+            var clientJoinedMessage = new MobileControlMessage
+            {
+                Type = "/system/clientJoined",
+                Content = JToken.FromObject(new
+                {
+                    clientId,
+                    roomKey = RoomKey,
+                })
+            };
+
+            Controller.HandleClientMessage(JsonConvert.SerializeObject(clientJoinedMessage));
+            // Inform controller of client joining
+            /*
+            var clientJoined = new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = RoomKey,
+            };                    
+
+            Controller.SendMessageObjectToDirectClient(clientJoined);
+
+            if (Controller.Config.EnableUiMirroring)
+            {
+                var uiMirrorEnabled = new MobileControlMessage
+                {
+                    Type = "/system/uiMirrorEnabled",
+                    ClientId = clientId,
+                    Content = JToken.FromObject(new MobileControlSimpleContent<bool> { Value = Controller.Config.EnableUiMirroring }),
+                };
+
+                var uiState = new MobileControlMessage
+                {
+                    Type = "/system/uiMirrorState",
+                    ClientId = clientId,
+                    Content = Controller.LastUiState,
+                };
+
+                Controller.SendMessageObjectToDirectClient(uiMirrorEnabled);
+
+                Controller.SendMessageObjectToDirectClient(uiState);
+            }*/
+
+            var bridge = Controller.GetRoomBridge(RoomKey);
+
+            SendUserCodeToClient(bridge, clientId);
+
+            bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
 
             // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
         }
@@ -890,7 +923,7 @@ namespace PepperDash.Essentials
                     JoinResponse jRes = new JoinResponse
                     {
                         ClientId = token,
-                        RoomKey = bridge.RoomKey,
+                        DefaultRoomKey = bridge.RoomKey,
                         SystemUuid = _parent.SystemUuid,
                         RoomUuid = _parent.SystemUuid,
                         Config = _parent.GetConfigWithPluginVersion(),
@@ -1170,8 +1203,11 @@ namespace PepperDash.Essentials
         [JsonProperty("clientId")]
         public string ClientId { get; set; }
 
-        [JsonProperty("roomKey")]
-        public string RoomKey { get; set; }
+        [JsonProperty("defaultRoomKey")]
+        public string DefaultRoomKey { get; set; }
+
+        [JsonProperty("currentRoomKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string CurrentRoomKey { get; set; }
 
         [JsonProperty("systemUUid")]
         public string SystemUuid { get; set; }

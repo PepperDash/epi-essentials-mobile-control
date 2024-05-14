@@ -89,6 +89,8 @@ namespace PepperDash.Essentials
 
         public bool Connected => _wsClient2 != null && _wsClient2.IsAlive;
 
+        private IEssentialsRoomCombiner _roomCombiner;
+
         public string SystemUuid
         {
             get
@@ -231,6 +233,13 @@ namespace PepperDash.Essentials
             AddPreActivationAction(() => SetupDefaultRoomMessengers());
 
             AddPreActivationAction(() => AddWebApiPaths());
+
+            AddPreActivationAction(() =>
+            {
+                _roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
+
+                _roomCombiner.RoomCombinationScenarioChanged += OnRoomCombinationScenarioChanged;
+            });
 
             CrestronEnvironment.ProgramStatusEventHandler +=
                 CrestronEnvironment_ProgramStatusEventHandler;
@@ -1127,7 +1136,7 @@ namespace PepperDash.Essentials
 
         public string ClientAppUrl => Config.ClientAppUrl;
 
-        private void RoomCombinerOnRoomCombinationScenarioChanged(
+        private void OnRoomCombinationScenarioChanged(
             object sender,
             EventArgs eventArgs
         )
@@ -2209,19 +2218,65 @@ Mobile Control Direct Server Infromation:
             }
         }
 
+        //private void HandleClientJoined(JToken content)
+        //{
+        //    var clientId = content["clientId"].Value<string>();
+        //    var roomKey = content["roomKey"].Value<string>();
+
+        //    SendMessageObject(
+        //        new MobileControlMessage
+        //        {
+        //            Type = "/system/roomKey",
+        //            ClientId = clientId,
+        //            Content = roomKey
+        //        }
+        //    );
+        //}
+
         private void HandleClientJoined(JToken content)
         {
             var clientId = content["clientId"].Value<string>();
             var roomKey = content["roomKey"].Value<string>();
 
-            SendMessageObject(
-                new MobileControlMessage
+            if (_roomCombiner == null)
+            {
+                var message = new MobileControlMessage
                 {
                     Type = "/system/roomKey",
                     ClientId = clientId,
                     Content = roomKey
-                }
-            );
+                };
+
+                SendMessageObject(message);
+                return;
+            }
+
+            if (!_roomCombiner.CurrentScenario.UiMap.ContainsKey(roomKey))
+            {
+                Debug.Console(0, this,
+                    "Unable to find correct roomKey for {0} in current scenario. Returning {0} as roomKey", roomKey);
+
+                var message = new MobileControlMessage
+                {
+                    Type = "/system/roomKey",
+                    ClientId = clientId,
+                    Content = roomKey
+                };
+
+                SendMessageObject(message);
+                return;
+            }
+
+            var newRoomKey = _roomCombiner.CurrentScenario.UiMap[roomKey];
+
+            var newMessage = new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = newRoomKey
+            };
+
+            SendMessageObject(newMessage);
         }
 
         private void HandleUserCode(JToken content)
