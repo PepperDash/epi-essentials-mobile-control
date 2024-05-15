@@ -1,5 +1,6 @@
 ﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.WebScripting;
+using Crestron.SimplSharpPro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
@@ -399,6 +400,12 @@ namespace PepperDash.Essentials
                 }
             }
 
+            var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+
+            var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Processor IP: {processorIp}", this);
+
             foreach (var touchpanel in touchpanels.Select(tp =>
             {
                 var token = _secret.Tokens.FirstOrDefault((t) => t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase));
@@ -419,10 +426,6 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, $"Unable to find room messenger for {touchpanel.Touchpanel.DefaultRoomKey}");
                     continue;
                 }
-
-                var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
-
-                var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
 
                 var appUrl = $"http://{processorIp}:{_parent.Config.DirectServer.Port}/mc/app?token={touchpanel.Key}";
 
