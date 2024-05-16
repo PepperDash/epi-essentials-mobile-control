@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
+using System;
 using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 
 namespace PepperDash.Essentials.AppServer.Messengers
@@ -61,11 +62,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
             });
 
             AddAction("/muteToggle", (id, content) =>
-            {
-                var state = content.ToObject<MobileControlSimpleContent<bool>>();
-
-                if (!state.Value) return;
-
+            {                
                 _localDevice.MuteToggle();
             });
 
@@ -81,12 +78,30 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => 
             {
-                _localDevice.VolumeUp(b);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Calling {localDevice} volume Up", this, DeviceKey);
+                try
+                {
+                    _localDevice.VolumeUp(b);
+                } catch (Exception ex)
+                {
+                    Debug.LogMessage(ex, "Got exception during volume up: {Exception}", null, ex);
+                }
              }));
 
 
 
-            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => _localDevice.VolumeDown(b)));
+            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Calling {localDevice} volume down", this, DeviceKey);
+
+                try
+                {
+                    _localDevice.VolumeDown(b);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogMessage(ex, "Got exception during volume down: {Exception}", null, ex);
+                }
+            }));
 
             _localDevice.MuteFeedback.OutputChange += (sender, args) =>
             {
