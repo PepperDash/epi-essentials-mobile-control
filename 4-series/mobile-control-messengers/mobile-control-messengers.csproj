@@ -11,6 +11,7 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>4.0.0-local</Version>
     <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
     <Authors>PepperDash Technologies</Authors>
     <PackageId>PepperDash.Essentials.Plugin.MobileControl.Messengers</PackageId>
