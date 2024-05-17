@@ -55,9 +55,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
                 AddAction($"/{key}/muteOff", (id, content) => control.MuteOff());
 
-                AddAction($"/{key}/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => control.VolumeUp(b)));
+                AddAction($"/{key}/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => control.VolumeUp(b)));
 
-                AddAction($"/{key}/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => control.VolumeDown(b)));
+                AddAction($"/{key}/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => control.VolumeDown(b)));
 
                 control.VolumeLevelFeedback.OutputChange += (o, a) => PostStatusMessage(JToken.FromObject(new
                 {

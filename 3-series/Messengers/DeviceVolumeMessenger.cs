@@ -2,10 +2,9 @@
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
-using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System;
-using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -76,9 +75,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 _localDevice.MuteOff();
             });
 
-            AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => 
+            AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => 
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Calling {localDevice} volume Up", this, DeviceKey);
+                this.LogVerbose("Calling {localDevice} volume up with {value}", DeviceKey, b);
                 try
                 {
                     _localDevice.VolumeUp(b);
@@ -90,8 +89,8 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
 
 
-            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Calling {localDevice} volume down", this, DeviceKey);
+            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => {
+                this.LogVerbose("Calling {localDevice} volume down with {value}", DeviceKey, b);
 
                 try
                 {

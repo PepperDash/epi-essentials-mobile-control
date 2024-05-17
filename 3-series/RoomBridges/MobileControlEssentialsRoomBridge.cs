@@ -151,7 +151,7 @@ namespace PepperDash.Essentials
                         basicVolumeWithFeedback.MuteOff();
                 });
 
-                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
                     {
                         if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
                         {
@@ -160,7 +160,7 @@ namespace PepperDash.Essentials
                     }
                 ));
 
-                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
                 {
                     if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
                     {
