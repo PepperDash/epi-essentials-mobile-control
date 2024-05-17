@@ -32,6 +32,7 @@ using PepperDash.Essentials.Services;
 using PepperDash.Essentials.WebApiHandlers;
 using Serilog.Events;
 using WebSocketSharp;
+using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
@@ -279,6 +280,8 @@ namespace PepperDash.Essentials
 
                 if (room is IRoomEventSchedule)
                 {
+                    Debug.LogMessage(LogEventLevel.Information, "Setting up event schedule messenger for room: {key}", this, room.Key);
+
                     var scheduleMessenger = new RoomEventScheduleMessenger(
                         $"{room.Key}-schedule-{Key}",
                         string.Format("/room/{0}", room.Key),
@@ -290,6 +293,8 @@ namespace PepperDash.Essentials
 
                 if (room is ITechPassword)
                 {
+                    Debug.LogMessage(LogEventLevel.Information, "Setting up tech password messenger for room: {key}", this, room.Key);
+
                     var techPasswordMessenger = new ITechPasswordMessenger(
                         $"{room.Key}-techPassword-{Key}",
                         string.Format("/room/{0}", room.Key),
@@ -301,6 +306,8 @@ namespace PepperDash.Essentials
 
                 if (room is IShutdownPromptTimer)
                 {
+                    Debug.LogMessage(LogEventLevel.Information, "Setting up shutdown prompt timer messenger for room: {key}", this, room.Key);
+
                     var shutdownPromptTimerMessenger = new IShutdownPromptTimerMessenger(
                         $"{room.Key}-shutdownPromptTimer-{Key}",
                         string.Format("/room/{0}", room.Key),
@@ -308,6 +315,19 @@ namespace PepperDash.Essentials
                     );
 
                     AddDefaultDeviceMessenger(shutdownPromptTimerMessenger);
+                }
+
+                if (room is ILevelControls levelControls)
+                {
+                    Debug.LogMessage(LogEventLevel.Information, "Setting up level controls messenger for room: {key}", this, room.Key);
+
+                    var levelControlsMessenger = new ILevelControlsMessenger(
+                        $"{room.Key}-levelControls-{Key}",
+                        $"/room/{room.Key}",
+                        levelControls
+                    );
+
+                    AddDefaultDeviceMessenger(levelControlsMessenger);
                 }
             }
         }

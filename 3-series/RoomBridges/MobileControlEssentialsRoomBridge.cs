@@ -522,7 +522,6 @@ namespace PepperDash.Essentials
                     }
 
                     volumes.Add("master", volume);
-
                 }
             }
 
@@ -757,6 +756,13 @@ namespace PepperDash.Essentials
             {
                 configuration.DestinationList = destinationList;
             }
+
+            var levelControlList = ConfigReader.ConfigObject.GetLevelControlListForKey(room.LevelControlListKey);
+
+            if(levelControlList != null)
+            {
+                configuration.LevelControlList = levelControlList;
+            }
             
 
             return configuration;
@@ -856,6 +862,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("destinationList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string,  DestinationListItem> DestinationList { get; set;}
+
+        [JsonProperty("levelListControl", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, LevelControlListItem> LevelControlList { get; set; }
 
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultPresentationSourceKey { get; set; }
