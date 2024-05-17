@@ -863,7 +863,7 @@ namespace PepperDash.Essentials
         [JsonProperty("destinationList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string,  DestinationListItem> DestinationList { get; set;}
 
-        [JsonProperty("levelListControl", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("levelControlList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string, LevelControlListItem> LevelControlList { get; set; }
 
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]

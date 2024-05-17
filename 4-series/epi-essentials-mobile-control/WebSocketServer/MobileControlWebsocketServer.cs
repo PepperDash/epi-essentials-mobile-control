@@ -937,7 +937,7 @@ namespace PepperDash.Essentials
                     JoinResponse jRes = new JoinResponse
                     {
                         ClientId = token,
-                        DefaultRoomKey = bridge.RoomKey,
+                        RoomKey = bridge.RoomKey,
                         SystemUuid = _parent.SystemUuid,
                         RoomUuid = _parent.SystemUuid,
                         Config = _parent.GetConfigWithPluginVersion(),
@@ -1217,11 +1217,8 @@ namespace PepperDash.Essentials
         [JsonProperty("clientId")]
         public string ClientId { get; set; }
 
-        [JsonProperty("defaultRoomKey")]
-        public string DefaultRoomKey { get; set; }
-
-        [JsonProperty("currentRoomKey", NullValueHandling = NullValueHandling.Ignore)]
-        public string CurrentRoomKey { get; set; }
+        [JsonProperty("roomKey")]
+        public string RoomKey { get; set; }
 
         [JsonProperty("systemUUid")]
         public string SystemUuid { get; set; }
