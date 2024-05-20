@@ -54,8 +54,6 @@ namespace PepperDash.Essentials
             Parent = parent;
 
             McServerUrl = Parent.ClientAppUrl;
-
-            RegisterWithAppServer(parent);
         }
 
         /// <summary>

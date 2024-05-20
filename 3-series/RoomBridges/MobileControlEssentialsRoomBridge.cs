@@ -24,6 +24,7 @@ using Volume = PepperDash.Essentials.Room.MobileControl.Volume;
 using PepperDash.Essentials.Core.CrestronIO;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
+using PepperDash.Core.Logging;
 
 
 #if SERIES4
@@ -151,7 +152,7 @@ namespace PepperDash.Essentials
                         basicVolumeWithFeedback.MuteOff();
                 });
 
-                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
                     {
                         if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
                         {
@@ -160,7 +161,7 @@ namespace PepperDash.Essentials
                     }
                 ));
 
-                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) =>
+                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
                 {
                     if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
                     {
@@ -296,12 +297,13 @@ namespace PepperDash.Essentials
 
         protected override void UserCodeChange()
         {
-            Debug.Console(1, this, "Server user code changed: {0}", UserCode);
+            this.LogDebug("Server user code changed: {userCode}", UserCode);
 
-            var qrUrl = string.Format("{0}/rooms/{1}/{3}/qr?x={2}", Parent.Host, Parent.SystemUuid, new Random().Next(), DefaultRoomKey);
+            var qrUrl = string.Format("{0}/rooms/{1}/{3}/qr?x={2}", Parent?.Host, Parent?.SystemUuid, new Random().Next(), DefaultRoomKey);
+
             QrCodeUrl = qrUrl;
 
-            Debug.Console(1, this, "Server user code changed: {0} - {1}", UserCode, qrUrl);
+            this.LogDebug("Server user code changed: {userCode} - {qrUrl}", UserCode, qrUrl);
 
             OnUserCodeChanged();
         }

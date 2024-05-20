@@ -6,6 +6,7 @@ using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
@@ -156,7 +157,7 @@ namespace PepperDash.Essentials
             : base(key, name)
         {
             Config = config;
-
+            
             // The queue that will collect the incoming messages in the order they are received
             //_receiveQueue = new ReceiveQueue(key, ParseStreamRx);
             _receiveQueue = new GenericQueue(key + "-rxqueue", Crestron.SimplSharpPro.CrestronThread.Thread.eThreadPriority.HighPriority, 25);
@@ -206,13 +207,15 @@ namespace PepperDash.Essentials
 
                 return _wsClient2.IsAlive && IsAuthorized;
             });
-        }
+        }        
 
         private void SetupDefaultRoomMessengers()
         {
             foreach (var room in DeviceManager.AllDevices.OfType<IEssentialsRoom>())
             {
                 var messenger = new MobileControlEssentialsRoomBridge(room);
+
+                messenger.AddParent(this);
 
                 _roomBridges.Add(messenger);
 
@@ -1435,6 +1438,17 @@ Mobile Control Direct Server Infromation:
             return confObject;
         }
 
+        public void SetClientUrl(string path, string roomKey = null)
+        {
+            var message = new MobileControlMessage
+            {
+                Type = string.IsNullOrEmpty(roomKey) ? $"/event/system/setUrl" : $"/event/room/{roomKey}/setUrl",
+                Content = JToken.FromObject(new MobileControlSimpleContent<string> { Value = path })
+            };
+
+            SendMessageObject(message);
+        }
+
         /// <summary>
         /// Sends any object type to server
         /// </summary>
@@ -1571,7 +1585,7 @@ Mobile Control Direct Server Infromation:
         private void HandleClientJoined(JToken content)
         {
             var clientId = content["clientId"].Value<string>();
-            var roomKey = content["roomKey"].Value<string>();
+            var roomKey = content["roomKey"].Value<string>();            
 
 
             SendMessageObject(new MobileControlMessage
@@ -1582,12 +1596,7 @@ Mobile Control Direct Server Infromation:
             });
         }
 
-        private void HandleUserCode(JToken content)
-        {
-            HandleUserCode(content, null);
-        }
-
-        private void HandleUserCode(JToken content, Action<string, string> action)
+        private void HandleUserCode(JToken content, Action<string, string> action = null)
         {
             var code = content["userCode"];
 
