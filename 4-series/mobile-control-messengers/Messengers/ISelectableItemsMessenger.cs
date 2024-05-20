@@ -38,9 +38,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
             foreach (var input in itemDevice.Items)
             {
                 var key = input.Key;
-                var localItem = input.Value;
+                var localItem = input.Value;                
 
-                AddAction($"/{localItem.Key}", (id, content) =>
+                AddAction($"/{key}", (id, content) =>
                 {
                     localItem.Select();
                 });

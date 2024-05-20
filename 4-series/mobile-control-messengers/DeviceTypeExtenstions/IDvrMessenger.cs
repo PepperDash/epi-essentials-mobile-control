@@ -18,8 +18,8 @@ namespace PepperDash.Essentials.Room.MobileControl
         {
             base.RegisterActions();       
 
-            AddAction("/dvrlist", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dvrDevice?.DvrList(b)));
-            AddAction("/record", (id, content) => PressAndHoldHandler.HandlePressAndHold(content, (b) => dvrDevice?.Record(b)));
+            AddAction("/dvrlist", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => dvrDevice?.DvrList(b)));
+            AddAction("/record", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => dvrDevice?.Record(b)));
         }
 
     }
