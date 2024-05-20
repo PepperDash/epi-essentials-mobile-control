@@ -215,6 +215,8 @@ namespace PepperDash.Essentials
             {
                 var messenger = new MobileControlEssentialsRoomBridge(room);
 
+                messenger.AddParent(this);
+
                 _roomBridges.Add(messenger);
 
                 AddDefaultDeviceMessenger(messenger);
@@ -1583,7 +1585,7 @@ Mobile Control Direct Server Infromation:
         private void HandleClientJoined(JToken content)
         {
             var clientId = content["clientId"].Value<string>();
-            var roomKey = content["roomKey"].Value<string>();
+            var roomKey = content["roomKey"].Value<string>();            
 
 
             SendMessageObject(new MobileControlMessage
