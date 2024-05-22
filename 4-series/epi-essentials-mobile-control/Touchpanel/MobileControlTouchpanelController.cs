@@ -140,6 +140,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    
                     UpdateZoomFeedbacks();
 
                     if (!x70Panel.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue)
@@ -157,7 +158,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.Console(2, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+
+                    if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number || a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        UpdateZoomFeedbacks();
+                    }
                 };
                 
 
@@ -202,7 +207,10 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x60withZoomApp.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.Console(2, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+                    if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number || a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        UpdateZoomFeedbacks();
+                    }
                 };
 
                 x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
