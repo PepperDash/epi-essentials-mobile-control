@@ -765,7 +765,6 @@ namespace PepperDash.Essentials
             {
                 configuration.AudioControlPointList = audioControlPointList;
             }
-            
 
             return configuration;
         }
