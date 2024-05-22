@@ -11,7 +11,8 @@
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Authors>PepperDash Technologies</Authors>
     <PackageId>PepperDash.Essentials.Plugin.MobileControl.Messengers</PackageId>
     <PackageProjectUrl>https://github.com/PepperDash/epi-essentials-mobile-control</PackageProjectUrl>
@@ -61,6 +62,6 @@
     <Folder Include="SIMPLJoinMaps\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2499" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2505" />
   </ItemGroup>
 </Project>

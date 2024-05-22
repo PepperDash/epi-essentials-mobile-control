@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
-using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -33,7 +33,6 @@ using PepperDash.Essentials.Services;
 using PepperDash.Essentials.WebApiHandlers;
 using Serilog.Events;
 using WebSocketSharp;
-using static Crestron.SimplSharpPro.Lighting.ZumWired.ZumNetBridgeRoom.ZumWiredRoomInterface;
 using DisplayBase = PepperDash.Essentials.Devices.Common.Displays.DisplayBase;
 using TwoWayDisplayBase = PepperDash.Essentials.Devices.Common.Displays.TwoWayDisplayBase;
 #if SERIES4
@@ -941,13 +940,32 @@ namespace PepperDash.Essentials
                         Debug.Console(
                             2,
                             this,
-                            $"Adding IProjectorScreenLiftControl for device: {device.Key}"
+                            $"Adding IProjectorScreenLiftControlMessenger for device: {device.Key}"
                         );
 
                         var messenger = new IProjectorScreenLiftControlMessenger(
                             $"{device.Key}-screenLiftControl-{Key}",
                             $"/device/{device.Key}",
                             screenLiftControl
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
+                   if (device is IDspPresets dspPresets)
+                    {
+                        Debug.Console(
+                            2,
+                            this,
+                            $"Adding IDspPresetsMessenger for device: {device.Key}"
+                        );
+
+                        var messenger = new IDspPresetsMessenger(
+                            $"{device.Key}-dspPresets-{Key}",
+                            $"/device/{device.Key}",
+                            dspPresets
                         );
 
                         AddDefaultDeviceMessenger(messenger);
@@ -2068,11 +2086,10 @@ Mobile Control Direct Server Infromation:
             var essentialsVersion = Global.AssemblyVersion;
             confObject.Info.RuntimeInfo.AssemblyVersion = essentialsVersion;
 
-#if DEBUG
-            // Set for local testing
-            confObject.RuntimeInfo.PluginVersion = "3.0.0-localBuild-1";
-
-#else
+//#if DEBUG
+//            // Set for local testing
+//            confObject.RuntimeInfo.PluginVersion = "4.0.0-localBuild";
+//#else
             // Populate the plugin version
             var pluginVersion = Assembly
                 .GetExecutingAssembly()
@@ -2086,7 +2103,7 @@ Mobile Control Direct Server Infromation:
 
                 confObject.RuntimeInfo.PluginVersion = pluginInformationalVersion;
             }
-#endif
+//#endif
             return confObject;
         }
 

@@ -759,11 +759,11 @@ namespace PepperDash.Essentials
                 configuration.DestinationList = destinationList;
             }
 
-            var levelControlList = ConfigReader.ConfigObject.GetLevelControlListForKey(room.LevelControlListKey);
+            var audioControlPointList = ConfigReader.ConfigObject.GetAudioControlPointListForKey(room.AudioControlPointListKey);
 
-            if(levelControlList != null)
+            if(audioControlPointList != null)
             {
-                configuration.LevelControlList = levelControlList;
+                configuration.AudioControlPointList = audioControlPointList;
             }
             
 
@@ -865,8 +865,8 @@ namespace PepperDash.Essentials
         [JsonProperty("destinationList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string,  DestinationListItem> DestinationList { get; set;}
 
-        [JsonProperty("levelControlList", NullValueHandling = NullValueHandling.Ignore)]
-        public Dictionary<string, LevelControlListItem> LevelControlList { get; set; }
+        [JsonProperty("audioControlPointList", NullValueHandling = NullValueHandling.Ignore)]
+        public AudioControlPointListItem AudioControlPointList { get; set; }
 
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultPresentationSourceKey { get; set; }
