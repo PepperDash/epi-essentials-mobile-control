@@ -13,7 +13,7 @@
     <Copyright>Copyright 2020</Copyright>
     <Version>4.0.0-local</Version>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-    <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Authors>PepperDash Technologies</Authors>
     <PackageId>PepperDash.Essentials.4Series.Plugin.MobileControl</PackageId>
@@ -28,7 +28,7 @@
     <DefineConstants>TRACE;SERIES4</DefineConstants>
   </PropertyGroup>  
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2508" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2509" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
