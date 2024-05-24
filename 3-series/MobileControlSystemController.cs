@@ -2102,6 +2102,9 @@ Mobile Control Direct Server Infromation:
                 var pluginInformationalVersion = fullVersionAtt.InformationalVersion;
 
                 confObject.RuntimeInfo.PluginVersion = pluginInformationalVersion;
+                confObject.RuntimeInfo.EssentialsVersion = Global.AssemblyVersion;
+                confObject.RuntimeInfo.PepperDashCoreVersion = PluginLoader.PepperDashCoreAssembly.Version;
+                confObject.RuntimeInfo.EssentialsPlugins = PluginLoader.EssentialsPluginAssemblies;
             }
 //#endif
             return confObject;
