@@ -33,6 +33,8 @@ namespace PepperDash.Essentials
 
         public string RoomKey { get; set; }
 
+        public string TouchpanelKey { get; set; }
+
         private DateTime _connectionTime;
 
         public TimeSpan ConnectedDuration
@@ -64,34 +66,47 @@ namespace PepperDash.Essentials
 
             var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
 
-            if (match.Success)
+            if (!match.Success)
             {
-                var clientId = match.Groups[1].Value;
-
-                // Inform controller of client joining
-                if (Controller != null)
-                {
-                    var clientJoined = new MobileControlMessage
-                    {
-                        Type = "/system/roomKey",
-                        ClientId = clientId,
-                        Content = RoomKey,
-                    };
-
-                    Controller.SendMessageObjectToDirectClient(clientJoined);
-
-                    var bridge = Controller.GetRoomBridge(RoomKey);
-
-                    SendUserCodeToClient(bridge, clientId);
-
-                    bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
-                }
-                else
-                {
-                    Debug.Console(2, "WebSocket UiClient Controller is null");
-                }
+                return;
             }
+            
+            var clientId = match.Groups[1].Value;
 
+            // Inform controller of client joining
+            if (Controller == null)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "WebSocket UiClient Controller is null");
+            }
+            /*
+            var clientJoined = new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = RoomKey,
+            };
+
+            Controller.SendMessageObjectToDirectClient(clientJoined);*/
+
+            var clientJoined = new MobileControlMessage
+            {
+                Type = "/system/clientJoined",
+                Content = JToken.FromObject(new
+                {
+                    clientId,
+                    roomKey = RoomKey,
+                    touchpanelKey = string.IsNullOrEmpty(TouchpanelKey) ? TouchpanelKey : string.Empty,
+                })
+            };
+
+            Controller.HandleClientMessage(JsonConvert.SerializeObject(clientJoined));
+
+            var bridge = Controller.GetRoomBridge(RoomKey);
+
+            SendUserCodeToClient(bridge, clientId);
+
+            bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);           
+            
             _connectionTime = DateTime.Now;
 
             // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
@@ -509,6 +524,7 @@ namespace PepperDash.Essentials
                     var key = client.Key;
                     var path = _wsPath + key;
                     var roomKey = client.Value.Token.RoomKey;
+                    var touchpanelKey = client.Value.Token.TouchpanelKey;
 
                     _server.AddWebSocketService(path, () =>
                     {
@@ -516,6 +532,7 @@ namespace PepperDash.Essentials
                         Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
+                        c.TouchpanelKey = touchpanelKey;
                         UiClients[key].SetClient(c);
                         return c;
                     });
