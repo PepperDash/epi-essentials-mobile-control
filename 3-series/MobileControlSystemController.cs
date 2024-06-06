@@ -2416,6 +2416,12 @@ Mobile Control Direct Server Infromation:
                     case "/system/clientJoined":
                         HandleClientJoined(message.Content);
                         break;
+                    case "/system/reboot":
+                        SystemMonitorController.ProcessorReboot();
+                        break;
+                    case "/system/programReset":
+                        SystemMonitorController.ProgramReset(InitialParametersClass.ApplicationNumber);
+                        break;
                     case "raw":
                         var wrapper = message.Content.ToObject<DeviceActionWrapper>();
                         DeviceJsonApi.DoDeviceAction(wrapper);
