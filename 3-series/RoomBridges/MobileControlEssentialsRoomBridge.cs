@@ -129,6 +129,10 @@ namespace PepperDash.Essentials
 
             if (Room is IHasCurrentVolumeControls volumeRoom)
             {
+                volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
+
+                if (volumeRoom.CurrentVolumeControls == null) return;
+
                 AddAction("/volumes/master/level", (id, content) =>
                 {
                     var msg = content.ToObject<MobileControlSimpleContent<ushort>>();
@@ -170,7 +174,6 @@ namespace PepperDash.Essentials
                 }
                 ));
 
-                volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
 
                 // Registers for initial volume events, if possible
                 if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
@@ -209,26 +212,15 @@ namespace PepperDash.Essentials
                 privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
 
-            //SetupDeviceMessengers();
 
             if (Room is IRunDefaultCallRoute defCallRm)
             {
                 AddAction("/activityVideo", (id, content) => defCallRm.RunDefaultCallRoute());
             }
 
-            //AddAction("/shutdownStart", (id, content) => Room.StartShutdown(eShutdownType.Manual));
-
-            //AddAction("/shutdownEnd", (id, content) => Room.ShutdownPromptTimer.Finish());
-
-            //AddAction("/shutdownCancel", (id, content) => Room.ShutdownPromptTimer.Cancel());
-
             Room.OnFeedback.OutputChange += OnFeedback_OutputChange;
             Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
             Room.IsWarmingUpFeedback.OutputChange += IsWarmingUpFeedback_OutputChange;
-
-            //Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
-            //Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
-            //Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
 
             AddTechRoomActions();
         }

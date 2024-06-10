@@ -239,6 +239,9 @@ namespace PepperDash.Essentials
             {
                 _roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
 
+                if(_roomCombiner == null)
+                    return;
+
                 _roomCombiner.RoomCombinationScenarioChanged += OnRoomCombinationScenarioChanged;
             });
 
