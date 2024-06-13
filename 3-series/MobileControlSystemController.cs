@@ -900,6 +900,71 @@ namespace PepperDash.Essentials
                         messengerAdded = true;
                     }
 
+                    if (device is IHasInputs<byte, int> byteIntInputs)
+                    {
+                           Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                        var messenger = new ISelectableItemsMessenger<byte>(
+                            $"{device.Key}-inputs-{Key}",
+                            $"/device/{device.Key}",
+                            byteIntInputs.Inputs,
+                            "inputs"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;  
+                    }
+
+                    if (device is IHasInputs<string> stringInputs)
+                    {
+                        Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                        var messenger = new ISelectableItemsMessenger<string>(
+                            $"{device.Key}-inputs-{Key}",
+                            $"/device/{device.Key}",
+                            stringInputs.Inputs,
+                            "inputs"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
+                    if (device is IHasInputs<byte> byteInputs)
+                    {
+                        Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                        var messenger = new ISelectableItemsMessenger<byte>(
+                            $"{device.Key}-inputs-{Key}",
+                            $"/device/{device.Key}",
+                            byteInputs.Inputs,
+                            "inputs"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
+                    if (device is IHasInputs<int> intInputs)
+                    {
+                        Debug.Console(2, this, $"Adding InputsMessenger for device: {device.Key}");
+
+                        var messenger = new ISelectableItemsMessenger<int>(
+                            $"{device.Key}-inputs-{Key}",
+                            $"/device/{device.Key}",
+                            intInputs.Inputs,
+                            "inputs"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
+
                     if (device is IMatrixRouting matrix)
                     {
                         Debug.LogMessage(
