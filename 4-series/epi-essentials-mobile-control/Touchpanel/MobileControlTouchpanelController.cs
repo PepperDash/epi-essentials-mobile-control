@@ -155,12 +155,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         }
 
         private void RegisterForExtenders()
-        {
+        {            
             if (Panel is TswXX70Base x70Panel)
             {
                 x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+
                     UpdateZoomFeedbacks();
 
                     if (!x70Panel.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue)
@@ -178,7 +179,15 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+
+                    if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number)
+                    {
+                        ZoomIncomingCallFeedback.FireUpdate();
+                    }
+                    else if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        ZoomInCallFeedback.FireUpdate();
+                    }
                 };
                 
 
@@ -218,12 +227,24 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 x60withZoomApp.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X60 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+
+                    if (a.Sig.Number == x60withZoomApp.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.Number)
+                    {
+                        AppOpenFeedback.FireUpdate();
+                    }
                 };
                 x60withZoomApp.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+
+                    if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number)
+                    {
+                        ZoomIncomingCallFeedback.FireUpdate();
+                    }
+                    else if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        ZoomInCallFeedback.FireUpdate();
+                    }
                 };
 
                 x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
