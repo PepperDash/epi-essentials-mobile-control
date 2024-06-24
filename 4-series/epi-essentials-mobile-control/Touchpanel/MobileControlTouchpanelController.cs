@@ -141,13 +141,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public void UpdateTheme(string theme)
         {
-            localConfig.Theme = theme;            
-            
+            localConfig.Theme = theme;
+
             var props = JToken.FromObject(localConfig);
 
             var deviceConfig = ConfigReader.ConfigObject.Devices.FirstOrDefault((d) => d.Key == Key);
 
-            if(deviceConfig == null) { return; }
+            if (deviceConfig == null) { return; }
 
             deviceConfig.Properties = props;
 
@@ -155,7 +155,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         }
 
         private void RegisterForExtenders()
-        {            
+        {
             if (Panel is TswXX70Base x70Panel)
             {
                 x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
@@ -168,13 +168,14 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.ShowButtonToolbar();
                         x70Panel.ExtenderButtonToolbarReservedSigs.Button2On();
-                    } else
+                    }
+                    else
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.HideButtonToolbar();
                         x70Panel.ExtenderButtonToolbarReservedSigs.Button2Off();
                     }
                 };
-                
+
 
                 x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
@@ -189,7 +190,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                         ZoomInCallFeedback.FireUpdate();
                     }
                 };
-                
+
 
                 x70Panel.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
@@ -200,7 +201,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
                     var handler = DeviceInfoChanged;
 
-                    if(handler == null)
+                    if (handler == null)
                     {
                         return;
                     }
@@ -248,7 +249,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 };
 
                 x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
-                {                    
+                {
                     DeviceInfo.MacAddress = x60withZoomApp.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
                     DeviceInfo.IpAddress = x60withZoomApp.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
 
@@ -272,10 +273,6 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public override bool CustomActivate()
         {
-            if (!(Panel is TswXX70Base) && !(Panel is TswX60WithZoomRoomAppReservedSigs))
-            {
-                return base.CustomActivate();
-            }
             var appMessenger = new ITswAppControlMessenger($"appControlMessenger-{Key}", $"/device/{Key}", this);
 
             var zoomMessenger = new ITswZoomControlMessenger($"zoomControlMessenger-{Key}", $"/device/{Key}", this);
@@ -286,6 +283,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             if (mc == null)
             {
+                return base.CustomActivate();
+            }
+
+            if (!(Panel is TswXX70Base) && !(Panel is TswX60WithZoomRoomAppReservedSigs))
+            {
+                mc.AddDeviceMessenger(themeMessenger);
+
                 return base.CustomActivate();
             }
 
