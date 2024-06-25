@@ -5,6 +5,7 @@ using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -1585,8 +1586,8 @@ Mobile Control Direct Server Infromation:
         private void HandleClientJoined(JToken content)
         {
             var clientId = content["clientId"].Value<string>();
-            var roomKey = content["roomKey"].Value<string>();            
-
+            var roomKey = content["roomKey"].Value<string>();
+            var touchpanelKey = content.SelectToken("touchpanelKey"); //content["touchpanelKey"].Value<string>();
 
             SendMessageObject(new MobileControlMessage
             {
@@ -1594,6 +1595,15 @@ Mobile Control Direct Server Infromation:
                 ClientId = clientId,
                 Content = roomKey
             });
+
+            if(touchpanelKey == null) { return; }
+            
+            SendMessageObject(new MobileControlMessage
+            {
+                Type = "/system/touchpanelKey",
+                ClientId = clientId,
+                Content = touchpanelKey.Value<string>()
+            });            
         }
 
         private void HandleUserCode(JToken content, Action<string, string> action = null)
