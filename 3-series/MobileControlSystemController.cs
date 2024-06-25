@@ -1419,7 +1419,7 @@ Mobile Control Direct Server Infromation:
 
 #if DEBUG
             // Set for local testing
-            confObject.RuntimeInfo.PluginVersion = "3.0.0-localBuild-1";
+            confObject.RuntimeInfo.PluginVersion = "4.0.0-localBuild-1";
 
 #else
             // Populate the plugin version 
