@@ -29,7 +29,7 @@
     <DefineConstants>TRACE;SERIES4</DefineConstants>
   </PropertyGroup>  
   <ItemGroup>
-    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2524" />
+    <PackageReference Include="PepperDashEssentials" Version="2.0.0-alpha-2538" />
     <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>

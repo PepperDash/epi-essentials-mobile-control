@@ -25,6 +25,8 @@ using PepperDash.Essentials.Core.CrestronIO;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Core.Logging;
+using PepperDash.Essentials.Core.Devices;
+
 
 
 #if SERIES4
@@ -758,6 +760,13 @@ namespace PepperDash.Essentials
                 configuration.AudioControlPointList = audioControlPointList;
             }
 
+            var cameraList = ConfigReader.ConfigObject.GetCameraListForKey(room.CameraListKey);
+
+            if(cameraList != null)
+            {
+                configuration.CameraList = cameraList;
+            }
+
             return configuration;
         }
     }
@@ -858,6 +867,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("audioControlPointList", NullValueHandling = NullValueHandling.Ignore)]
         public AudioControlPointListItem AudioControlPointList { get; set; }
+
+        [JsonProperty("cameraList", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, CameraListItem> CameraList { get; set; }
 
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultPresentationSourceKey { get; set; }
