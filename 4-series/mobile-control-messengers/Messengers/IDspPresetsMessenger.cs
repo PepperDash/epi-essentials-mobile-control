@@ -25,11 +25,15 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 {
                     Presets = _device.Presets
                 };
+
+                PostStatusMessage(message);
             });
 
             AddAction("/recallPreset", (id, content) =>
             {
                 var presetKey = content.ToObject<string>();
+
+
                 if (!string.IsNullOrEmpty(presetKey))
                 {
                     _device.RecallPreset(presetKey);
