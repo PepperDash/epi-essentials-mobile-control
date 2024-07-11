@@ -94,10 +94,11 @@ namespace PepperDash.Essentials.AppServer.Messengers
             // replace base path with empty string. Should leave something like /fullStatus
             var route = path.Replace(MessagePath, string.Empty); 
 
-            if(!_actions.TryGetValue(route, out var action)) {
-                Debug.Console(1, this, $"No action found for path {path}");
+            if(!_actions.TryGetValue(route, out var action)) {                
                 return;
             }
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Executing action for path {path}", this, path);
 
             action(id, content);
         }

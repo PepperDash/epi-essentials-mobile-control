@@ -2,6 +2,7 @@
 using Crestron.SimplSharpPro.DeviceSupport;
 using Crestron.SimplSharpPro.UI;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
@@ -24,7 +25,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
     //}
 
 
-    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider, IMobileControlTouchpanelController
+    public class MobileControlTouchpanelController : TouchpanelBase, IHasFeedback, ITswAppControl, ITswZoomControl, IDeviceInfoProvider, IMobileControlTouchpanelController, ITheme
     {
         private readonly MobileControlTouchpanelProperties localConfig;
         private IMobileControlRoomMessenger _bridge;
@@ -61,6 +62,10 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public bool ZoomRoomController => localConfig.ZoomRoomController;
 
+        public string Theme => localConfig.Theme;
+
+        public StringFeedback ThemeFeedback { get; private set; }
+
         public DeviceInfo DeviceInfo => new DeviceInfo();
 
         public MobileControlTouchpanelController(string key, string name, BasicTriListWithSmartObject panel, MobileControlTouchpanelProperties config) : base(key, name, panel, config)
@@ -69,6 +74,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             AddPostActivationAction(SubscribeForMobileControlUpdates);
 
+            ThemeFeedback = new StringFeedback(() => Theme);
             AppUrlFeedback = new StringFeedback(() => _appUrl);
             QrCodeUrlFeedback = new StringFeedback(() => _bridge?.QrCodeUrl);
             McServerUrlFeedback = new StringFeedback(() => _bridge?.McServerUrl);
@@ -78,13 +84,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             {
                 if (Panel is TswX60BaseClass tsX60)
                 {
-                    Debug.Console(2, this, $"x60 sending {tsX60.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.BoolValue}");
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"x60 sending {tsX60.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.BoolValue}");
                     return !tsX60.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.BoolValue;
                 }
 
                 if (Panel is TswX70Base tsX70)
                 {
-                    Debug.Console(2, this, $"x70 sending {tsX70.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue}");
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"x70 sending {tsX70.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue}");
                     return !tsX70.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue;
                 }
 
@@ -133,49 +139,69 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             RegisterForExtenders();
         }
 
+        public void UpdateTheme(string theme)
+        {
+            localConfig.Theme = theme;
+
+            var props = JToken.FromObject(localConfig);
+
+            var deviceConfig = ConfigReader.ConfigObject.Devices.FirstOrDefault((d) => d.Key == Key);
+
+            if (deviceConfig == null) { return; }
+
+            deviceConfig.Properties = props;
+
+            ConfigWriter.UpdateDeviceConfig(deviceConfig);
+        }
+
         private void RegisterForExtenders()
         {
             if (Panel is TswXX70Base x70Panel)
             {
                 x70Panel.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
-                    Debug.Console(2, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X70 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+
                     UpdateZoomFeedbacks();
 
                     if (!x70Panel.ExtenderApplicationControlReservedSigs.HideOpenedApplicationFeedback.BoolValue)
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.ShowButtonToolbar();
                         x70Panel.ExtenderButtonToolbarReservedSigs.Button2On();
-                    } else
+                    }
+                    else
                     {
                         x70Panel.ExtenderButtonToolbarReservedSigs.HideButtonToolbar();
                         x70Panel.ExtenderButtonToolbarReservedSigs.Button2Off();
                     }
                 };
-                
+
 
                 x70Panel.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
-                    Debug.Console(2, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X70 Zoom Room Ap Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
 
-                    if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number || a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number)
                     {
-                        UpdateZoomFeedbacks();
+                        ZoomIncomingCallFeedback.FireUpdate();
+                    }
+                    else if (a.Sig.Number == x70Panel.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        ZoomInCallFeedback.FireUpdate();
                     }
                 };
-                
+
 
                 x70Panel.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
                     DeviceInfo.MacAddress = x70Panel.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
                     DeviceInfo.IpAddress = x70Panel.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
 
-                    Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
 
                     var handler = DeviceInfoChanged;
 
-                    if(handler == null)
+                    if (handler == null)
                     {
                         return;
                     }
@@ -201,24 +227,33 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             {
                 x60withZoomApp.ExtenderApplicationControlReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
-                    Debug.Console(2, this, $"X60 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    UpdateZoomFeedbacks();
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X60 App Control Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+
+                    if (a.Sig.Number == x60withZoomApp.ExtenderApplicationControlReservedSigs.HideOpenApplicationFeedback.Number)
+                    {
+                        AppOpenFeedback.FireUpdate();
+                    }
                 };
                 x60withZoomApp.ExtenderZoomRoomAppReservedSigs.DeviceExtenderSigChange += (e, a) =>
                 {
-                    Debug.Console(2, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
-                    if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number || a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"X60 Zoom Room App Device Extender args: {a.Event}:{a.Sig}:{a.Sig.Type}:{a.Sig.BoolValue}:{a.Sig.UShortValue}:{a.Sig.StringValue}");
+
+                    if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomIncomingCallFeedback.Number)
                     {
-                        UpdateZoomFeedbacks();
+                        ZoomIncomingCallFeedback.FireUpdate();
+                    }
+                    else if (a.Sig.Number == x60withZoomApp.ExtenderZoomRoomAppReservedSigs.ZoomRoomActiveFeedback.Number)
+                    {
+                        ZoomInCallFeedback.FireUpdate();
                     }
                 };
 
                 x60withZoomApp.ExtenderEthernetReservedSigs.DeviceExtenderSigChange += (e, a) =>
-                {                    
+                {
                     DeviceInfo.MacAddress = x60withZoomApp.ExtenderEthernetReservedSigs.MacAddressFeedback.StringValue;
                     DeviceInfo.IpAddress = x60withZoomApp.ExtenderEthernetReservedSigs.IpAddressFeedback.StringValue;
 
-                    Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
 
                     var handler = DeviceInfoChanged;
 
@@ -238,13 +273,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         public override bool CustomActivate()
         {
-            if (!(Panel is TswXX70Base) && !(Panel is TswX60WithZoomRoomAppReservedSigs))
-            {
-                return base.CustomActivate();
-            }
             var appMessenger = new ITswAppControlMessenger($"appControlMessenger-{Key}", $"/device/{Key}", this);
 
             var zoomMessenger = new ITswZoomControlMessenger($"zoomControlMessenger-{Key}", $"/device/{Key}", this);
+
+            var themeMessenger = new ThemeMessenger($"themeMessenger-{Key}", $"/device/{Key}", this);
 
             var mc = DeviceManager.AllDevices.OfType<IMobileControl>().FirstOrDefault();
 
@@ -253,8 +286,16 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 return base.CustomActivate();
             }
 
+            if (!(Panel is TswXX70Base) && !(Panel is TswX60WithZoomRoomAppReservedSigs))
+            {
+                mc.AddDeviceMessenger(themeMessenger);
+
+                return base.CustomActivate();
+            }
+
             mc.AddDeviceMessenger(appMessenger);
             mc.AddDeviceMessenger(zoomMessenger);
+            mc.AddDeviceMessenger(themeMessenger);
 
             return base.CustomActivate();
         }
@@ -262,7 +303,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         protected override void ExtenderSystemReservedSigs_DeviceExtenderSigChange(DeviceExtender currentDeviceExtender, SigEventArgs args)
         {
-            Debug.Console(2, this, $"System Device Extender args: ${args.Event}:${args.Sig}");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, this, $"System Device Extender args: ${args.Event}:${args.Sig}");
         }
 
         protected override void SetupPanelDrivers(string roomKey)
@@ -287,14 +328,14 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         {
             foreach (var dev in DeviceManager.AllDevices)
             {
-                Debug.Console(0, this, $"{dev.Key}:{dev.GetType().Name}");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, $"{dev.Key}:{dev.GetType().Name}");
             }
 
             var mcList = DeviceManager.AllDevices.OfType<MobileControlSystemController>().ToList();
 
             if (mcList.Count == 0)
             {
-                Debug.Console(0, this, $"No Mobile Control controller found");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, $"No Mobile Control controller found");
 
                 return;
             }
@@ -306,14 +347,14 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             if (bridge == null)
             {
-                Debug.Console(0, this, $"No Mobile Control bridge for {_config.DefaultRoomKey} found ");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, $"No Mobile Control bridge for {_config.DefaultRoomKey} found ");
                 return;
             }
 
             _bridge = bridge;
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
-            _bridge.AppUrlChanged += (s, a) => { Debug.Console(0, this, "AppURL changed"); UpdateFeedbacks(s, a); };
+            _bridge.AppUrlChanged += (s, a) => { Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, "AppURL changed"); UpdateFeedbacks(s, a); };
         }
 
         public void SetAppUrl(string url)
@@ -336,7 +377,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         {
             foreach (var feedback in ZoomFeedbacks)
             {
-                Debug.Console(1, this, $"Updating {feedback.Key}");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, this, $"Updating {feedback.Key}");
                 feedback.FireUpdate();
             }
         }
@@ -366,7 +407,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             if (Panel is TswX60WithZoomRoomAppReservedSigs)
             {
-                Debug.Console(0, this, $"X60 panel does not support zoom app");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, $"X60 panel does not support zoom app");
                 return;
             }
         }
@@ -433,7 +474,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                 handler(this, new DeviceInfoEventArgs(DeviceInfo));
             }
 
-            Debug.Console(1, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, this, $"MAC: {DeviceInfo.MacAddress} IP: {DeviceInfo.IpAddress}");
         }
     }
 
@@ -450,14 +491,16 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             var comm = CommFactory.GetControlPropertiesConfig(dc);
             var props = JsonConvert.DeserializeObject<MobileControlTouchpanelProperties>(dc.Properties.ToString());
 
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Touchpanel Properties {@props}", this, props);
+
             var panel = GetPanelForType(dc.Type, comm.IpIdInt, props.ProjectName);
 
             if (panel == null)
             {
-                Debug.Console(0, "Unable to create Touchpanel for type {0}. Touchpanel Controller WILL NOT function correctly", dc.Type);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Unable to create Touchpanel for type {0}. Touchpanel Controller WILL NOT function correctly", dc.Type);
             }
 
-            Debug.Console(1, "Factory Attempting to create new MobileControlTouchpanelController");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Factory Attempting to create new MobileControlTouchpanelController");
 
             var panelController = new MobileControlTouchpanelController(dc.Key, dc.Name, panel, props);
 
@@ -507,13 +550,13 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
                     return new Ts1070(id, Global.ControlSystem);
                 else
                 {
-                    Debug.Console(0, Debug.ErrorLogLevel.Notice, "WARNING: Cannot create TSW controller with type '{0}'", type);
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "WARNING: Cannot create TSW controller with type '{0}'", type);
                     return null;
                 }
             }
             catch (Exception e)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Notice, "WARNING: Cannot create TSW base class. Panel will not function: {0}", e.Message);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "WARNING: Cannot create TSW base class. Panel will not function: {0}", e.Message);
                 return null;
             }
         }
