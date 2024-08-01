@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using PepperDash.Essentials.Core.Config;
+using System.Collections.Generic;
 
 
 namespace PepperDash.Essentials
@@ -40,5 +41,14 @@ namespace PepperDash.Essentials
     {
         [JsonProperty("pluginVersion")]
         public string PluginVersion { get; set; }
+
+        [JsonProperty("essentialsVersion")]
+        public string EssentialsVersion { get; set; }
+
+        [JsonProperty("pepperDashCoreVersion")]
+        public string PepperDashCoreVersion { get; set; }
+
+        [JsonProperty("essentialsPlugins")]
+        public List<LoadedAssembly> EssentialsPlugins { get; set; }
     }
 }

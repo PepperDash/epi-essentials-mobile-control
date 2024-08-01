@@ -77,7 +77,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
             AddAction("/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => 
             {
-                this.LogVerbose("Calling {localDevice} volume up with {value}", DeviceKey, b);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Calling {localDevice} volume up with {value}", DeviceKey, b);
                 try
                 {
                     _localDevice.VolumeUp(b);
@@ -89,8 +89,9 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
 
 
-            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => {
-                this.LogVerbose("Calling {localDevice} volume down with {value}", DeviceKey, b);
+            AddAction("/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) => 
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Calling {localDevice} volume down with {value}", DeviceKey, b);
 
                 try
                 {

@@ -25,7 +25,6 @@ using PepperDash.Essentials.Core.CrestronIO;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Core.Logging;
-using PepperDash.Essentials.Core.Routing;
 
 
 
@@ -131,6 +130,10 @@ namespace PepperDash.Essentials
 
             if (Room is IHasCurrentVolumeControls volumeRoom)
             {
+                volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
+
+                if (volumeRoom.CurrentVolumeControls == null) return;
+
                 AddAction("/volumes/master/level", (id, content) =>
                 {
                     var msg = content.ToObject<MobileControlSimpleContent<ushort>>();
@@ -172,7 +175,6 @@ namespace PepperDash.Essentials
                 }
                 ));
 
-                volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
 
                 // Registers for initial volume events, if possible
                 if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
@@ -211,26 +213,15 @@ namespace PepperDash.Essentials
                 privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
             }
 
-            //SetupDeviceMessengers();
 
             if (Room is IRunDefaultCallRoute defCallRm)
             {
                 AddAction("/activityVideo", (id, content) => defCallRm.RunDefaultCallRoute());
             }
 
-            //AddAction("/shutdownStart", (id, content) => Room.StartShutdown(eShutdownType.Manual));
-
-            //AddAction("/shutdownEnd", (id, content) => Room.ShutdownPromptTimer.Finish());
-
-            //AddAction("/shutdownCancel", (id, content) => Room.ShutdownPromptTimer.Cancel());
-
             Room.OnFeedback.OutputChange += OnFeedback_OutputChange;
             Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
             Room.IsWarmingUpFeedback.OutputChange += IsWarmingUpFeedback_OutputChange;
-
-            //Room.ShutdownPromptTimer.HasStarted += ShutdownPromptTimer_HasStarted;
-            //Room.ShutdownPromptTimer.HasFinished += ShutdownPromptTimer_HasFinished;
-            //Room.ShutdownPromptTimer.WasCancelled += ShutdownPromptTimer_WasCancelled;
 
             AddTechRoomActions();
         }
@@ -299,13 +290,13 @@ namespace PepperDash.Essentials
 
         protected override void UserCodeChange()
         {
-            this.LogDebug("Server user code changed: {userCode}", UserCode);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Server user code changed: {userCode}", this, UserCode);
 
             var qrUrl = string.Format("{0}/rooms/{1}/{3}/qr?x={2}", Parent?.Host, Parent?.SystemUuid, new Random().Next(), DefaultRoomKey);
 
             QrCodeUrl = qrUrl;
 
-            this.LogDebug("Server user code changed: {userCode} - {qrUrl}", UserCode, qrUrl);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Server user code changed: {userCode} - {qrUrl}", this, UserCode, qrUrl);
 
             OnUserCodeChanged();
         }
@@ -382,48 +373,6 @@ namespace PepperDash.Essentials
 
             PostStatusMessage(state);
         }
-
-        ///// <summary>
-        ///// Handler for cancelled shutdown
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_WasCancelled(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new {state = "wasCancelled" };
-            
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //}
-
-        ///// <summary>
-        ///// Handler for when shutdown finishes
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_HasFinished(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new { state= "hasFinished" };            
-
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //}
-
-        ///// <summary>
-        ///// Handler for when shutdown starts
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="e"></param>
-        //private void ShutdownPromptTimer_HasStarted(object sender, EventArgs e)
-        //{
-        //    var roomStatus = new
-        //    {
-        //        state = "hasStarted",
-        //        duration = Room.ShutdownPromptTimer.SecondsToCount
-        //    };
-
-        //    PostStatusMessage(JToken.FromObject(roomStatus));
-        //    // equivalent JS message:
-        //    //	Post( { type: '/room/status/', content: { shutdown: 'hasStarted', duration: Room.ShutdownPromptTimer.SecondsToCount })
-        //}
 
         /// <summary>
         /// 
@@ -568,7 +517,6 @@ namespace PepperDash.Essentials
                     }
 
                     volumes.Add("master", volume);
-
                 }
             }
 
@@ -606,18 +554,31 @@ namespace PepperDash.Essentials
                 .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
                 .Select(tp => tp.Key).ToList()
             };
-
             
             try
             {
                 var zrcTp = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
 
-                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : room.Key;
+                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : null;
             }
             catch
             {
                 configuration.ZoomRoomControllerKey = room.Key;
             }
+
+            if (room is IHasCiscoNavigatorTouchpanel ciscoNavRoom)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Setting CiscoNavigatorKey to: {ciscoNavRoom.CiscoNavigatorTouchpanelKey}", this);
+                configuration.CiscoNavigatorKey = ciscoNavRoom.CiscoNavigatorTouchpanelKey;
+            }
+
+
+
+            // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
+            var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
+
+            configuration.RoomCombinerKey = roomCombiner != null ? roomCombiner.Key : null;    
+
 
             if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
             {
@@ -719,7 +680,7 @@ namespace PepperDash.Essentials
                 }
                 else
                 {
-                    Debug.Console(2, this, "**************************** Room Has No Environmental Control Devices");
+                    Debug.Console(2, this, "Room Has No Environmental Control Devices");
                 }
             }
 
@@ -744,6 +705,22 @@ namespace PepperDash.Essentials
 
                     configuration.Destinations = multiDisplayRoom.Displays.ToDictionary(kv => kv.Key, kv => kv.Value.Key);
                 }
+            }
+
+            if(room is IHasAccessoryDevices accRoom)
+            {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Getting accessory devices config", this);
+
+                if (accRoom.AccessoryDeviceKeys == null)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection is null", this);
+                }
+                else
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection exists", this);
+
+                    configuration.AccessoryDeviceKeys = accRoom.AccessoryDeviceKeys;
+                }   
             }
 
             var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
@@ -774,7 +751,20 @@ namespace PepperDash.Essentials
             {
                 configuration.DestinationList = destinationList;
             }
-            
+
+            var audioControlPointList = ConfigReader.ConfigObject.GetAudioControlPointListForKey(room.AudioControlPointListKey);
+
+            if(audioControlPointList != null)
+            {
+                configuration.AudioControlPointList = audioControlPointList;
+            }
+
+            var cameraList = ConfigReader.ConfigObject.GetCameraListForKey(room.CameraListKey);
+
+            if(cameraList != null)
+            {
+                configuration.CameraList = cameraList;
+            }
 
             return configuration;
         }
@@ -846,6 +836,9 @@ namespace PepperDash.Essentials
         [JsonProperty("zoomRoomControllerKey", NullValueHandling = NullValueHandling.Ignore)]
         public string ZoomRoomControllerKey { get; set; }
 
+        [JsonProperty("ciscoNavigatorKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string CiscoNavigatorKey { get; set; }
+
 
         [JsonProperty("videoCodecKey", NullValueHandling = NullValueHandling.Ignore)]
         public string VideoCodecKey { get; set; }
@@ -855,6 +848,9 @@ namespace PepperDash.Essentials
         public string MatrixRoutingKey { get; set; }
         [JsonProperty("endpointKeys", NullValueHandling = NullValueHandling.Ignore)]
         public List<string> EndpointKeys { get; set; }
+
+        [JsonProperty("accessoryDeviceKeys", NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> AccessoryDeviceKeys { get; set; }
 
         [JsonProperty("defaultDisplayKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultDisplayKey { get; set; }
@@ -867,6 +863,12 @@ namespace PepperDash.Essentials
 
         [JsonProperty("destinationList", NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<string,  DestinationListItem> DestinationList { get; set;}
+
+        [JsonProperty("audioControlPointList", NullValueHandling = NullValueHandling.Ignore)]
+        public AudioControlPointListItem AudioControlPointList { get; set; }
+
+        [JsonProperty("cameraList", NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, CameraListItem> CameraList { get; set; }
 
         [JsonProperty("defaultPresentationSourceKey", NullValueHandling = NullValueHandling.Ignore)]
         public string DefaultPresentationSourceKey { get; set; }
@@ -886,6 +888,9 @@ namespace PepperDash.Essentials
         [JsonProperty("userCanChangeShareMode", NullValueHandling = NullValueHandling.Ignore)]
         public bool? UserCanChangeShareMode { get; set; }
 
+        [JsonProperty("roomCombinerKey", NullValueHandling = NullValueHandling.Ignore)]
+        public string RoomCombinerKey { get; set; }
+
         public RoomConfiguration()
         {
             Destinations = new Dictionary<eSourceListItemDestinationTypes, string>();
@@ -893,7 +898,6 @@ namespace PepperDash.Essentials
             SourceList = new Dictionary<string, SourceListItem>();
             TouchpanelKeys = new List<string>();
         }
-
     }
 
     public class EnvironmentalDeviceConfiguration

@@ -7,7 +7,6 @@ using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Web;
-using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.WebApiHandlers;
 using System;
 using System.Collections.Generic;
@@ -33,7 +32,7 @@ namespace PepperDash.Essentials
 
         public string RoomKey { get; set; }
 
-        public string TouchpanelKey { get; set; }
+        private string _clientId;
 
         private DateTime _connectionTime;
 
@@ -68,48 +67,77 @@ namespace PepperDash.Essentials
 
             if (!match.Success)
             {
+                _connectionTime = DateTime.Now;
                 return;
             }
-            
-            var clientId = match.Groups[1].Value;
 
-            // Inform controller of client joining
+            var clientId = match.Groups[1].Value;
+            _clientId = clientId;
+
             if (Controller == null)
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "WebSocket UiClient Controller is null");
+                Debug.Console(2, "WebSocket UiClient Controller is null");
+                _connectionTime = DateTime.Now;
             }
-            /*
-            var clientJoined = new MobileControlMessage
-            {
-                Type = "/system/roomKey",
-                ClientId = clientId,
-                Content = RoomKey,
-            };
 
-            Controller.SendMessageObjectToDirectClient(clientJoined);*/
-
-            var clientJoined = new MobileControlMessage
+            var clientJoinedMessage = new MobileControlMessage
             {
                 Type = "/system/clientJoined",
                 Content = JToken.FromObject(new
                 {
                     clientId,
                     roomKey = RoomKey,
-                    touchpanelKey = string.IsNullOrEmpty(TouchpanelKey) ? TouchpanelKey : string.Empty,
                 })
             };
 
-            Controller.HandleClientMessage(JsonConvert.SerializeObject(clientJoined));
+            Controller.HandleClientMessage(JsonConvert.SerializeObject(clientJoinedMessage));
+            // Inform controller of client joining
+            /*
+            var clientJoined = new MobileControlMessage
+            {
+                Type = "/system/roomKey",
+                ClientId = clientId,
+                Content = RoomKey,
+            };                    
+
+            Controller.SendMessageObjectToDirectClient(clientJoined);
+
+            if (Controller.Config.EnableUiMirroring)
+            {
+                var uiMirrorEnabled = new MobileControlMessage
+                {
+                    Type = "/system/uiMirrorEnabled",
+                    ClientId = clientId,
+                    Content = JToken.FromObject(new MobileControlSimpleContent<bool> { Value = Controller.Config.EnableUiMirroring }),
+                };
+
+                var uiState = new MobileControlMessage
+                {
+                    Type = "/system/uiMirrorState",
+                    ClientId = clientId,
+                    Content = Controller.LastUiState,
+                };
+
+                Controller.SendMessageObjectToDirectClient(uiMirrorEnabled);
+
+                Controller.SendMessageObjectToDirectClient(uiState);
+            }*/
 
             var bridge = Controller.GetRoomBridge(RoomKey);
 
+            if (bridge == null) return;
+
             SendUserCodeToClient(bridge, clientId);
 
-            bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);           
-            
-            _connectionTime = DateTime.Now;
+            bridge.UserCodeChanged -= Bridge_UserCodeChanged;
+            bridge.UserCodeChanged += Bridge_UserCodeChanged;
 
             // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
+        }
+
+        private void Bridge_UserCodeChanged(object sender, EventArgs e)
+        {
+            SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, _clientId);
         }
 
         private void SendUserCodeToClient(MobileControlBridgeBase bridge, string clientId)
@@ -188,7 +216,7 @@ namespace PepperDash.Essentials
         {
             get
             {
-                return string.Format("{0}:{1}-tokens", Global.ControlSystem.ProgramNumber, this.Key);
+                return string.Format("{0}:{1}-tokens", Global.ControlSystem.ProgramNumber, Key);
             }
         }
 
@@ -301,35 +329,42 @@ namespace PepperDash.Essentials
 
         public override void Initialize()
         {
-            base.Initialize();
-
-            _server = new HttpServer(Port, false);
-
-            _server.OnGet += Server_OnGet;
-
-            _server.OnOptions += Server_OnOptions;
-
-            if (_parent.Config.DirectServer.Logging.EnableRemoteLogging)
+            try
             {
-                _server.OnPost += Server_OnPost;
+                base.Initialize();
+
+                _server = new HttpServer(Port, false);
+
+                _server.OnGet += Server_OnGet;
+
+                _server.OnOptions += Server_OnOptions;
+
+                if (_parent.Config.DirectServer.Logging.EnableRemoteLogging)
+                {
+                    _server.OnPost += Server_OnPost;
+                }
+
+                CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+
+                _server.Start();
+
+                if (_server.IsListening)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Mobile Control WebSocket Server listening on port {port}", this, _server.Port);
+                }
+
+                CrestronEnvironment.ProgramStatusEventHandler += OnProgramStop;
+
+                RetrieveSecret();
+
+                CreateFolderStructure();
+
+                AddClientsForTouchpanels();
             }
-
-            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-            _server.Start();
-
-            if (_server.IsListening)
+            catch (Exception ex)
             {
-                Debug.Console(0, this, "Mobile Control WebSocket Server lisening on port: {0}", _server.Port);
+                Debug.LogMessage(ex, "Exception intializing websocket server", this);
             }
-
-            CrestronEnvironment.ProgramStatusEventHandler += OnProgramStop;
-
-            RetrieveSecret();
-
-            CreateFolderStructure();
-
-            AddClientsForTouchpanels();
         }
 
         private void AddClientsForTouchpanels()
@@ -338,10 +373,20 @@ namespace PepperDash.Essentials
                 .OfType<IMobileControlTouchpanelController>().Where(tp => tp.UseDirectServer);
 
 
-            var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
+            var touchpanelsToAdd = new List<IMobileControlTouchpanelController>();
 
+            if (_secret != null)
+            {
+                var newTouchpanels = touchpanels.Where(tp => !_secret.Tokens.Any(t => t.Value.TouchpanelKey != null && t.Value.TouchpanelKey.Equals(tp.Key, StringComparison.InvariantCultureIgnoreCase)));
 
-            foreach (var client in newTouchpanels)
+                touchpanelsToAdd.AddRange(newTouchpanels);
+            }
+            else
+            {
+                touchpanelsToAdd.AddRange(touchpanels);
+            }
+
+            foreach (var client in touchpanelsToAdd)
             {
                 var bridge = _parent.GetRoomBridge(client.DefaultRoomKey);
 
@@ -359,6 +404,12 @@ namespace PepperDash.Essentials
                     continue;
                 }
             }
+
+            var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
+
+            var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Processor IP: {processorIp}", this);
 
             foreach (var touchpanel in touchpanels.Select(tp =>
             {
@@ -380,10 +431,6 @@ namespace PepperDash.Essentials
                     Debug.Console(2, this, $"Unable to find room messenger for {touchpanel.Touchpanel.DefaultRoomKey}");
                     continue;
                 }
-
-                var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
-
-                var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
 
                 var appUrl = $"http://{processorIp}:{_parent.Config.DirectServer.Port}/mc/app?token={touchpanel.Key}";
 
@@ -486,10 +533,9 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, "Error getting application configuration: {0}", ex.Message);
-                Debug.Console(2, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.LogMessage(ex, "Error getting application configuration", this);
 
-                Debug.Console(2, "Config Object: {0} from config: {1}", config, _parent.Config);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Config Object: {config} from {parentConfig}", this, config, _parent.Config);
             }
 
             return config;
@@ -508,7 +554,7 @@ namespace PepperDash.Essentials
 
             if (secret != null)
             {
-                Debug.Console(2, this, "Secret successfully retrieved");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
 
                 // populate the local secrets object
                 _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
@@ -524,15 +570,14 @@ namespace PepperDash.Essentials
                     var key = client.Key;
                     var path = _wsPath + key;
                     var roomKey = client.Value.Token.RoomKey;
-                    var touchpanelKey = client.Value.Token.TouchpanelKey;
 
                     _server.AddWebSocketService(path, () =>
                     {
                         var c = new UiClient();
-                        Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
-                        c.TouchpanelKey = touchpanelKey;
                         UiClients[key].SetClient(c);
                         return c;
                     });
@@ -549,10 +594,10 @@ namespace PepperDash.Essentials
             }
             else
             {
-                Debug.Console(2, this, "No secret found");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
             }
 
-            Debug.Console(2, this, "{0} UiClients restored from secrets data", UiClients.Count);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
         }
 
         /// <summary>
@@ -560,16 +605,30 @@ namespace PepperDash.Essentials
         /// </summary>
         public void UpdateSecret()
         {
-            _secret.Tokens.Clear();
-
-            foreach (var uiClientContext in UiClients)
+            try
             {
-                _secret.Tokens.Add(uiClientContext.Key, uiClientContext.Value.Token);
+                if (_secret == null)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Secret is null", this);
+
+                    _secret = new ServerTokenSecrets(string.Empty);
+                }
+
+                _secret.Tokens.Clear();
+
+                foreach (var uiClientContext in UiClients)
+                {
+                    _secret.Tokens.Add(uiClientContext.Key, uiClientContext.Value.Token);
+                }
+
+                var serializedSecret = JsonConvert.SerializeObject(_secret);
+
+                _secretProvider.SetSecret(SecretProviderKey, serializedSecret);
             }
-
-            var serializedSecret = JsonConvert.SerializeObject(_secret);
-
-            _secretProvider.SetSecret(SecretProviderKey, serializedSecret);
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception updating secret", this);
+            }
         }
 
         /// <summary>
@@ -655,17 +714,17 @@ namespace PepperDash.Essentials
             _server.AddWebSocketService(path, () =>
             {
                 var c = new UiClient();
-                Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Constructing UiClient with id: {0}", this, key);
                 c.Controller = _parent;
                 c.RoomKey = bridge.RoomKey;
                 UiClients[key].SetClient(c);
                 return c;
             });
 
-            Debug.Console(0, this, $"Added new WebSocket UiClient service at path: {path}");
-            Debug.Console(0, this, $"Token: {key}");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Added new WebSocket UiClient service at path: {path}", this, path);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Token: {@token}", this, token);
 
-            Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "{serviceCount} websocket services present", this, _server.WebSocketServices.Count);
 
             UpdateSecret();
 
@@ -789,7 +848,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.LogMessage(ex, "Caught an exception in the OnGet handler", this);
             }
         }
 
@@ -833,14 +892,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
-                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
-                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
-                }
+                Debug.LogMessage(ex, "Caught an exception in the OnPost handler", this);
             }
         }
 
@@ -859,15 +911,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
-                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
-                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
-                }
-
+                Debug.LogMessage(ex, "Caught an exception in the OnPost handler", this);
             }
         }
 
@@ -970,8 +1014,10 @@ namespace PepperDash.Essentials
             var qp = req.QueryString;
             var token = qp["token"];
 
+            string filePath = path.Split('?')[0];
+
             // remove the token from the path if found
-            string filePath = path.Replace(string.Format("?token={0}", token), "");
+            //string filePath = path.Replace(string.Format("?token={0}", token), "");
 
             // if there's no file suffix strip any extra path data after the base href
             if (filePath != _userAppBaseHref && !filePath.Contains(".") && (!filePath.EndsWith(_userAppBaseHref) || !filePath.EndsWith(_userAppBaseHref += "/")))

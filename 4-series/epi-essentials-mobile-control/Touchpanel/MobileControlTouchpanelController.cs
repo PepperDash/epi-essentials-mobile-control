@@ -354,7 +354,12 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             _bridge = bridge;
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
-            _bridge.AppUrlChanged += (s, a) => { Debug.LogMessage(Serilog.Events.LogEventLevel.Information, this, "AppURL changed"); UpdateFeedbacks(s, a); };
+            _bridge.AppUrlChanged += (s, a) => { 
+                Debug.Console(0, this, "AppURL changed");
+                UpdateFeedbacks(s, a); 
+            };
+
+            SetAppUrl(_bridge.AppUrl);
         }
 
         public void SetAppUrl(string url)
@@ -490,8 +495,6 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
         {
             var comm = CommFactory.GetControlPropertiesConfig(dc);
             var props = JsonConvert.DeserializeObject<MobileControlTouchpanelProperties>(dc.Properties.ToString());
-
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Touchpanel Properties {@props}", this, props);
 
             var panel = GetPanelForType(dc.Type, comm.IpIdInt, props.ProjectName);
 
