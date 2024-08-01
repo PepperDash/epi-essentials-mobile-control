@@ -34,6 +34,7 @@ namespace PepperDash.Essentials.Touchpanel
                 PostStatusMessage(JToken.FromObject(new
                 {
                     incomingCall = a.BoolValue,
+                    inCall = _zoomControl.ZoomInCallFeedback.BoolValue
                 }));
             };
 
@@ -44,6 +45,7 @@ namespace PepperDash.Essentials.Touchpanel
                 new
                 {
                     inCall = a.BoolValue,
+                    incomingCall = _zoomControl.ZoomIncomingCallFeedback.BoolValue
                 }));
             };
         }

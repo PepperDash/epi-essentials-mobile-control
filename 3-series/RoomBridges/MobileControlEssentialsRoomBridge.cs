@@ -25,7 +25,6 @@ using PepperDash.Essentials.Core.CrestronIO;
 using PepperDash.Essentials.Core.Lighting;
 using PepperDash.Essentials.Core.Shades;
 using PepperDash.Core.Logging;
-using PepperDash.Essentials.Core.Devices;
 
 
 
