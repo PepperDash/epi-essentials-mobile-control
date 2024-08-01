@@ -10,6 +10,7 @@ using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.WebScripting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
 using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
@@ -2358,7 +2359,8 @@ Mobile Control Direct Server Infromation:
         private void HandleClientJoined(JToken content)
         {
             var clientId = content["clientId"].Value<string>();
-            var roomKey = content["roomKey"].Value<string>();            
+            var roomKey = content["roomKey"].Value<string>();
+            var touchpanelKey = content.SelectToken("touchpanelKey"); //content["touchpanelKey"].Value<string>();
 
             if (_roomCombiner == null)
             {

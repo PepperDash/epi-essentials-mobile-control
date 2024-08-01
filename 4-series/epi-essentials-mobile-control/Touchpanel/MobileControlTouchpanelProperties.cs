@@ -13,5 +13,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         [JsonProperty("buttonToolbarTimeoutInS")]
         public ushort ButtonToolbarTimoutInS { get; set; } = 0;
+
+        [JsonProperty("theme")]
+        public string Theme { get; set; } = "light";
     }
 }

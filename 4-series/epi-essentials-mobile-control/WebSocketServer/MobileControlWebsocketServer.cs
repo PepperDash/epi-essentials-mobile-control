@@ -1,6 +1,5 @@
 ﻿using Crestron.SimplSharp;
 using Crestron.SimplSharp.WebScripting;
-using Crestron.SimplSharpPro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
@@ -8,7 +7,6 @@ using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Web;
-using PepperDash.Essentials.Devices.Common.TouchPanel;
 using PepperDash.Essentials.WebApiHandlers;
 using System;
 using System.Collections.Generic;
@@ -218,7 +216,7 @@ namespace PepperDash.Essentials
         {
             get
             {
-                return string.Format("{0}:{1}-tokens", Global.ControlSystem.ProgramNumber, this.Key);
+                return string.Format("{0}:{1}-tokens", Global.ControlSystem.ProgramNumber, Key);
             }
         }
 
@@ -331,35 +329,42 @@ namespace PepperDash.Essentials
 
         public override void Initialize()
         {
-            base.Initialize();
-
-            _server = new HttpServer(Port, false);
-
-            _server.OnGet += Server_OnGet;
-
-            _server.OnOptions += Server_OnOptions;
-
-            if (_parent.Config.DirectServer.Logging.EnableRemoteLogging)
+            try
             {
-                _server.OnPost += Server_OnPost;
+                base.Initialize();
+
+                _server = new HttpServer(Port, false);
+
+                _server.OnGet += Server_OnGet;
+
+                _server.OnOptions += Server_OnOptions;
+
+                if (_parent.Config.DirectServer.Logging.EnableRemoteLogging)
+                {
+                    _server.OnPost += Server_OnPost;
+                }
+
+                CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+
+                _server.Start();
+
+                if (_server.IsListening)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Mobile Control WebSocket Server listening on port {port}", this, _server.Port);
+                }
+
+                CrestronEnvironment.ProgramStatusEventHandler += OnProgramStop;
+
+                RetrieveSecret();
+
+                CreateFolderStructure();
+
+                AddClientsForTouchpanels();
             }
-
-            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-            _server.Start();
-
-            if (_server.IsListening)
+            catch (Exception ex)
             {
-                Debug.Console(0, this, "Mobile Control WebSocket Server lisening on port: {0}", _server.Port);
+                Debug.LogMessage(ex, "Exception intializing websocket server", this);
             }
-
-            CrestronEnvironment.ProgramStatusEventHandler += OnProgramStop;
-
-            RetrieveSecret();
-
-            CreateFolderStructure();
-
-            AddClientsForTouchpanels();
         }
 
         private void AddClientsForTouchpanels()
@@ -528,10 +533,9 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, "Error getting application configuration: {0}", ex.Message);
-                Debug.Console(2, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.LogMessage(ex, "Error getting application configuration", this);
 
-                Debug.Console(2, "Config Object: {0} from config: {1}", config, _parent.Config);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Config Object: {config} from {parentConfig}", this, config, _parent.Config);
             }
 
             return config;
@@ -550,7 +554,7 @@ namespace PepperDash.Essentials
 
             if (secret != null)
             {
-                Debug.Console(2, this, "Secret successfully retrieved");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
 
                 // populate the local secrets object
                 _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
@@ -570,7 +574,8 @@ namespace PepperDash.Essentials
                     _server.AddWebSocketService(path, () =>
                     {
                         var c = new UiClient();
-                        Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+
                         c.Controller = _parent;
                         c.RoomKey = roomKey;
                         UiClients[key].SetClient(c);
@@ -589,10 +594,10 @@ namespace PepperDash.Essentials
             }
             else
             {
-                Debug.Console(2, this, "No secret found");
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
             }
 
-            Debug.Console(2, this, "{0} UiClients restored from secrets data", UiClients.Count);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
         }
 
         /// <summary>
@@ -600,16 +605,30 @@ namespace PepperDash.Essentials
         /// </summary>
         public void UpdateSecret()
         {
-            _secret.Tokens.Clear();
-
-            foreach (var uiClientContext in UiClients)
+            try
             {
-                _secret.Tokens.Add(uiClientContext.Key, uiClientContext.Value.Token);
+                if (_secret == null)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Secret is null", this);
+
+                    _secret = new ServerTokenSecrets(string.Empty);
+                }
+
+                _secret.Tokens.Clear();
+
+                foreach (var uiClientContext in UiClients)
+                {
+                    _secret.Tokens.Add(uiClientContext.Key, uiClientContext.Value.Token);
+                }
+
+                var serializedSecret = JsonConvert.SerializeObject(_secret);
+
+                _secretProvider.SetSecret(SecretProviderKey, serializedSecret);
             }
-
-            var serializedSecret = JsonConvert.SerializeObject(_secret);
-
-            _secretProvider.SetSecret(SecretProviderKey, serializedSecret);
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception updating secret", this);
+            }
         }
 
         /// <summary>
@@ -695,17 +714,17 @@ namespace PepperDash.Essentials
             _server.AddWebSocketService(path, () =>
             {
                 var c = new UiClient();
-                Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Constructing UiClient with id: {0}", this, key);
                 c.Controller = _parent;
                 c.RoomKey = bridge.RoomKey;
                 UiClients[key].SetClient(c);
                 return c;
             });
 
-            Debug.Console(0, this, $"Added new WebSocket UiClient service at path: {path}");
-            Debug.Console(0, this, $"Token: {key}");
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Added new WebSocket UiClient service at path: {path}", this, path);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Token: {@token}", this, token);
 
-            Debug.Console(2, this, "{0} websocket services present", _server.WebSocketServices.Count);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "{serviceCount} websocket services present", this, _server.WebSocketServices.Count);
 
             UpdateSecret();
 
@@ -829,7 +848,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}\r{1}\r{2}", ex.Message, ex.InnerException, ex.StackTrace);
+                Debug.LogMessage(ex, "Caught an exception in the OnGet handler", this);
             }
         }
 
@@ -873,14 +892,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
-                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
-                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
-                }
+                Debug.LogMessage(ex, "Caught an exception in the OnPost handler", this);
             }
         }
 
@@ -899,15 +911,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception ex)
             {
-                Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnPost handler {0}", ex.Message);
-                Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.StackTrace);
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, Debug.ErrorLogLevel.Error, "Caught an exception in the OnGet handler {0}", ex.InnerException.Message);
-                    Debug.Console(2, Debug.ErrorLogLevel.Error, "StackTrace: {0}", ex.InnerException.StackTrace);
-                }
-
+                Debug.LogMessage(ex, "Caught an exception in the OnPost handler", this);
             }
         }
 
