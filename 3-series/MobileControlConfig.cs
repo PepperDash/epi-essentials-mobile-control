@@ -116,6 +116,21 @@ namespace PepperDash.Essentials
 
         [JsonProperty("enableRemoteLogging")]
         public bool Logging { get; set; }
+
+        [JsonProperty("partnerMetadata", NullValueHandling = NullValueHandling.Ignore)]
+        public List<MobileControlPartnerMetadata> PartnerMetadata { get; set; }
+    }
+
+    public class MobileControlPartnerMetadata
+    {
+        [JsonProperty("role")]
+        public string Role { get; set; }
+
+        [JsonProperty("description")]
+        public string Description { get; set; }
+
+        [JsonProperty("logo")]
+        public string LogoPath { get; set; }
     }
 
     public class McMode
