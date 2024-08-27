@@ -285,6 +285,30 @@ namespace PepperDash.Essentials
                 Port = customPort;
             }
 
+            if(CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter) != -1 && 
+                parent.Config.DirectServer.AutomaticallyForwardPortToCSLAN == true)
+            {
+                try
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Automatically forwarding port {0} to CS LAN", Port);
+
+                    var csAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
+                    var csIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, csAdapterId);
+
+                    var result = CrestronEthernetHelper.AddPortForwarding((ushort)Port, (ushort)Port, csIp, CrestronEthernetHelper.ePortMapTransport.TCP);
+
+                    if (result != CrestronEthernetHelper.PortForwardingUserPatRetCodes.NoErr)
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Error adding port forwarding: {0}", result);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogMessage(ex, "Error automatically forwarding port to CS LAN");
+                }
+            }
+
+
             UiClients = new Dictionary<string, UiClientContext>();
 
             //_joinTokens = new Dictionary<string, JoinToken>();
@@ -527,7 +551,8 @@ namespace PepperDash.Essentials
                                 }
                             }
                         },
-                        Logging = _parent.Config.ApplicationConfig.Logging
+                        Logging = _parent.Config.ApplicationConfig.Logging,
+                        PartnerMetadata = _parent.Config.ApplicationConfig.PartnerMetadata ?? new List<MobileControlPartnerMetadata>()
                     };
                 }
             }

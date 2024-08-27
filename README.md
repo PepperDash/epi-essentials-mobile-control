@@ -13,9 +13,9 @@ A user gets served the Mobile Control User App to their browser via HTTP and sub
 
 ## Download Links for Dependencies
 
-[PepperDash Essentials - Releases](https://github.com/PepperDash/Essentials/releases) (v1.10.0 minimum)
+[PepperDash Essentials - Releases](https://github.com/PepperDash/Essentials/releases) (v2.0.0 minimum)
 
-[PepperDash Mobile Control App - Releases](https://github.com/PepperDash-Products/mobile-control-app/releases) (v3.0.1 minimum)
+[PepperDash Mobile Control React App Core - Releases](https://github.com/PepperDash/mobile-control-react-app-core)
 
 ## Direct Connection to 4-Series Processor with or without Edge Server
 
@@ -62,8 +62,20 @@ This file is created automatically when program starts up and served up to the c
       "listPageText": "Please select your room",
       "loginHelpText": "Please select your room from the list, then enter the code shown on the display in the room. (Configurable message)",
       "passcodePageText": "Please enter the code shown on this room's display"
+    },
+    "partnerMetadata": [
+    {
+        "role": "consultant",
+        "description": "Design and consulting by [Consultant Name]",
+        "logoPath": "logo/consultant.png"
+    },
+    {
+        "role": "integrator",
+        "description": "Integration services by [Integrator Name]",
+        "logoPath": "logo/integrator.png"
     }
-  }
+]
+}
 }
 ```
 
@@ -75,7 +87,6 @@ This file is created automatically when program starts up and served up to the c
     "name": "Mobile Control",
     "type": "mobileControl",
     "group": "api",
-    "uid": 25,
     "id": "c9138b74-ae67-4837-89ee-e1fe91e0f0d8",
     "properties": {
         "clientAppUrl": "http://{server-hostname}/mc/gateway", // url of the gateway app on an Edge Server
@@ -96,9 +107,21 @@ This file is created automatically when program starts up and served up to the c
                     "loginHelpText": "Please select your room from the list, then enter the code shown on the display.",
                     "passcodePageText": "Please enter the code shown on this room's display"
                 }
-            }
+            },
+            "partnerMetadata": [
+                {
+                    "role": "consultant",
+                    "description": "Design and consulting by [Consultant Name]",
+                    "logoPath": "logo/consultant.png"
+                },
+                {
+                    "role": "integrator",
+                    "description": "Integration services by [Integrator Name]",
+                    "logoPath": "logo/integrator.png"
+                }
+            ]
         }
-    }
+}
 }
 ```
 
@@ -157,33 +180,12 @@ Duration: Not Connected
 DIN-AP4>
 ```
 
-## Setting up a TSXX70 Panel Using Console Commands
+## Messengers for communicating between Essentials Devices and the Client User Interface
 
-### Crestron TS(W)-x70
+The included library `mobile-control-messengers` contains the `MessengerBase` class and a set of messengers that correspond either to common abstract base classes or to specific interfaces and are used to generate a dynamic API for the User Interface client applications to integrate with.
 
-Set the `appmode` to `generalweb`
+As part of the Essentials program startup cycle, this plugin will iterate through the loaded devices and rooms and attempt to create messengers for each device for every base class or interface that device can successfully be cast as.
 
-```plaintext
-appmode generalweb
-```
+In addition to the automatically instantiated messengers, plugin devices can reference the `mobile-control-messengers` project via nuget as a dependency and thus inherit from the `MessengerBase` class to create custom messengers.  These custom messengers will have to be manually added to the `MobileControlSystemController` instance.
 
-Restart the app
-
-```plaintext
-apprestart
-```
-
-Set the generalweb URL
-setserialjoin 28535 {url}
-
-```plaintext
-// example set
-setserialjoin 28535 http://10.0.0.223:50001/mc/app?token=81c4eb3c-dbc5-410c-8816-90500f474236
-Get the generalweb URL
-getserialjoin 28535
-```
-
-```plaintext
-// example return
-SERIAL=http://10.0.0.223:50001/mc/app?token=81c4eb3c-dbc5-410c-8816-90500f474236
-```
+To view the paths at runtime, the console command `mobilecontrolshowactionpaths:[slotnumber]` will print all the action paths for the mobile control API. 
