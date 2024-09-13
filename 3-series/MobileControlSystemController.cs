@@ -986,6 +986,46 @@ namespace PepperDash.Essentials
                         messengerAdded = true;
                     }
 
+                    if (device is ITemperatureSensor tempSensor)
+                    {
+                        Debug.LogMessage(
+                            Serilog.Events.LogEventLevel.Verbose,
+                            "Adding ITemperatureSensor for device: {key}",
+                            this,
+                            device.Key
+                        );
+
+                        var messenger = new ITemperatureSensorMessenger(
+                            $"{device.Key}-tempSensor",
+                            tempSensor,
+                            $"/device/{device.Key}"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
+                    if (device is IHumiditySensor humSensor)
+                    {
+                        Debug.LogMessage(
+                            Serilog.Events.LogEventLevel.Verbose,
+                            "Adding IHumiditySensor for device: {key}",
+                            this,
+                            device.Key
+                        );
+
+                        var messenger = new IHumiditySensorMessenger(
+                            $"{device.Key}-humiditySensor",
+                            humSensor,
+                            $"/device/{device.Key}"
+                        );
+
+                        AddDefaultDeviceMessenger(messenger);
+
+                        messengerAdded = true;
+                    }
+
                     if (device is IEssentialsRoomCombiner roomCombiner)
                     {
                         Debug.Console(
