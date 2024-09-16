@@ -354,7 +354,7 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(GenerateClientTokenFromConsole, "MobileAddUiClient", "Adds a client and generates a token. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(RemoveToken, "MobileRemoveUiClient", "Removes a client. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand((s) => PrintClientInfo(), "MobileGetClientInfo", "Displays the current client info", ConsoleAccessLevelEnum.AccessOperator);
-            CrestronConsole.AddNewConsoleCommand(RemoveAllTokens, "MobileRemoveAllUiClients", "Removes all clients", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(RemoveAllTokens, "MobileRemoveAllClients", "Removes all clients", ConsoleAccessLevelEnum.AccessOperator);
         }
 
 
@@ -802,7 +802,13 @@ namespace PepperDash.Essentials
         {
             if (s == "?" || string.IsNullOrEmpty(s))
             {
-                CrestronConsole.ConsoleCommandResponse(@"Removes all clients from the server");
+                CrestronConsole.ConsoleCommandResponse(@"Removes all clients from the server.  To execute add 'confirm' to command");
+                return;
+            }
+
+            if (s != "confirm")
+            {
+                CrestronConsole.ConsoleCommandResponse(@"To remove all clients, add 'confirm' to the command");
                 return;
             }
 
@@ -816,8 +822,6 @@ namespace PepperDash.Essentials
                 var path = _wsPath + client.Key;
                 if (_server.RemoveWebSocketService(path))
                 {
-                    UiClients.Remove(client.Key);
-
                     CrestronConsole.ConsoleCommandResponse(string.Format("Client removed with token: {0}", client.Key));
                 }
                 else
@@ -825,6 +829,8 @@ namespace PepperDash.Essentials
                     CrestronConsole.ConsoleCommandResponse(string.Format("Unable to remove client with token : {0}", client.Key));
                 }
             }
+
+            UiClients.Clear();
 
             UpdateSecret();
         }
