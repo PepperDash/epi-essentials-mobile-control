@@ -26,7 +26,7 @@ namespace PepperDash.Essentials
             }
             catch (Exception e)
             {
-                Debug.Console(2, "Error building MobileConttrolSystemController", e);
+                Debug.LogMessage(e, "Error building Mobile Control System Controller");
                 return null;
             }
         }

@@ -285,11 +285,13 @@ namespace PepperDash.Essentials
                 Port = customPort;
             }
 
-            if(CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter) != -1 && 
-                parent.Config.DirectServer.AutomaticallyForwardPortToCSLAN == true)
+            if(parent.Config.DirectServer.AutomaticallyForwardPortToCSLAN == true)
             {
                 try
                 {
+                    CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
+
+
                     Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Automatically forwarding port {0} to CS LAN", Port);
 
                     var csAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
@@ -301,6 +303,10 @@ namespace PepperDash.Essentials
                     {
                         Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Error adding port forwarding: {0}", result);
                     }
+                }
+                catch (ArgumentException)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "This processor does not have a CS LAN", this);
                 }
                 catch (Exception ex)
                 {
@@ -571,58 +577,90 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RetrieveSecret()
         {
-            // Add secret provider
-            _secretProvider = new WebSocketServerSecretProvider(SecretProviderKey);
-
-            // Check for existing secrets
-            var secret = _secretProvider.GetSecret(SecretProviderKey);
-
-            if (secret != null)
+            try
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
+                // Add secret provider
+                _secretProvider = new WebSocketServerSecretProvider(SecretProviderKey);
 
-                // populate the local secrets object
-                _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
+                // Check for existing secrets
+                var secret = _secretProvider.GetSecret(SecretProviderKey);
 
-                // populate the _uiClient collection
-                foreach (var token in _secret.Tokens)
+                if (secret != null)
                 {
-                    UiClients.Add(token.Key, new UiClientContext(token.Value));
-                }
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
 
-                foreach (var client in UiClients)
-                {
-                    var key = client.Key;
-                    var path = _wsPath + key;
-                    var roomKey = client.Value.Token.RoomKey;
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Secret: {0}", this, secret.Value.ToString());
 
-                    _server.AddWebSocketService(path, () =>
+
+                    // populate the local secrets object
+                    _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
+
+                    if (_secret != null && _secret.Tokens != null)
                     {
-                        var c = new UiClient();
-                        Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+                        // populate the _uiClient collection
+                        foreach (var token in _secret.Tokens)
+                        {
+                            if(token.Value == null)
+                            {
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "Token value is null", this);
+                                continue;
+                            }   
 
-                        c.Controller = _parent;
-                        c.RoomKey = roomKey;
-                        UiClients[key].SetClient(c);
-                        return c;
-                    });
+                            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Adding token: {0} for room: {1}", this, token.Key, token.Value.RoomKey);
+                            
+                            if(UiClients == null)
+                            {
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "UiClients is null", this);
+                                UiClients = new Dictionary<string, UiClientContext>();
+                            }
+                            
+                            UiClients.Add(token.Key, new UiClientContext(token.Value));
+                        }
+                    }
+
+                    if (UiClients.Count > 0)
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Restored {uiClientCount} UiClients from secrets data", this, UiClients.Count);
+
+                        foreach (var client in UiClients)
+                        {
+                            var key = client.Key;
+                            var path = _wsPath + key;
+                            var roomKey = client.Value.Token.RoomKey;
+
+                            _server.AddWebSocketService(path, () =>
+                            {
+                                var c = new UiClient();
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+
+                                c.Controller = _parent;
+                                c.RoomKey = roomKey;
+                                UiClients[key].SetClient(c);
+                                return c;
+                            });
 
 
-                    //_server.WebSocketServices.AddService<UiClient>(path, (c) =>
-                    //{
-                    //    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
-                    //    c.Controller = _parent;
-                    //    c.RoomKey = roomKey;
-                    //    UiClients[key].SetClient(c);
-                    //});
+                            //_server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                            //{
+                            //    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                            //    c.Controller = _parent;
+                            //    c.RoomKey = roomKey;
+                            //    UiClients[key].SetClient(c);
+                            //});
+                        }
+                    }
                 }
-            }
-            else
-            {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
-            }
+                else
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
+                }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception retrieving secret", this);
+            }
         }
 
         /// <summary>
