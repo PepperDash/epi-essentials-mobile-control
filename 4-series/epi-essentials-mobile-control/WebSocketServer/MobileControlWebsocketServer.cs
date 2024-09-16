@@ -354,6 +354,7 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(GenerateClientTokenFromConsole, "MobileAddUiClient", "Adds a client and generates a token. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(RemoveToken, "MobileRemoveUiClient", "Removes a client. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand((s) => PrintClientInfo(), "MobileGetClientInfo", "Displays the current client info", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(RemoveAllTokens, "MobileRemoveAllUiClients", "Removes all clients", ConsoleAccessLevelEnum.AccessOperator);
         }
 
 
@@ -792,6 +793,40 @@ namespace PepperDash.Essentials
             UpdateSecret();
 
             return (key, path);
+        }
+
+        /// <summary>
+        /// Removes all clients from the server
+        /// </summary>
+        private void RemoveAllTokens(string s)
+        {
+            if (s == "?" || string.IsNullOrEmpty(s))
+            {
+                CrestronConsole.ConsoleCommandResponse(@"Removes all clients from the server");
+                return;
+            }
+
+            foreach (var client in UiClients)
+            {
+                if (client.Value.Client != null && client.Value.Client.Context.WebSocket.IsAlive)
+                {
+                    client.Value.Client.Context.WebSocket.Close(CloseStatusCode.Normal, "Server Shutting Down");
+                }
+
+                var path = _wsPath + client.Key;
+                if (_server.RemoveWebSocketService(path))
+                {
+                    UiClients.Remove(client.Key);
+
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Client removed with token: {0}", client.Key));
+                }
+                else
+                {
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to remove client with token : {0}", client.Key));
+                }
+            }
+
+            UpdateSecret();
         }
 
         /// <summary>
