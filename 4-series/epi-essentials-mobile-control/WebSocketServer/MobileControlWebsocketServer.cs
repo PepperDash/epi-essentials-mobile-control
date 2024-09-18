@@ -938,7 +938,11 @@ namespace PepperDash.Essentials
                 {
                     HandleVersionRequest(res);
                 }
-                // Call to serve the Angular user app
+                else if (path.StartsWith("/mc/app/logo"))
+                {
+                    HandleImageRequest(req, res);
+                }
+                // Call to serve the user app
                 else if (path.StartsWith(_userAppBaseHref))
                 {
                     HandleUserAppRequest(req, res, path);
@@ -1104,6 +1108,54 @@ namespace PepperDash.Essentials
             res.ContentLength64 = body.LongLength;
             res.Close(body, true);
         }
+
+        /// <summary>
+        /// Handler to return images requested by the user app
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="res"></param>
+        private void HandleImageRequest(HttpListenerRequest req, HttpListenerResponse res)
+        {
+            var path = req.RawUrl;
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Requesting Image: {0}", this, path);
+
+            var imageBasePath = Global.DirectorySeparator + "html" + Global.DirectorySeparator + "logo" + Global.DirectorySeparator;
+
+            var image = path.Split('/').Last();
+
+            var filePath = imageBasePath + image;
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Retrieving Image: {0}", this, filePath);
+
+            if (System.IO.File.Exists(filePath))
+            {
+                if(filePath.EndsWith(".png"))
+                { 
+                    res.ContentType = "image/png";
+                }
+                else if(filePath.EndsWith(".jpg"))
+                {
+                    res.ContentType = "image/jpeg";
+                }
+                else if(filePath.EndsWith(".gif"))
+                {
+                    res.ContentType = "image/gif";
+                }
+                else if(filePath.EndsWith(".svg"))
+                {
+                    res.ContentType = "image/svg+xml";
+                }
+                byte[] contents = System.IO.File.ReadAllBytes(filePath);
+                res.ContentLength64 = contents.LongLength;
+                res.Close(contents, true);
+            }
+            else
+            {
+                res.StatusCode = (int)HttpStatusCode.NotFound;
+                res.Close();
+            }
+        }   
 
         /// <summary>
         /// Handles requests to serve files for the Angular single page app
