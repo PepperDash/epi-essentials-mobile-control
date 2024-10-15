@@ -1,4 +1,5 @@
 ﻿using PepperDash.Core;
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ namespace PepperDash.Essentials.Services
             var handler = new HttpClientHandler
             {
                 AllowAutoRedirect = false,
+                ServerCertificateCustomValidationCallback = (req, cert, certChain, errors) => true
             };
 
             _client = new HttpClient(handler);
