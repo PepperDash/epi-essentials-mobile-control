@@ -19,28 +19,30 @@ namespace PepperDash.Essentials.WebApiHandlers
 
         protected override async Task HandlePost(HttpCwsContext context)
         {
-            var requestBody = EssentialsWebApiHelpers.GetRequestBody(context.Request);
-
-            var grantCode = JsonConvert.DeserializeObject<AuthorizationRequest>(requestBody);
-
-            if (string.IsNullOrEmpty(grantCode?.GrantCode))
-            {
-                context.Response.StatusCode = 400;
-                context.Response.StatusDescription = "Missing grant code";
-                context.Response.End();
-                return;
-            }
-
-            var response = await mcController.ApiService.SendAuthorizationRequest(mcController.Host, grantCode.GrantCode, mcController.SystemUuid);
-
-            Debug.Console(1, $"response received");
-            if (response.Authorized)
-            {
-                mcController.RegisterSystemToServer();
-            }
-
             try
             {
+                var requestBody = EssentialsWebApiHelpers.GetRequestBody(context.Request);
+
+                var grantCode = JsonConvert.DeserializeObject<AuthorizationRequest>(requestBody);
+
+                if (string.IsNullOrEmpty(grantCode?.GrantCode))
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Missing grant code");
+                    context.Response.StatusCode = 400;
+                    context.Response.StatusDescription = "Missing grant code";
+                    context.Response.End();
+                    return;
+                }
+
+                var response = await mcController.ApiService.SendAuthorizationRequest(mcController.Host, grantCode.GrantCode, mcController.SystemUuid);
+
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, $"response received");
+                if (response.Authorized)
+                {
+                    mcController.RegisterSystemToServer();
+                }
+
+
                 context.Response.StatusCode = 200;
                 var responseBody = JsonConvert.SerializeObject(response, Formatting.None);
                 context.Response.ContentType = "application/json";
@@ -50,14 +52,7 @@ namespace PepperDash.Essentials.WebApiHandlers
             }
             catch (Exception ex)
             {
-                Debug.Console(0, $"Exception handling MC Auth request: {ex.Message}");
-                Debug.Console(2, $"Stack Trace: {ex.StackTrace}");
-
-                if (ex.InnerException != null)
-                {
-                    Debug.Console(0, $"Inner Exception: {ex.InnerException.Message}");
-                    Debug.Console(2, $"Inner Exception Stack Trace: {ex.InnerException.StackTrace}");
-                }
+                Debug.LogMessage(ex, "Exception recieved authorizing system");
             }
         }
     }
