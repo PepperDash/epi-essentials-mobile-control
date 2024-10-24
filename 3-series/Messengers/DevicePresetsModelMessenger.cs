@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using PepperDash.Essentials.Core.Presets;
@@ -45,23 +46,32 @@ namespace PepperDash.Essentials.AppServer.Messengers
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            AddAction("/fullStatus", (id, content) => SendPresets());
+            AddAction("/presets/fullStatus", (id, content) => {
+                this.LogInformation("getting full status for client {id}", id);
+                try
+                {
+                    SendPresets();
+                } catch(Exception ex)
+                {
+                    Debug.LogMessage(ex, "Exception sending preset full status", this);
+                }
+            });
 
-            AddAction("/recall", (id, content) =>
+            AddAction("/presets/recall", (id, content) =>
             {
                 var p = content.ToObject<PresetChannelMessage>();
 
 
                 if (!(DeviceManager.GetDeviceForKey(p.DeviceKey) is ISetTopBoxNumericKeypad dev))
                 {
-                    Debug.Console(1, "Unable to find device with key {0}", p.DeviceKey);
+                    this.LogDebug("Unable to find device with key {0}", p.DeviceKey);
                     return;
                 }
 
                 RecallPreset(dev, p.Preset.Channel);
             });
 
-            AddAction("/save", (id, content) =>
+            AddAction("/presets/save", (id, content) =>
             {
                 var presets = content.ToObject<List<PresetChannel>>();
 

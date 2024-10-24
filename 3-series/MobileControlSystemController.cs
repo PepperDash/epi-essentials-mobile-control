@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Crypto.Prng;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.AppServer;
 using PepperDash.Essentials.AppServer.Messengers;
 using PepperDash.Essentials.Core;
@@ -474,7 +475,7 @@ namespace PepperDash.Essentials
 
                             var presetsMessenger = new DevicePresetsModelMessenger(
                                 $"{device.Key}-presets-{Key}",
-                                $"/device/{device.Key}/presets",
+                                $"/device/{device.Key}",
                                 presetsDevice
                             );
 
@@ -2509,17 +2510,12 @@ Mobile Control Direct Server Infromation:
                         // /room/roomAB
 
                         // Can't do direct comparison because it will match /room/roomA with /room/roomA/xxx instead of /room/roomAB/xxx
-                        var handlersKv = _actionDictionary.FirstOrDefault(kv =>
-                            message.Type.StartsWith(kv.Key + "/") // adds trailing slash to ensure above case is handled
-                        );
+                        var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key + "/")); // adds trailing slash to ensure above case is handled
+                        
 
                         if (handlersKv.Key == null)
                         {
-                            Debug.Console(
-                                1,
-                                this,
-                                "-- Warning: Incoming message has no registered handler"
-                            );
+                            this.LogInformation("-- Warning: Incoming message has no registered handler {type}", message.Type);
                             break;
                         }
 
@@ -2540,10 +2536,9 @@ Mobile Control Direct Server Infromation:
             {
                 Debug.LogMessage(
                     err,
-                    "Unable to parse {message}:{exception}",
+                    "Unable to parse {message}",
                     this,
-                    messageText,
-                    err
+                    messageText
                 );
             }
         }
