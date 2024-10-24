@@ -77,7 +77,7 @@ namespace PepperDash.Essentials
             // sub-controller parsing could be attached to these classes, so that the systemController
             // doesn't need to know about everything.
 
-            Debug.Console(0, this, "Registering Actions with AppServer");
+            this.LogInformation("Registering Actions with AppServer");
 
             AddAction("/promptForCode", (id, content) => OnUserPromptedForCode());
             AddAction("/clientJoined", (id, content) => OnClientJoined());
@@ -106,7 +106,7 @@ namespace PepperDash.Essentials
 
                     var msg = content.ToObject<SourceSelectMessageContent>();
 
-                    Debug.Console(2, this, "Received request to route to source: {0} on list: {1}", msg.SourceListItemKey, msg.SourceListKey);
+                    this.LogVerbose("Received request to route to source: {sourceListKey} on list: {sourceList}", msg.SourceListItemKey, msg.SourceListKey);
 
                     routeRoom.RunRouteAction(msg.SourceListItemKey, msg.SourceListKey);
                 });
@@ -118,7 +118,7 @@ namespace PepperDash.Essentials
                     var msg = content.ToObject<DirectRoute>();
 
 
-                    Debug.Console(2, this, $"Running direct route from {msg.SourceKey} to {msg.DestinationKey} with signal type {msg.SignalType}");
+                    this.LogVerbose("Running direct route from {sourceKey} to {destinationKey} with signal type {signalType}", msg.SourceKey, msg.DestinationKey, msg.SignalType);
 
                     directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey, msg.SignalType);
                 });
@@ -179,7 +179,7 @@ namespace PepperDash.Essentials
                 // Registers for initial volume events, if possible
                 if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
                 {
-                    Debug.Console(2, this, "Registering for volume feedback events");
+                    this.LogVerbose("Registering for volume feedback events");
 
                     currentVolumeDevice.MuteFeedback.OutputChange += MuteFeedback_OutputChange;
                     currentVolumeDevice.VolumeLevelFeedback.OutputChange += VolumeLevelFeedback_OutputChange;
@@ -244,7 +244,7 @@ namespace PepperDash.Essentials
                 if (dev == null)
                 {
                     continue;
-                }                
+                }
 
                 //UpdateAppUrl($"{userAppUrl}?token={tp.Token}");
 
@@ -274,14 +274,14 @@ namespace PepperDash.Essentials
         {
             if (Room != null)
             {
-                Debug.Console(0, this, "Room with key {0} already linked.", DefaultRoomKey);
+                this.LogInformation("Room with key {key} already linked.", DefaultRoomKey);
                 return;
             }
 
 
             if (!(DeviceManager.GetDeviceForKey(DefaultRoomKey) is IEssentialsRoom tempRoom))
             {
-                Debug.Console(0, this, "Room with key {0} not found or is not an Essentials Room", DefaultRoomKey);
+                this.LogInformation("Room with key {key} not found or is not an Essentials Room", DefaultRoomKey);
                 return;
             }
 
@@ -296,7 +296,7 @@ namespace PepperDash.Essentials
 
             QrCodeUrl = qrUrl;
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Server user code changed: {userCode} - {qrUrl}", this, UserCode, qrUrl);
+            this.LogDebug("Server user code changed: {userCode} - {qrUrl}", UserCode, qrUrl);
 
             OnUserCodeChanged();
         }
@@ -331,7 +331,7 @@ namespace PepperDash.Essentials
                 { "master",  new Volume("master")
                     {
                         PrivacyMuted = e.BoolValue
-                    } 
+                    }
                 }
             };
 
@@ -381,7 +381,7 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void IsWarmingUpFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
-            var state = new 
+            var state = new
             {
                 isWarmingUp = e.BoolValue
             };
@@ -396,7 +396,7 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void IsCoolingDownFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
-            var state = new 
+            var state = new
             {
                 isCoolingDown = e.BoolValue
             };
@@ -410,7 +410,7 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void OnFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
-            var state = new 
+            var state = new
             {
                 isOn = e.BoolValue
             };
@@ -478,7 +478,7 @@ namespace PepperDash.Essentials
                   }
                 }
              */
-            
+
         }
 
         /// <summary>
@@ -489,6 +489,11 @@ namespace PepperDash.Essentials
         {
             //Parent.SendMessageObject(GetFullStatus(room));
             var message = GetFullStatusForClientId(room);
+
+            if (message == null)
+            {
+                return;
+            }
             PostStatusMessage(message, id);
         }
 
@@ -500,43 +505,50 @@ namespace PepperDash.Essentials
         /// <returns>The status response message</returns>
         private RoomStateMessage GetFullStatusForClientId(IEssentialsRoom room)
         {
-            Debug.Console(2, this, "GetFullStatus");
-
-            var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
-
-            var volumes = new Dictionary<string, Volume>();
-            if (room is IHasCurrentVolumeControls rmVc)
+            try
             {
-                if (rmVc.CurrentVolumeControls is IBasicVolumeWithFeedback vc)
+                this.LogVerbose("GetFullStatus");
+
+                var sourceKey = room is IHasCurrentSourceInfoChange ? (room as IHasCurrentSourceInfoChange).CurrentSourceInfoKey : null;
+
+                var volumes = new Dictionary<string, Volume>();
+                if (room is IHasCurrentVolumeControls rmVc)
                 {
-                    var volume = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
-                    if (room is IPrivacy privacyRoom)
+                    if (rmVc.CurrentVolumeControls is IBasicVolumeWithFeedback vc)
                     {
-                        volume.HasPrivacyMute = true;
-                        volume.PrivacyMuted = privacyRoom.PrivacyModeIsOnFeedback.BoolValue;
+                        var volume = new Volume("master", vc.VolumeLevelFeedback.UShortValue, vc.MuteFeedback.BoolValue, "Volume", true, "");
+                        if (room is IPrivacy privacyRoom)
+                        {
+                            volume.HasPrivacyMute = true;
+                            volume.PrivacyMuted = privacyRoom.PrivacyModeIsOnFeedback.BoolValue;
+                        }
+
+                        volumes.Add("master", volume);
                     }
-
-                    volumes.Add("master", volume);
                 }
-            }
 
-            var state = new RoomStateMessage
+                var state = new RoomStateMessage
+                {
+                    Configuration = GetRoomConfiguration(room),
+                    ActivityMode = 1,
+                    IsOn = room.OnFeedback.BoolValue,
+                    SelectedSourceKey = sourceKey,
+                    Volumes = volumes,
+                    IsWarmingUp = room.IsWarmingUpFeedback.BoolValue,
+                    IsCoolingDown = room.IsCoolingDownFeedback.BoolValue
+                };
+
+                if (room is IEssentialsHuddleVtc1Room vtcRoom)
+                {
+                    state.IsInCall = vtcRoom.InCallFeedback.BoolValue;
+                }
+
+                return state;
+            } catch (Exception ex)
             {
-                Configuration = GetRoomConfiguration(room),
-                ActivityMode = 1,
-                IsOn = room.OnFeedback.BoolValue,
-                SelectedSourceKey = sourceKey,
-                Volumes = volumes,
-                IsWarmingUp = room.IsWarmingUpFeedback.BoolValue,
-                IsCoolingDown = room.IsCoolingDownFeedback.BoolValue
-            };
-
-            if (room is IEssentialsHuddleVtc1Room vtcRoom)
-            {
-                state.IsInCall = vtcRoom.InCallFeedback.BoolValue;
+                Debug.LogMessage(ex, "Error getting full status", this);
+                return null;
             }
-
-            return state;
         }
 
         /// <summary>
@@ -545,229 +557,238 @@ namespace PepperDash.Essentials
         /// <returns></returns>
         private RoomConfiguration GetRoomConfiguration(IEssentialsRoom room)
         {
-
-            var configuration = new RoomConfiguration
-            {
-                //ShutdownPromptSeconds = room.ShutdownPromptSeconds,
-                TouchpanelKeys = DeviceManager.AllDevices.
-                OfType<IMobileControlTouchpanelController>()
-                .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
-                .Select(tp => tp.Key).ToList()
-            };
-            
             try
             {
-                var zrcTp = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
-
-                configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : null;
-            }
-            catch
-            {
-                configuration.ZoomRoomControllerKey = room.Key;
-            }
-
-            if (room is IHasCiscoNavigatorTouchpanel ciscoNavRoom)
-            {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Setting CiscoNavigatorKey to: {ciscoNavRoom.CiscoNavigatorTouchpanelKey}", this);
-                configuration.CiscoNavigatorKey = ciscoNavRoom.CiscoNavigatorTouchpanelKey;
-            }
-
-
-
-            // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
-            var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
-
-            configuration.RoomCombinerKey = roomCombiner != null ? roomCombiner.Key : null;    
-
-
-            if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
-            {
-                configuration.HelpMessage = propertiesConfig.PropertiesConfig.HelpMessageForDisplay;
-            }
-
-            if (room is IEssentialsHuddleSpaceRoom huddleRoom && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
-            {
-                Debug.Console(2, this, "Getting huddle room config");
-                configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
-                configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
-                configuration.DefaultPresentationSourceKey = huddleRoom.PropertiesConfig.DefaultSourceItem;
-
-            }
-
-            if (room is IEssentialsHuddleVtc1Room vtc1Room && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
-            {
-                Debug.Console(2, this, "Getting vtc room config");
-                configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
-                configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
-                configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
-            }
-
-            if (room is IEssentialsTechRoom techRoom && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
-            {
-                Debug.Console(2, this, "Getting tech room config");
-                configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
-            }
-
-            if (room is IHasVideoCodec vcRoom)
-            {
-                if (vcRoom.VideoCodec != null)
+                var configuration = new RoomConfiguration
                 {
-                    Debug.Console(2, this, "Getting codec config");
-                    var type = vcRoom.VideoCodec.GetType();
+                    //ShutdownPromptSeconds = room.ShutdownPromptSeconds,
+                    TouchpanelKeys = DeviceManager.AllDevices.
+                    OfType<IMobileControlTouchpanelController>()
+                    .Where((tp) => tp.DefaultRoomKey.Equals(room.Key, StringComparison.InvariantCultureIgnoreCase))
+                    .Select(tp => tp.Key).ToList()
+                };
 
-                    configuration.HasVideoConferencing = true;
-                    configuration.VideoCodecKey = vcRoom.VideoCodec.Key;
-                    configuration.VideoCodecIsZoomRoom = type.Name.Equals("ZoomRoom", StringComparison.InvariantCultureIgnoreCase);
+                try
+                {
+                    var zrcTp = DeviceManager.AllDevices.OfType<IMobileControlTouchpanelController>().SingleOrDefault((tp) => tp.ZoomRoomController);
+
+                    configuration.ZoomRoomControllerKey = zrcTp != null ? zrcTp.Key : null;
                 }
-            };
-
-            if (room is IHasAudioCodec acRoom)
-            {
-                if (acRoom.AudioCodec != null)
+                catch
                 {
-                    Debug.Console(2, this, "Getting audio codec config");
-                    configuration.HasAudioConferencing = true;
-                    configuration.AudioCodecKey = acRoom.AudioCodec.Key;
+                    configuration.ZoomRoomControllerKey = room.Key;
                 }
-            }
 
-
-            if (room is IHasMatrixRouting matrixRoutingRoom)
-            {
-                Debug.Console(2, this, "Getting matrix routing config");
-                configuration.MatrixRoutingKey = matrixRoutingRoom.MatrixRoutingDeviceKey;
-                configuration.EndpointKeys = matrixRoutingRoom.EndpointKeys;
-            }
-
-            if (room is IEnvironmentalControls envRoom)
-            {
-                Debug.Console(2, this, "Getting environmental controls config. RoomHasEnvironmentalControls: {0}", envRoom.HasEnvironmentalControlDevices);
-                configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
-
-                if (envRoom.HasEnvironmentalControlDevices)
+                if (room is IHasCiscoNavigatorTouchpanel ciscoNavRoom)
                 {
-                    Debug.Console(2, this, "Room Has {0} Environmental Control Devices.", envRoom.EnvironmentalControlDevices.Count);
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, $"Setting CiscoNavigatorKey to: {ciscoNavRoom.CiscoNavigatorTouchpanelKey}", this);
+                    configuration.CiscoNavigatorKey = ciscoNavRoom.CiscoNavigatorTouchpanelKey;
+                }
 
-                    foreach (var dev in envRoom.EnvironmentalControlDevices)
+
+
+                // find the room combiner for this room by checking if the room is in the list of rooms for the room combiner
+                var roomCombiner = DeviceManager.AllDevices.OfType<IEssentialsRoomCombiner>().FirstOrDefault();
+
+                configuration.RoomCombinerKey = roomCombiner != null ? roomCombiner.Key : null;
+
+
+                if (room is IEssentialsRoomPropertiesConfig propertiesConfig)
+                {
+                    configuration.HelpMessage = propertiesConfig.PropertiesConfig.HelpMessageForDisplay;
+                }
+
+                if (room is IEssentialsHuddleSpaceRoom huddleRoom && !string.IsNullOrEmpty(huddleRoom.PropertiesConfig.HelpMessageForDisplay))
+                {
+                    this.LogVerbose("Getting huddle room config");
+                    configuration.HelpMessage = huddleRoom.PropertiesConfig.HelpMessageForDisplay;
+                    configuration.UiBehavior = huddleRoom.PropertiesConfig.UiBehavior;
+                    configuration.DefaultPresentationSourceKey = huddleRoom.PropertiesConfig.DefaultSourceItem;
+
+                }
+
+                if (room is IEssentialsHuddleVtc1Room vtc1Room && !string.IsNullOrEmpty(vtc1Room.PropertiesConfig.HelpMessageForDisplay))
+                {
+                    this.LogVerbose("Getting vtc room config");
+                    configuration.HelpMessage = vtc1Room.PropertiesConfig.HelpMessageForDisplay;
+                    configuration.UiBehavior = vtc1Room.PropertiesConfig.UiBehavior;
+                    configuration.DefaultPresentationSourceKey = vtc1Room.PropertiesConfig.DefaultSourceItem;
+                }
+
+                if (room is IEssentialsTechRoom techRoom && !string.IsNullOrEmpty(techRoom.PropertiesConfig.HelpMessage))
+                {
+                    this.LogVerbose("Getting tech room config");
+                    configuration.HelpMessage = techRoom.PropertiesConfig.HelpMessage;
+                }
+
+                if (room is IHasVideoCodec vcRoom)
+                {
+                    if (vcRoom.VideoCodec != null)
                     {
-                        Debug.Console(2, this, "Adding environmental device: {0}", dev.Key);
+                        this.LogVerbose("Getting codec config");
+                        var type = vcRoom.VideoCodec.GetType();
 
-                        eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
+                        configuration.HasVideoConferencing = true;
+                        configuration.VideoCodecKey = vcRoom.VideoCodec.Key;
+                        configuration.VideoCodecIsZoomRoom = type.Name.Equals("ZoomRoom", StringComparison.InvariantCultureIgnoreCase);
+                    }
+                };
 
-                        if (dev is ILightingScenes || dev is Devices.Common.Lighting.LightingBase)
-                        {
-                            type = eEnvironmentalDeviceTypes.Lighting;
-                        }
-                        else if (dev is ShadeBase || dev is IShadesOpenCloseStop || dev is IShadesOpenClosePreset)
-                        {
-                            type = eEnvironmentalDeviceTypes.Shade;
-                        }
-                        else if (dev is IShades)
-                        {
-                            type = eEnvironmentalDeviceTypes.ShadeController;
-                        }
-                        else if (dev is ISwitchedOutput)
-                        {
-                            type = eEnvironmentalDeviceTypes.Relay;
-                        }
-
-                        Debug.Console(2, this, "Environmental Device Type: {0}", type);
-
-                        var envDevice = new EnvironmentalDeviceConfiguration(dev.Key, type);
-
-                        configuration.EnvironmentalDevices.Add(envDevice);
+                if (room is IHasAudioCodec acRoom)
+                {
+                    if (acRoom.AudioCodec != null)
+                    {
+                        this.LogVerbose("Getting audio codec config");
+                        configuration.HasAudioConferencing = true;
+                        configuration.AudioCodecKey = acRoom.AudioCodec.Key;
                     }
                 }
-                else
+
+
+                if (room is IHasMatrixRouting matrixRoutingRoom)
                 {
-                    Debug.Console(2, this, "Room Has No Environmental Control Devices");
+                    this.LogVerbose("Getting matrix routing config");
+                    configuration.MatrixRoutingKey = matrixRoutingRoom.MatrixRoutingDeviceKey;
+                    configuration.EndpointKeys = matrixRoutingRoom.EndpointKeys;
                 }
-            }
 
-            if (room is IHasDefaultDisplay defDisplayRoom)
-            {
-                Debug.Console(2, this, "Getting default display config");
-                configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
-                configuration.Destinations.Add(eSourceListItemDestinationTypes.defaultDisplay, defDisplayRoom.DefaultDisplay.Key);
-            }
-
-            if (room is IHasMultipleDisplays multiDisplayRoom)
-            {
-                Debug.Console(2, this, "Getting multiple display config");
-
-                if (multiDisplayRoom.Displays == null)
+                if (room is IEnvironmentalControls envRoom)
                 {
-                    Debug.Console(2, this, "Displays collection is null");
-                }
-                else
-                {
-                    Debug.Console(2, this, "Displays collection exists");
+                    this.LogVerbose("Getting environmental controls config. RoomHasEnvironmentalControls: {hasEnvironmentalControls}", envRoom.HasEnvironmentalControlDevices);
+                    configuration.HasEnvironmentalControls = envRoom.HasEnvironmentalControlDevices;
 
-                    configuration.Destinations = multiDisplayRoom.Displays.ToDictionary(kv => kv.Key, kv => kv.Value.Key);
-                }
-            }
-
-            if(room is IHasAccessoryDevices accRoom)
-            {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Getting accessory devices config", this);
-
-                if (accRoom.AccessoryDeviceKeys == null)
-                {
-                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection is null", this);
-                }
-                else
-                {
-                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection exists", this);
-
-                    configuration.AccessoryDeviceKeys = accRoom.AccessoryDeviceKeys;
-                }   
-            }
-
-            var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
-            if (sourceList != null)
-            {
-                Debug.Console(2, this, "Getting source list config");
-                configuration.SourceList = sourceList;
-                configuration.HasRoutingControls = true;
-
-                foreach (var source in sourceList)
-                {
-                    if (source.Value.SourceDevice is Devices.Common.IRSetTopBoxBase)
+                    if (envRoom.HasEnvironmentalControlDevices)
                     {
-                        configuration.HasSetTopBoxControls = true;
-                        continue;
+                        this.LogVerbose("Room Has {count} Environmental Control Devices.", envRoom.EnvironmentalControlDevices.Count);
+
+                        foreach (var dev in envRoom.EnvironmentalControlDevices)
+                        {
+                            this.LogVerbose("Adding environmental device: {key}", dev.Key);
+
+                            eEnvironmentalDeviceTypes type = eEnvironmentalDeviceTypes.None;
+
+                            if (dev is ILightingScenes || dev is Devices.Common.Lighting.LightingBase)
+                            {
+                                type = eEnvironmentalDeviceTypes.Lighting;
+                            }
+                            else if (dev is ShadeBase || dev is IShadesOpenCloseStop || dev is IShadesOpenClosePreset)
+                            {
+                                type = eEnvironmentalDeviceTypes.Shade;
+                            }
+                            else if (dev is IShades)
+                            {
+                                type = eEnvironmentalDeviceTypes.ShadeController;
+                            }
+                            else if (dev is ISwitchedOutput)
+                            {
+                                type = eEnvironmentalDeviceTypes.Relay;
+                            }
+
+                            this.LogVerbose("Environmental Device Type: {type}", type);
+
+                            var envDevice = new EnvironmentalDeviceConfiguration(dev.Key, type);
+
+                            configuration.EnvironmentalDevices.Add(envDevice);
+                        }
                     }
-                    else if (source.Value.SourceDevice is CameraBase)
+                    else
                     {
-                        configuration.HasCameraControls = true;
-                        continue;
+                        this.LogVerbose("Room Has No Environmental Control Devices");
                     }
                 }
+
+                if (room is IHasDefaultDisplay defDisplayRoom)
+                {
+                    this.LogVerbose("Getting default display config");
+                    configuration.DefaultDisplayKey = defDisplayRoom.DefaultDisplay.Key;
+                    configuration.Destinations.Add(eSourceListItemDestinationTypes.defaultDisplay, defDisplayRoom.DefaultDisplay.Key);
+                }
+
+                if (room is IHasMultipleDisplays multiDisplayRoom)
+                {
+                    this.LogVerbose("Getting multiple display config");
+
+                    if (multiDisplayRoom.Displays == null)
+                    {
+                        this.LogVerbose("Displays collection is null");
+                    }
+                    else
+                    {
+                        this.LogVerbose("Displays collection exists");
+
+                        configuration.Destinations = multiDisplayRoom.Displays.ToDictionary(kv => kv.Key, kv => kv.Value.Key);
+                    }
+                }
+
+                if (room is IHasAccessoryDevices accRoom)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Getting accessory devices config", this);
+
+                    if (accRoom.AccessoryDeviceKeys == null)
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection is null", this);
+                    }
+                    else
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Accessory devices collection exists", this);
+
+                        configuration.AccessoryDeviceKeys = accRoom.AccessoryDeviceKeys;
+                    }
+                }
+
+                var sourceList = ConfigReader.ConfigObject.GetSourceListForKey(room.SourceListKey);
+                if (sourceList != null)
+                {
+                    this.LogVerbose("Getting source list config");
+                    configuration.SourceList = sourceList;
+                    configuration.HasRoutingControls = true;
+
+                    foreach (var source in sourceList)
+                    {
+                        if (source.Value.SourceDevice is Devices.Common.IRSetTopBoxBase)
+                        {
+                            configuration.HasSetTopBoxControls = true;
+                            continue;
+                        }
+                        else if (source.Value.SourceDevice is CameraBase)
+                        {
+                            configuration.HasCameraControls = true;
+                            continue;
+                        }
+                    }
+                }
+
+                var destinationList = ConfigReader.ConfigObject.GetDestinationListForKey(room.DestinationListKey);
+
+                if (destinationList != null)
+                {
+                    configuration.DestinationList = destinationList;
+                }
+
+                var audioControlPointList = ConfigReader.ConfigObject.GetAudioControlPointListForKey(room.AudioControlPointListKey);
+
+                if (audioControlPointList != null)
+                {
+                    configuration.AudioControlPointList = audioControlPointList;
+                }
+
+                var cameraList = ConfigReader.ConfigObject.GetCameraListForKey(room.CameraListKey);
+
+                if (cameraList != null)
+                {
+                    configuration.CameraList = cameraList;
+                }
+
+                return configuration;
+
             }
-
-            var destinationList = ConfigReader.ConfigObject.GetDestinationListForKey(room.DestinationListKey);
-
-            if(destinationList != null)
+            catch (Exception ex)
             {
-                configuration.DestinationList = destinationList;
+                Debug.LogMessage(ex, "Exception getting room configuration");
+                return new RoomConfiguration();
             }
-
-            var audioControlPointList = ConfigReader.ConfigObject.GetAudioControlPointListForKey(room.AudioControlPointListKey);
-
-            if(audioControlPointList != null)
-            {
-                configuration.AudioControlPointList = audioControlPointList;
-            }
-
-            var cameraList = ConfigReader.ConfigObject.GetCameraListForKey(room.CameraListKey);
-
-            if(cameraList != null)
-            {
-                configuration.CameraList = cameraList;
-            }
-
-            return configuration;
         }
+
     }
 
     public class RoomStateMessage : DeviceStateMessageBase
