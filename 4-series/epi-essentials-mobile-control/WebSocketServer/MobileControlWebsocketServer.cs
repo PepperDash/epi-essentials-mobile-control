@@ -945,6 +945,7 @@ namespace PepperDash.Essentials
                         SystemUuid = _parent.SystemUuid,
                         RoomUuid = _parent.SystemUuid,
                         Config = _parent.GetConfigWithPluginVersion(),
+                        UserInterfaceConfig = _parent.Config.UserInterfaceConfig,
                         CodeExpires = new DateTime().AddYears(1),
                         UserCode = bridge.UserCode,
                         UserAppUrl = string.Format("http://{0}:{1}/mc/app",
@@ -1232,6 +1233,9 @@ namespace PepperDash.Essentials
 
         [JsonProperty("config")]
         public object Config { get; set; }
+
+        [JsonProperty("userInterfaceConfig")]
+        public UserInterfaceConfig UserInterfaceConfig { get; set; }
 
         [JsonProperty("codeExpires")]
         public DateTime CodeExpires { get; set; }

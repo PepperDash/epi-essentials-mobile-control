@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using PepperDash.Core;
 using System;
 using System.Collections.Generic;
 
@@ -23,6 +25,9 @@ namespace PepperDash.Essentials
         [JsonProperty("applicationConfig")]
         public MobileControlApplicationConfig ApplicationConfig { get; set; }
 
+        [JsonProperty("userInterfaceConfig")]
+        public UserInterfaceConfig UserInterfaceConfig { get; set; }
+
         [JsonProperty("enableApiServer")]
         public bool EnableApiServer { get; set; }
 #endif
@@ -38,6 +43,7 @@ namespace PepperDash.Essentials
 #if SERIES4
             EnableApiServer = true; // default to true
             ApplicationConfig = null;
+            UserInterfaceConfig = null;
 #endif
         }
     }
@@ -116,6 +122,74 @@ namespace PepperDash.Essentials
 
         [JsonProperty("enableRemoteLogging")]
         public bool Logging { get; set; }
+
+    }
+
+    public class UserInterfaceConfig
+    {
+        [JsonProperty("partnerMetadata", NullValueHandling = NullValueHandling.Ignore)]
+        public List<MobileControlPartnerMetadata> PartnerMetadata { get; set; }
+
+        [JsonProperty("techMenuConfig")]
+        public TechMenuConfig TechMenuConfig { get; set; }
+
+        [JsonProperty("customStyles")]
+        public Dictionary<eUiModeKeys, JObject> CustomStyles { get; set; }
+
+        public UserInterfaceConfig()
+        {
+            PartnerMetadata = new List<MobileControlPartnerMetadata>();
+            TechMenuConfig = new TechMenuConfig();
+            CustomStyles = new Dictionary<eUiModeKeys, JObject>();
+        }
+    }
+
+
+    public class MobileControlPartnerMetadata
+    {
+        [JsonProperty("role")]
+        public string Role { get; set; }
+
+        [JsonProperty("description")]
+        public string Description { get; set; }
+
+        [JsonProperty("logoPath")]
+        public string LogoPath { get; set; }
+    }
+
+    public class TechMenuConfig
+    {
+        [JsonProperty("leftNav")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public Dictionary<eUiModeKeys, LeftNavItemConfig> LeftNav { get; set; }
+
+        public TechMenuConfig()
+        {
+            LeftNav = new Dictionary<eUiModeKeys, LeftNavItemConfig>();
+        }
+    }
+
+    public enum eUiModeKeys
+    {
+        systemStatus,
+        matrixRouting,
+        displays,
+        audio,
+        setTopBox,
+        environment,
+        roomSchedule,
+        roomSetup,
+        changePin,
+        about,
+    }
+
+    public class LeftNavItemConfig
+    {
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("enabled")]
+        public bool? Enabled { get; set; }
     }
 
     public class McMode
