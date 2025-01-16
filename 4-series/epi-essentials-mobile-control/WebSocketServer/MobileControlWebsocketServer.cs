@@ -462,23 +462,43 @@ namespace PepperDash.Essentials
                 Directory.CreateDirectory($"{userAppPath}{localConfigFolderName}");
             }
 
-            using (var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.Create, FileAccess.ReadWrite)))
-            {
-                var config = GetApplicationConfig();
+            //using (var sw = new StreamWriter(File.Open($"{userAppPath}{localConfigFolderName}{Global.DirectorySeparator}{appConfigFileName}", FileMode.Create, FileAccess.ReadWrite)))
+            //{
+            //    var config = GetApplicationConfig();
 
-                var contents = JsonConvert.SerializeObject(config, Formatting.Indented);
+            //    var contents = JsonConvert.SerializeObject(config, Formatting.Indented);
 
-                sw.Write(contents);
-            }
+            //    sw.Write(contents);
+            //}
         }
 
-        private MobileControlApplicationConfig GetApplicationConfig()
+        private MobileControlApplicationConfig GetApplicationConfig(System.Net.IPAddress reqIpAddress)
         {
             MobileControlApplicationConfig config = null;
 
-            var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
 
+            // Get the IP address of the processor
+            var lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetLANAdapter);
             var processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+
+            // Compare the first octed of the request IP address to the processor IP address to determine if the request came from the LAN or CS side
+            var pIpBytes = IPAddress.Parse(processorIp).GetAddressBytes()[0];
+            var onLan = reqIpAddress.GetAddressBytes()[0].Equals(pIpBytes);
+
+            if (!onLan)
+            {   
+                // If the request came from the CS side, get the IP address of the CS adapter
+                lanAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
+
+                if(lanAdapterId == 0)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No CS adapter found", this);
+                }
+
+                processorIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, lanAdapterId);
+            }
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Processor Ip: {processorIp}", processorIp);
 
             try
             {
@@ -1073,24 +1093,42 @@ namespace PepperDash.Essentials
                 }
             }
 
+            byte[] contents;
+
             Debug.Console(2, this, "Attempting to serve file: {0}", filePath);
 
-            byte[] contents;
-            if (System.IO.File.Exists(filePath))
+
+            // Special case to generate the local config file on the fly with the IP of the request
+            if (filePath.Contains("_config.local.json"))
             {
-                Debug.Console(2, this, "File found");
-                contents = System.IO.File.ReadAllBytes(filePath);
+                var reqIp = req.RemoteEndPoint.Address;
+
+                var config = GetApplicationConfig(reqIp);
+
+                var file = JsonConvert.SerializeObject(config);
+
+                contents = Encoding.UTF8.GetBytes(file);
             }
             else
-            {
-                Debug.Console(2, this, "File not found: {0}", filePath);
-                res.StatusCode = (int)HttpStatusCode.NotFound;
-                res.Close();
-                return;
+            { 
+                if (System.IO.File.Exists(filePath))
+                {
+                    Debug.Console(2, this, "File found");
+                    contents = System.IO.File.ReadAllBytes(filePath);
+                }
+                else
+                {
+                    Debug.Console(2, this, "File not found: {0}", filePath);
+                    res.StatusCode = (int)HttpStatusCode.NotFound;
+                    res.Close();
+                    return;
+                }
             }
 
             res.ContentLength64 = contents.LongLength;
-            res.Close(contents, true);
+                    res.Close(contents, true);
+            
+
         }
 
         public void StopServer()
