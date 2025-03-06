@@ -4,6 +4,7 @@ using Crestron.SimplSharpPro.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.Config;
 using PepperDash.Essentials.Core.DeviceInfo;
@@ -74,11 +75,11 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             AddPostActivationAction(SubscribeForMobileControlUpdates);
 
-            ThemeFeedback = new StringFeedback(() => Theme);
-            AppUrlFeedback = new StringFeedback(() => _appUrl);
-            QrCodeUrlFeedback = new StringFeedback(() => _bridge?.QrCodeUrl);
-            McServerUrlFeedback = new StringFeedback(() => _bridge?.McServerUrl);
-            UserCodeFeedback = new StringFeedback(() => _bridge?.UserCode);
+            ThemeFeedback = new StringFeedback($"{Key}-theme",() => Theme);
+            AppUrlFeedback = new StringFeedback($"{Key}-appUrl", () => _appUrl);
+            QrCodeUrlFeedback = new StringFeedback($"{Key}-qrCodeUrl", () => _bridge?.QrCodeUrl);
+            McServerUrlFeedback = new StringFeedback($"{Key}-mcServerUrl", () => _bridge?.McServerUrl);
+            UserCodeFeedback = new StringFeedback($"{Key}-userCode", () => _bridge?.UserCode);
 
             _appOpenFeedback = new BoolFeedback($"{Key}-appOpen", () =>
             {
@@ -317,6 +318,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
             {
                 UpdateFeedbacks();
 
+                this.LogInformation("Sending {appUrl} on join 1", AppUrlFeedback.StringValue);
+
                 Panel.StringInput[1].StringValue = AppUrlFeedback.StringValue;
                 Panel.StringInput[2].StringValue = QrCodeUrlFeedback.StringValue;
                 Panel.StringInput[3].StringValue = McServerUrlFeedback.StringValue;
@@ -355,7 +358,8 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
             _bridge.UserCodeChanged += UpdateFeedbacks;
             _bridge.AppUrlChanged += (s, a) => { 
-                Debug.Console(0, this, "AppURL changed");
+               this.LogInformation("AppURL changed");
+                SetAppUrl(_bridge.AppUrl);
                 UpdateFeedbacks(s, a); 
             };
 
@@ -375,7 +379,7 @@ namespace PepperDash.Essentials.Devices.Common.TouchPanel
 
         private void UpdateFeedbacks()
         {
-            foreach (var feedback in Feedbacks) { feedback.FireUpdate(); }
+            foreach (var feedback in Feedbacks) { this.LogDebug("Updating {feedbackKey}", feedback.Key); feedback.FireUpdate(); }
         }
 
         private void UpdateZoomFeedbacks()
