@@ -5,6 +5,7 @@ namespace PepperDash.Essentials.AppServer
 {
     public class SourceSelectMessageContent
     {
+        
         [JsonProperty("sourceListItemKey")]
         public string SourceListItemKey { get; set; }
         [JsonProperty("sourceListKey")]
@@ -13,6 +14,7 @@ namespace PepperDash.Essentials.AppServer
 
     public class DirectRoute
     {
+
         [JsonProperty("sourceKey")]
         public string SourceKey { get; set; }
         [JsonProperty("destinationKey")]

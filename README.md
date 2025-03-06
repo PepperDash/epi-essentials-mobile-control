@@ -189,3 +189,5 @@ As part of the Essentials program startup cycle, this plugin will iterate throug
 In addition to the automatically instantiated messengers, plugin devices can reference the `mobile-control-messengers` project via nuget as a dependency and thus inherit from the `MessengerBase` class to create custom messengers.  These custom messengers will have to be manually added to the `MobileControlSystemController` instance.
 
 To view the paths at runtime, the console command `mobilecontrolshowactionpaths:[slotnumber]` will print all the action paths for the mobile control API. 
+
+

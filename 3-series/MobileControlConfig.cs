@@ -73,6 +73,8 @@ namespace PepperDash.Essentials
         [JsonProperty("port")]
         public int Port { get; set; }
 
+        
+
     }
 
     public class MobileControlRoomBridgePropertiesConfig
