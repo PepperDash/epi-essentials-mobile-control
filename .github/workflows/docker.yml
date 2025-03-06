@@ -63,7 +63,7 @@ jobs:
         echo "No new version generated" >> $GITHUB_STEP_SUMMARY
     - name: Upload release notes
       if: steps.get_version.outputs.newVersion == 'true'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: change-log
         path: CHANGELOG.md
@@ -256,7 +256,7 @@ jobs:
       - name: Build Solution        
         run: msbuild .\4-series\${{ steps.get_sln_info.outputs.SOLUTION_FILE }}.sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ needs.GetVersionNumber.outputs.version }}" -m   
       - name: Get release notes
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: change-log
       - name: Upload Release
