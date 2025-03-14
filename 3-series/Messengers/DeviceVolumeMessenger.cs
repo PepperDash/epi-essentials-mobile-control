@@ -12,35 +12,37 @@ namespace PepperDash.Essentials.AppServer.Messengers
     {
         private readonly IBasicVolumeWithFeedback _localDevice;
 
-        public DeviceVolumeMessenger(string key, string messagePath) : base(key, messagePath)
-        {
-        }
-
         public DeviceVolumeMessenger(string key, string messagePath, IBasicVolumeWithFeedback device)
-            : base(key, messagePath, device as PepperDash.Core.Device)
+            : base(key, messagePath, device as IKeyName)
         {
             _localDevice = device;
         }
 
         private void SendStatus()
         {
-            var messageObj = new VolumeStateMessage
+            try
             {
-                Volume = new Volume
+                var messageObj = new VolumeStateMessage
                 {
-                    Level = _localDevice.VolumeLevelFeedback.IntValue,
-                    Muted = _localDevice.MuteFeedback.BoolValue,
-                    HasMute = true,  // assume all devices have mute for now
+                    Volume = new Volume
+                    {
+                        Level = _localDevice?.VolumeLevelFeedback.IntValue ?? -1,
+                        Muted = _localDevice?.MuteFeedback.BoolValue ?? false,
+                        HasMute = true,  // assume all devices have mute for now
+                    }
+                };
+
+                if (_localDevice is IBasicVolumeWithFeedbackAdvanced volumeAdvanced)
+                {
+                    messageObj.Volume.RawValue = volumeAdvanced.RawVolumeLevel.ToString();
+                    messageObj.Volume.Units = volumeAdvanced.Units;
                 }
-            };
 
-            if (_localDevice is IBasicVolumeWithFeedbackAdvanced volumeAdvanced)
+                PostStatusMessage(messageObj);
+            } catch(Exception ex)
             {
-                messageObj.Volume.RawValue = volumeAdvanced.RawVolumeLevel.ToString();
-                messageObj.Volume.Units = volumeAdvanced.Units;
+                Debug.LogMessage(ex, "Exception sending full status", this);
             }
-
-            PostStatusMessage(messageObj);
         }
 
         #region Overrides of MessengerBase

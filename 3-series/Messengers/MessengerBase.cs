@@ -149,33 +149,63 @@ namespace PepperDash.Essentials.AppServer.Messengers
         /// <param name="message"></param>
         protected void PostStatusMessage(DeviceStateMessageBase message, string clientId = null)
         {
-            message.SetInterfaces(_deviceInterfaces);
+            try
+            {
+                if(message == null)
+                {
+                    throw new ArgumentNullException("message");
+                }
 
-            message.Key = _device.Key;
+                if(_device == null)
+                {
+                    throw new ArgumentNullException("device");
+                }
 
-            message.Name = _device.Name;
+                message.SetInterfaces(_deviceInterfaces);
 
-            PostStatusMessage(JToken.FromObject(message),MessagePath, clientId);
+                message.Key = _device.Key;
+
+                message.Name = _device.Name;
+
+                PostStatusMessage(JToken.FromObject(message), MessagePath, clientId);
+            }
+            catch (Exception ex) {
+                Debug.LogMessage(ex, "Exception posting status message", this);
+            }
         }
 
 #if SERIES4 
         protected void PostStatusMessage(string type, DeviceStateMessageBase deviceState, string clientId = null)
         {
-            //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
-            deviceState.SetInterfaces(_deviceInterfaces);
+            try
+            {
+                //Debug.Console(2, this, "*********************Setting DeviceStateMessageProperties on MobileControlResponseMessage");
+                deviceState.SetInterfaces(_deviceInterfaces);
 
-            deviceState.Key = _device.Key;
+                deviceState.Key = _device.Key;
 
-            deviceState.Name = _device.Name;
+                deviceState.Name = _device.Name;
 
-            deviceState.MessageBasePath = MessagePath;
+                deviceState.MessageBasePath = MessagePath;
 
-            PostStatusMessage(JToken.FromObject(deviceState), type, clientId);
+                PostStatusMessage(JToken.FromObject(deviceState), type, clientId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception posting status message", this);
+            }
         }
 #endif
         protected void PostStatusMessage(JToken content, string type = "", string clientId = null)
         {
-            AppServerController?.SendMessageObject(new MobileControlMessage { Type = !string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
+            try
+            {
+                AppServerController?.SendMessageObject(new MobileControlMessage { Type = !string.IsNullOrEmpty(type) ? type : MessagePath, ClientId = clientId, Content = content });
+            }
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception posting status message", this);
+            }
         }
 
         protected void PostEventMessage(DeviceEventMessageBase message)
