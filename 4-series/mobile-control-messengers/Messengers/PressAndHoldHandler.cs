@@ -25,59 +25,61 @@ namespace PepperDash.Essentials.AppServer.Messengers
             };
         }
 
-        private static void AddTimer(string type, Action<bool> action)
+        private static void AddTimer(string deviceKey, Action<bool> action)
         {
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to add timer for action {type}", type);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to add timer for {deviceKey}", deviceKey);
 
-            if (_pushedActions.TryGetValue(type, out CTimer cancelTimer))
+            if (_pushedActions.TryGetValue(deviceKey, out CTimer cancelTimer))
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for action {type} already exists", type);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for {deviceKey} already exists", deviceKey);
                 return;
             }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Adding timer for action {type} with due time {dueTime}", type, ButtonHeartbeatInterval);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Adding timer for {deviceKey} with due time {dueTime}", deviceKey, ButtonHeartbeatInterval);
+
+            action(true);
 
             cancelTimer = new CTimer(o =>
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer expired for {type}", type);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer expired for {deviceKey}", deviceKey);
 
                 action(false);
 
-                _pushedActions.Remove(type);
+                _pushedActions.Remove(deviceKey);
             }, ButtonHeartbeatInterval);
 
-            _pushedActions.Add(type, cancelTimer);
+            _pushedActions.Add(deviceKey, cancelTimer);
         }
 
-        private static void ResetTimer(string type, Action<bool> action)
+        private static void ResetTimer(string deviceKey, Action<bool> action)
         {
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to reset timer for action {type}", type);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to reset timer for {deviceKey}", deviceKey);
             
-            if (!_pushedActions.TryGetValue(type, out CTimer cancelTimer))
+            if (!_pushedActions.TryGetValue(deviceKey, out CTimer cancelTimer))
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for action {type} not found", type);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for {deviceKey} not found", deviceKey);
                 return;
             }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Resetting timer for action {type} with due time {dueTime}", type, ButtonHeartbeatInterval);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Resetting timer for {deviceKey} with due time {dueTime}", deviceKey, ButtonHeartbeatInterval);
 
             cancelTimer.Reset(ButtonHeartbeatInterval);
         }
 
-        private static void StopTimer(string type, Action<bool> action)
+        private static void StopTimer(string deviceKey, Action<bool> action)
         {
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to stop timer for action {type}", type);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Attempting to stop timer for {deviceKey}", deviceKey);
 
-            if (!_pushedActions.TryGetValue(type, out CTimer cancelTimer)) {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for action {type} not found", type);
+            if (!_pushedActions.TryGetValue(deviceKey, out CTimer cancelTimer)) {
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Timer for {deviceKey} not found", deviceKey);
                 return;
             }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Stopping timer for action {type} with due time {dueTime}", type, ButtonHeartbeatInterval);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Stopping timer for {deviceKey} with due time {dueTime}", deviceKey, ButtonHeartbeatInterval);
 
             action(false);
             cancelTimer.Stop();
-            _pushedActions.Remove(type);
+            _pushedActions.Remove(deviceKey);
         }
 
         public static Action<string, Action<bool>> GetPressAndHoldHandler(string value)
@@ -90,7 +92,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 return null;
             }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Got handler for {value} not found", value);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Got handler for {value}", value);
 
             return handler;
         }
@@ -99,7 +101,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             var msg = content.ToObject<MobileControlSimpleContent<string>>();
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Handling press and hold message of {type}", msg.Value);
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Handling press and hold message of {type} for {deviceKey}", msg.Value, deviceKey);
 
             var timerHandler = GetPressAndHoldHandler(msg.Value);
 
@@ -108,12 +110,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 return;
             }
 
-            timerHandler(deviceKey, action);
-
-            if (msg.Value.Equals("pressed", StringComparison.InvariantCultureIgnoreCase))
-                action(true);
-            else if (msg.Value.Equals("released", StringComparison.InvariantCultureIgnoreCase))
-                action(false);
+            timerHandler(deviceKey, action);            
         }
     }
 }
