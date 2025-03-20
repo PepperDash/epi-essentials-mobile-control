@@ -72,158 +72,177 @@ namespace PepperDash.Essentials
         protected override void CustomRegisterWithAppServer(MobileControlSystemController appServerController)
 #endif
         {
-            // we add actions to the messaging system with a path, and a related action. Custom action
-            // content objects can be handled in the controller's LineReceived method - and perhaps other
-            // sub-controller parsing could be attached to these classes, so that the systemController
-            // doesn't need to know about everything.
-
-            this.LogInformation("Registering Actions with AppServer");
-
-            AddAction("/promptForCode", (id, content) => OnUserPromptedForCode());
-            AddAction("/clientJoined", (id, content) => OnClientJoined());
-
-            AddAction("/touchPanels", (id, content) => OnTouchPanelsUpdated(content));
-
-            AddAction($"/userApp", (id, content) => OnUserAppUpdated(content));
-
-            AddAction("/userCode", (id, content) =>
+            try
             {
-                var msg = content.ToObject<UserCodeChangedContent>();
+                // we add actions to the messaging system with a path, and a related action. Custom action
+                // content objects can be handled in the controller's LineReceived method - and perhaps other
+                // sub-controller parsing could be attached to these classes, so that the systemController
+                // doesn't need to know about everything.
 
-                SetUserCode(msg.UserCode, msg.QrChecksum ?? string.Empty);
-            });
+                this.LogInformation("Registering Actions with AppServer");
 
+                AddAction("/promptForCode", (id, content) => OnUserPromptedForCode());
+                AddAction("/clientJoined", (id, content) => OnClientJoined());
 
-            // Source Changes and room off
-            AddAction("/status", (id, content) =>
-            {
-                SendFullStatusForClientId(id, Room);
-            });
+                AddAction("/touchPanels", (id, content) => OnTouchPanelsUpdated(content));
 
-            if (Room is IRunRouteAction routeRoom)
-                AddAction("/source", (id, content) =>
+                AddAction("/userApp", (id, content) => OnUserAppUpdated(content));
+
+                AddAction("/userCode", (id, content) =>
                 {
+                    var msg = content.ToObject<UserCodeChangedContent>();
 
-                    var msg = content.ToObject<SourceSelectMessageContent>();
-
-                    this.LogVerbose("Received request to route to source: {sourceListKey} on list: {sourceList}", msg.SourceListItemKey, msg.SourceListKey);
-
-                    routeRoom.RunRouteAction(msg.SourceListItemKey, msg.SourceListKey);
+                    SetUserCode(msg.UserCode, msg.QrChecksum ?? string.Empty);
                 });
 
-            if (Room is IRunDirectRouteAction directRouteRoom)
-            {
-                AddAction("/directRoute", (id, content) =>
+
+                // Source Changes and room off
+                AddAction("/status", (id, content) =>
                 {
-                    var msg = content.ToObject<DirectRoute>();
-
-
-                    this.LogVerbose("Running direct route from {sourceKey} to {destinationKey} with signal type {signalType}", msg.SourceKey, msg.DestinationKey, msg.SignalType);
-
-                    directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey, msg.SignalType);
-                });
-            }
-
-
-            if (Room is IRunDefaultPresentRoute defaultRoom)
-                AddAction("/defaultsource", (id, content) => defaultRoom.RunDefaultPresentRoute());
-
-            if (Room is IHasCurrentVolumeControls volumeRoom)
-            {
-                volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
-
-                if (volumeRoom.CurrentVolumeControls == null) return;
-
-                AddAction("/volumes/master/level", (id, content) =>
-                {
-                    var msg = content.ToObject<MobileControlSimpleContent<ushort>>();
-
-
-                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
-                        basicVolumeWithFeedback.SetVolume(msg.Value);
+                    SendFullStatusForClientId(id, Room);
                 });
 
-                AddAction("/volumes/master/muteToggle", (id, content) => volumeRoom.CurrentVolumeControls.MuteToggle());
-
-                AddAction("/volumes/master/muteOn", (id, content) =>
-                {
-                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
-                        basicVolumeWithFeedback.MuteOn();
-                });
-
-                AddAction("/volumes/master/muteOff", (id, content) =>
-                {
-                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
-                        basicVolumeWithFeedback.MuteOff();
-                });
-
-                AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
+                if (Room is IRunRouteAction routeRoom)
+                    AddAction("/source", (id, content) =>
                     {
-                        if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+
+                        var msg = content.ToObject<SourceSelectMessageContent>();
+
+                        this.LogVerbose("Received request to route to source: {sourceListKey} on list: {sourceList}", msg.SourceListItemKey, msg.SourceListKey);
+
+                        routeRoom.RunRouteAction(msg.SourceListItemKey, msg.SourceListKey);
+                    });
+
+                if (Room is IRunDirectRouteAction directRouteRoom)
+                {
+                    AddAction("/directRoute", (id, content) =>
+                    {
+                        var msg = content.ToObject<DirectRoute>();
+
+
+                        this.LogVerbose("Running direct route from {sourceKey} to {destinationKey} with signal type {signalType}", msg.SourceKey, msg.DestinationKey, msg.SignalType);
+
+                        directRouteRoom.RunDirectRoute(msg.SourceKey, msg.DestinationKey, msg.SignalType);
+                    });
+                }
+
+
+                if (Room is IRunDefaultPresentRoute defaultRoom)
+                    AddAction("/defaultsource", (id, content) => defaultRoom.RunDefaultPresentRoute());                
+
+                if (Room is IHasCurrentSourceInfoChange sscRoom)
+                    sscRoom.CurrentSourceChange += Room_CurrentSingleSourceChange;
+
+                if (Room is IEssentialsHuddleVtc1Room vtcRoom)
+                {
+                    if (vtcRoom.ScheduleSource != null)
+                    {
+                        var key = vtcRoom.Key + "-" + Key;
+
+                        if (!AppServerController.CheckForDeviceMessenger(key))
                         {
-                            basicVolumeWithFeedback.VolumeUp(b);
+                            var scheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
+                                $"/room/{vtcRoom.Key}");
+                            AppServerController.AddDeviceMessenger(scheduleMessenger);
                         }
                     }
-                ));
 
-                AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
+                    vtcRoom.InCallFeedback.OutputChange += InCallFeedback_OutputChange;
+                }
+
+                if (Room is IPrivacy privacyRoom)
                 {
-                    if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                    AddAction("/volumes/master/privacyMuteToggle", (id, content) => privacyRoom.PrivacyModeToggle());
+
+                    privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
+                }
+
+
+                if (Room is IRunDefaultCallRoute defCallRm)
+                {
+                    AddAction("/activityVideo", (id, content) => defCallRm.RunDefaultCallRoute());
+                }
+
+
+                this.LogDebug("Registering for Power State messages");
+                Room.OnFeedback.OutputChange += (s, a) =>
+                {
+                    this.LogDebug("Room Power State Changed: {state}", a.BoolValue);
+                    OnFeedback_OutputChange(s, a);
+                };
+                Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
+                Room.IsWarmingUpFeedback.OutputChange += IsWarmingUpFeedback_OutputChange;
+
+                AddTechRoomActions();
+
+                if (Room is IHasCurrentVolumeControls volumeRoom)
+                {
+                    try
                     {
-                        basicVolumeWithFeedback.VolumeDown(b);
+                        volumeRoom.CurrentVolumeDeviceChange += Room_CurrentVolumeDeviceChange;
+
+                        if (volumeRoom.CurrentVolumeControls == null) return;
+
+                        AddAction("/volumes/master/level", (id, content) =>
+                        {
+                            var msg = content.ToObject<MobileControlSimpleContent<ushort>>();
+
+
+                            if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                                basicVolumeWithFeedback.SetVolume(msg.Value);
+                        });
+
+                        AddAction("/volumes/master/muteToggle", (id, content) => volumeRoom.CurrentVolumeControls.MuteToggle());
+
+                        AddAction("/volumes/master/muteOn", (id, content) =>
+                        {
+                            if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                                basicVolumeWithFeedback.MuteOn();
+                        });
+
+                        AddAction("/volumes/master/muteOff", (id, content) =>
+                        {
+                            if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                                basicVolumeWithFeedback.MuteOff();
+                        });
+
+                        AddAction("/volumes/master/volumeUp", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
+                        {
+                            if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                            {
+                                basicVolumeWithFeedback.VolumeUp(b);
+                            }
+                        }
+                        ));
+
+                        AddAction("/volumes/master/volumeDown", (id, content) => PressAndHoldHandler.HandlePressAndHold(DeviceKey, content, (b) =>
+                        {
+                            if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback basicVolumeWithFeedback)
+                            {
+                                basicVolumeWithFeedback.VolumeDown(b);
+                            }
+                        }
+                        ));
+
+
+                        // Registers for initial volume events, if possible
+                        if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
+                        {
+                            this.LogVerbose("Registering for volume feedback events");
+
+                            currentVolumeDevice.MuteFeedback.OutputChange += MuteFeedback_OutputChange;
+                            currentVolumeDevice.VolumeLevelFeedback.OutputChange += VolumeLevelFeedback_OutputChange;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogMessage(ex, "Exception registering for volume controls");
                     }
                 }
-                ));
-
-
-                // Registers for initial volume events, if possible
-                if (volumeRoom.CurrentVolumeControls is IBasicVolumeWithFeedback currentVolumeDevice)
-                {
-                    this.LogVerbose("Registering for volume feedback events");
-
-                    currentVolumeDevice.MuteFeedback.OutputChange += MuteFeedback_OutputChange;
-                    currentVolumeDevice.VolumeLevelFeedback.OutputChange += VolumeLevelFeedback_OutputChange;
-                }
-            }
-
-            if (Room is IHasCurrentSourceInfoChange sscRoom)
-                sscRoom.CurrentSourceChange += Room_CurrentSingleSourceChange;
-
-            if (Room is IEssentialsHuddleVtc1Room vtcRoom)
+            } catch(Exception ex)
             {
-                if (vtcRoom.ScheduleSource != null)
-                {
-                    var key = vtcRoom.Key + "-" + Key;
-
-                    if (!AppServerController.CheckForDeviceMessenger(key))
-                    {
-                        var scheduleMessenger = new IHasScheduleAwarenessMessenger(key, vtcRoom.ScheduleSource,
-                            $"/room/{vtcRoom.Key}");
-                        AppServerController.AddDeviceMessenger(scheduleMessenger);
-                    }
-                }
-
-                vtcRoom.InCallFeedback.OutputChange += InCallFeedback_OutputChange;
+                Debug.LogMessage(ex, "Exception registering actions", this);
             }
-
-            if (Room is IPrivacy privacyRoom)
-            {
-                AddAction("/volumes/master/privacyMuteToggle", (id, content) => privacyRoom.PrivacyModeToggle());
-
-                privacyRoom.PrivacyModeIsOnFeedback.OutputChange += PrivacyModeIsOnFeedback_OutputChange;
-            }
-
-
-            if (Room is IRunDefaultCallRoute defCallRm)
-            {
-                AddAction("/activityVideo", (id, content) => defCallRm.RunDefaultCallRoute());
-            }
-
-            Room.OnFeedback.OutputChange += OnFeedback_OutputChange;
-            Room.IsCoolingDownFeedback.OutputChange += IsCoolingDownFeedback_OutputChange;
-            Room.IsWarmingUpFeedback.OutputChange += IsWarmingUpFeedback_OutputChange;
-
-            AddTechRoomActions();
         }
 
         private void OnTouchPanelsUpdated(JToken content)
@@ -410,11 +429,19 @@ namespace PepperDash.Essentials
         /// <param name="e"></param>
         private void OnFeedback_OutputChange(object sender, FeedbackEventArgs e)
         {
-            var state = new
+            try
             {
-                isOn = e.BoolValue
-            };
-            PostStatusMessage(JToken.FromObject(state));
+                this.LogDebug("Power State changed: {powerState}", e.BoolValue);
+
+                var state = new
+                {
+                    isOn = e.BoolValue
+                };
+                PostStatusMessage(JToken.FromObject(state));
+            } catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception updating power state", this);
+            }
         }
 
         private void Room_CurrentVolumeDeviceChange(object sender, VolumeDeviceChangeEventArgs e)
