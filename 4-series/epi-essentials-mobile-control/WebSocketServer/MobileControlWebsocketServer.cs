@@ -285,6 +285,36 @@ namespace PepperDash.Essentials
                 Port = customPort;
             }
 
+            if(parent.Config.DirectServer.AutomaticallyForwardPortToCSLAN == true)
+            {
+                try
+                {
+                    CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
+
+
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Automatically forwarding port {0} to CS LAN", Port);
+
+                    var csAdapterId = CrestronEthernetHelper.GetAdapterdIdForSpecifiedAdapterType(EthernetAdapterType.EthernetCSAdapter);
+                    var csIp = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, csAdapterId);
+
+                    var result = CrestronEthernetHelper.AddPortForwarding((ushort)Port, (ushort)Port, csIp, CrestronEthernetHelper.ePortMapTransport.TCP);
+
+                    if (result != CrestronEthernetHelper.PortForwardingUserPatRetCodes.NoErr)
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Error, "Error adding port forwarding: {0}", result);
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "This processor does not have a CS LAN", this);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogMessage(ex, "Error automatically forwarding port to CS LAN");
+                }
+            }
+
+
             UiClients = new Dictionary<string, UiClientContext>();
 
             //_joinTokens = new Dictionary<string, JoinToken>();
@@ -324,6 +354,7 @@ namespace PepperDash.Essentials
             CrestronConsole.AddNewConsoleCommand(GenerateClientTokenFromConsole, "MobileAddUiClient", "Adds a client and generates a token. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand(RemoveToken, "MobileRemoveUiClient", "Removes a client. ? for more help", ConsoleAccessLevelEnum.AccessOperator);
             CrestronConsole.AddNewConsoleCommand((s) => PrintClientInfo(), "MobileGetClientInfo", "Displays the current client info", ConsoleAccessLevelEnum.AccessOperator);
+            CrestronConsole.AddNewConsoleCommand(RemoveAllTokens, "MobileRemoveAllClients", "Removes all clients", ConsoleAccessLevelEnum.AccessOperator);
         }
 
 
@@ -527,7 +558,8 @@ namespace PepperDash.Essentials
                                 }
                             }
                         },
-                        Logging = _parent.Config.ApplicationConfig.Logging
+                        Logging = _parent.Config.ApplicationConfig.Logging,
+                        PartnerMetadata = _parent.Config.ApplicationConfig.PartnerMetadata ?? new List<MobileControlPartnerMetadata>()
                     };
                 }
             }
@@ -546,58 +578,90 @@ namespace PepperDash.Essentials
         /// </summary>
         private void RetrieveSecret()
         {
-            // Add secret provider
-            _secretProvider = new WebSocketServerSecretProvider(SecretProviderKey);
-
-            // Check for existing secrets
-            var secret = _secretProvider.GetSecret(SecretProviderKey);
-
-            if (secret != null)
+            try
             {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
+                // Add secret provider
+                _secretProvider = new WebSocketServerSecretProvider(SecretProviderKey);
 
-                // populate the local secrets object
-                _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
+                // Check for existing secrets
+                var secret = _secretProvider.GetSecret(SecretProviderKey);
 
-                // populate the _uiClient collection
-                foreach (var token in _secret.Tokens)
+                if (secret != null)
                 {
-                    UiClients.Add(token.Key, new UiClientContext(token.Value));
-                }
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Secret successfully retrieved", this);
 
-                foreach (var client in UiClients)
-                {
-                    var key = client.Key;
-                    var path = _wsPath + key;
-                    var roomKey = client.Value.Token.RoomKey;
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Secret: {0}", this, secret.Value.ToString());
 
-                    _server.AddWebSocketService(path, () =>
+
+                    // populate the local secrets object
+                    _secret = JsonConvert.DeserializeObject<ServerTokenSecrets>(secret.Value.ToString());
+
+                    if (_secret != null && _secret.Tokens != null)
                     {
-                        var c = new UiClient();
-                        Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+                        // populate the _uiClient collection
+                        foreach (var token in _secret.Tokens)
+                        {
+                            if(token.Value == null)
+                            {
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "Token value is null", this);
+                                continue;
+                            }   
 
-                        c.Controller = _parent;
-                        c.RoomKey = roomKey;
-                        UiClients[key].SetClient(c);
-                        return c;
-                    });
+                            Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Adding token: {0} for room: {1}", this, token.Key, token.Value.RoomKey);
+                            
+                            if(UiClients == null)
+                            {
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "UiClients is null", this);
+                                UiClients = new Dictionary<string, UiClientContext>();
+                            }
+                            
+                            UiClients.Add(token.Key, new UiClientContext(token.Value));
+                        }
+                    }
+
+                    if (UiClients.Count > 0)
+                    {
+                        Debug.LogMessage(Serilog.Events.LogEventLevel.Information, "Restored {uiClientCount} UiClients from secrets data", this, UiClients.Count);
+
+                        foreach (var client in UiClients)
+                        {
+                            var key = client.Key;
+                            var path = _wsPath + key;
+                            var roomKey = client.Value.Token.RoomKey;
+
+                            _server.AddWebSocketService(path, () =>
+                            {
+                                var c = new UiClient();
+                                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "Constructing UiClient with id: {key}", this, key);
+
+                                c.Controller = _parent;
+                                c.RoomKey = roomKey;
+                                UiClients[key].SetClient(c);
+                                return c;
+                            });
 
 
-                    //_server.WebSocketServices.AddService<UiClient>(path, (c) =>
-                    //{
-                    //    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
-                    //    c.Controller = _parent;
-                    //    c.RoomKey = roomKey;
-                    //    UiClients[key].SetClient(c);
-                    //});
+                            //_server.WebSocketServices.AddService<UiClient>(path, (c) =>
+                            //{
+                            //    Debug.Console(2, this, "Constructing UiClient with id: {0}", key);
+                            //    c.Controller = _parent;
+                            //    c.RoomKey = roomKey;
+                            //    UiClients[key].SetClient(c);
+                            //});
+                        }
+                    }
                 }
-            }
-            else
-            {
-                Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
-            }
+                else
+                {
+                    Debug.LogMessage(Serilog.Events.LogEventLevel.Warning, "No secret found");
+                }
 
-            Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
+                Debug.LogMessage(Serilog.Events.LogEventLevel.Debug, "{uiClientCount} UiClients restored from secrets data", this, UiClients.Count);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogMessage(ex, "Exception retrieving secret", this);
+            }
         }
 
         /// <summary>
@@ -732,6 +796,46 @@ namespace PepperDash.Essentials
         }
 
         /// <summary>
+        /// Removes all clients from the server
+        /// </summary>
+        private void RemoveAllTokens(string s)
+        {
+            if (s == "?" || string.IsNullOrEmpty(s))
+            {
+                CrestronConsole.ConsoleCommandResponse(@"Removes all clients from the server.  To execute add 'confirm' to command");
+                return;
+            }
+
+            if (s != "confirm")
+            {
+                CrestronConsole.ConsoleCommandResponse(@"To remove all clients, add 'confirm' to the command");
+                return;
+            }
+
+            foreach (var client in UiClients)
+            {
+                if (client.Value.Client != null && client.Value.Client.Context.WebSocket.IsAlive)
+                {
+                    client.Value.Client.Context.WebSocket.Close(CloseStatusCode.Normal, "Server Shutting Down");
+                }
+
+                var path = _wsPath + client.Key;
+                if (_server.RemoveWebSocketService(path))
+                {
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Client removed with token: {0}", client.Key));
+                }
+                else
+                {
+                    CrestronConsole.ConsoleCommandResponse(string.Format("Unable to remove client with token : {0}", client.Key));
+                }
+            }
+
+            UiClients.Clear();
+
+            UpdateSecret();
+        }
+
+        /// <summary>
         /// Removes a client with the specified token value
         /// </summary>
         /// <param name="s"></param>
@@ -834,7 +938,11 @@ namespace PepperDash.Essentials
                 {
                     HandleVersionRequest(res);
                 }
-                // Call to serve the Angular user app
+                else if (path.StartsWith("/mc/app/logo"))
+                {
+                    HandleImageRequest(req, res);
+                }
+                // Call to serve the user app
                 else if (path.StartsWith(_userAppBaseHref))
                 {
                     HandleUserAppRequest(req, res, path);
@@ -1000,6 +1108,54 @@ namespace PepperDash.Essentials
             res.ContentLength64 = body.LongLength;
             res.Close(body, true);
         }
+
+        /// <summary>
+        /// Handler to return images requested by the user app
+        /// </summary>
+        /// <param name="req"></param>
+        /// <param name="res"></param>
+        private void HandleImageRequest(HttpListenerRequest req, HttpListenerResponse res)
+        {
+            var path = req.RawUrl;
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Requesting Image: {0}", this, path);
+
+            var imageBasePath = Global.DirectorySeparator + "html" + Global.DirectorySeparator + "logo" + Global.DirectorySeparator;
+
+            var image = path.Split('/').Last();
+
+            var filePath = imageBasePath + image;
+
+            Debug.LogMessage(Serilog.Events.LogEventLevel.Verbose, "Retrieving Image: {0}", this, filePath);
+
+            if (System.IO.File.Exists(filePath))
+            {
+                if(filePath.EndsWith(".png"))
+                { 
+                    res.ContentType = "image/png";
+                }
+                else if(filePath.EndsWith(".jpg"))
+                {
+                    res.ContentType = "image/jpeg";
+                }
+                else if(filePath.EndsWith(".gif"))
+                {
+                    res.ContentType = "image/gif";
+                }
+                else if(filePath.EndsWith(".svg"))
+                {
+                    res.ContentType = "image/svg+xml";
+                }
+                byte[] contents = System.IO.File.ReadAllBytes(filePath);
+                res.ContentLength64 = contents.LongLength;
+                res.Close(contents, true);
+            }
+            else
+            {
+                res.StatusCode = (int)HttpStatusCode.NotFound;
+                res.Close();
+            }
+        }   
 
         /// <summary>
         /// Handles requests to serve files for the Angular single page app

@@ -62,8 +62,20 @@ This file is created automatically when program starts up and served up to the c
       "listPageText": "Please select your room",
       "loginHelpText": "Please select your room from the list, then enter the code shown on the display in the room. (Configurable message)",
       "passcodePageText": "Please enter the code shown on this room's display"
+    },
+    "partnerMetadata": [
+    {
+        "role": "consultant",
+        "description": "Design and consulting by [Consultant Name]",
+        "logoPath": "logo/consultant.png"
+    },
+    {
+        "role": "integrator",
+        "description": "Integration services by [Integrator Name]",
+        "logoPath": "logo/integrator.png"
     }
-  }
+]
+}
 }
 ```
 
@@ -75,7 +87,6 @@ This file is created automatically when program starts up and served up to the c
     "name": "Mobile Control",
     "type": "mobileControl",
     "group": "api",
-    "uid": 25,
     "id": "c9138b74-ae67-4837-89ee-e1fe91e0f0d8",
     "properties": {
         "clientAppUrl": "http://{server-hostname}/mc/gateway", // url of the gateway app on an Edge Server
@@ -96,9 +107,21 @@ This file is created automatically when program starts up and served up to the c
                     "loginHelpText": "Please select your room from the list, then enter the code shown on the display.",
                     "passcodePageText": "Please enter the code shown on this room's display"
                 }
-            }
+            },
+            "partnerMetadata": [
+                {
+                    "role": "consultant",
+                    "description": "Design and consulting by [Consultant Name]",
+                    "logoPath": "logo/consultant.png"
+                },
+                {
+                    "role": "integrator",
+                    "description": "Integration services by [Integrator Name]",
+                    "logoPath": "logo/integrator.png"
+                }
+            ]
         }
-    }
+}
 }
 ```
 

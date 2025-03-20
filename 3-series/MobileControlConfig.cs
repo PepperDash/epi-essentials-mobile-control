@@ -53,6 +53,9 @@ namespace PepperDash.Essentials
         [JsonProperty("logging")]
         public MobileControlLoggingConfig Logging { get; set; }
 
+        [JsonProperty("automaticallyForwardPortToCSLAN")]
+        public bool? AutomaticallyForwardPortToCSLAN { get; set; }
+
         public MobileControlDirectServerPropertiesConfig()
         {
             Logging = new MobileControlLoggingConfig();
@@ -104,6 +107,9 @@ namespace PepperDash.Essentials
         public bool? EnableDev { get; set; }
 
         [JsonProperty("logoPath")]
+        /// <summary>
+        /// Client logo to be used in header and/or splash screen
+        /// </summary>
         public string LogoPath { get; set; }
 
         [JsonProperty("iconSet")]
@@ -118,6 +124,21 @@ namespace PepperDash.Essentials
 
         [JsonProperty("enableRemoteLogging")]
         public bool Logging { get; set; }
+
+        [JsonProperty("partnerMetadata", NullValueHandling = NullValueHandling.Ignore)]
+        public List<MobileControlPartnerMetadata> PartnerMetadata { get; set; }
+    }
+
+    public class MobileControlPartnerMetadata
+    {
+        [JsonProperty("role")]
+        public string Role { get; set; }
+
+        [JsonProperty("description")]
+        public string Description { get; set; }
+
+        [JsonProperty("logoPath")]
+        public string LogoPath { get; set; }
     }
 
     public class McMode
