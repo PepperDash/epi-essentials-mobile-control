@@ -9,6 +9,8 @@ namespace PepperDash.Essentials.Room.MobileControl
     /// </summary>
     public interface IDelayedConfiguration
     {
+
+        
         event EventHandler<EventArgs> ConfigurationIsReady;
     }
 }
