@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Converters;
+using PepperDash.Core.Logging;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
@@ -17,7 +18,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         private ISelectableItems<TKey> itemDevice;
 
         private readonly string _propName;
-        public ISelectableItemsMessenger(string key, string messagePath, ISelectableItems<TKey> device, string propName) : base(key, messagePath, device as Device)
+        public ISelectableItemsMessenger(string key, string messagePath, ISelectableItems<TKey> device, string propName) : base(key, messagePath, device as IKeyName)
         {
             itemDevice = device;
             _propName = propName;
@@ -61,10 +62,32 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void SendFullStatus()
         {
-            var stateObject = new JObject();
-            stateObject[_propName] = JToken.FromObject(itemDevice, serializer);
-            PostStatusMessage(stateObject);
+            try
+            { 
+                this.LogInformation("Sending full status");
+
+                var stateObject = new ISelectableItemsStateMessage<TKey>
+                {
+                    Items = itemDevice.Items,
+                    CurrentItem = itemDevice.CurrentItem
+                };
+
+                PostStatusMessage(stateObject);
+            }
+            catch (Exception e)
+            {
+                this.LogError("Error sending full status: {0}", e.Message);
+            }
         }
+    }
+
+    public class ISelectableItemsStateMessage<TKey> : DeviceStateMessageBase
+    {
+        [JsonProperty("items")]
+        public Dictionary<TKey, ISelectableItem> Items { get; set; }
+
+        [JsonProperty("currentItem")]
+        public TKey CurrentItem { get; set; }
     }
 
 }
