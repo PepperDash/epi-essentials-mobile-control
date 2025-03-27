@@ -1685,6 +1685,7 @@ namespace PepperDash.Essentials
                     actionList.Any(a =>
                         a.Messenger.GetType() == messenger.GetType()
                         && a.Messenger.DeviceKey == messenger.DeviceKey
+                        && a.Messenger.MessagePath == messenger.MessagePath
                     )
                 )
                 {
@@ -1693,6 +1694,7 @@ namespace PepperDash.Essentials
                         this,
                         $"Messenger of type {messenger.GetType().Name} already exists. Skipping actions for {messenger.Key}"
                     );
+
                     return;
                 }
 
@@ -2550,16 +2552,18 @@ Mobile Control Direct Server Infromation:
                         // /room/roomAB
 
                         // Can't do direct comparison because it will match /room/roomA with /room/roomA/xxx instead of /room/roomAB/xxx
-                        var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key + "/")); // adds trailing slash to ensure above case is handled
-                        
+                        // /device/aquilon-processor/fullStatus 
+                        // /device/aquilon-processor/screen-1/fullStatus
+                        // /device/aquilon-processor/screen-2/fullStatus
+                        // /device/aquilon-processor/screen-3/fullStatus
+                        //var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key + "/")); // adds trailing slash to ensure above case is handled
+                        var handlers = _actionDictionary.Where(kv => message.Type.StartsWith(kv.Key + "/")).SelectMany(kv => kv.Value).ToList();
 
-                        if (handlersKv.Key == null)
+                        if (handlers.Count == 0)
                         {
                             this.LogInformation("-- Warning: Incoming message has no registered handler {type}", message.Type);
                             break;
                         }
-
-                        var handlers = handlersKv.Value;
 
                         foreach (var handler in handlers)
                         {

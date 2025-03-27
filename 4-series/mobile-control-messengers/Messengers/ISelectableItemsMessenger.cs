@@ -28,7 +28,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
         {
             base.RegisterActions();
 
-            AddAction("/fullStatus", (id, context) =>
+            AddAction($"/{_propName}/fullStatus", (id, context) =>
             {
                 SendFullStatus();
             });
@@ -48,7 +48,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var key = input.Key;
                 var localItem = input.Value;                
 
-                AddAction($"/{key}", (id, content) =>
+                AddAction($"/{_propName}/{key}", (id, content) =>
                 {
                     localItem.Select();
                 });
