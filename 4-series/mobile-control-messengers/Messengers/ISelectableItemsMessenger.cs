@@ -1,34 +1,27 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json.Converters;
 using PepperDash.Core.Logging;
 
 namespace PepperDash.Essentials.AppServer.Messengers
 {
     public class ISelectableItemsMessenger<TKey> : MessengerBase
     {
-        private static readonly JsonSerializer serializer = new JsonSerializer { Converters = { new StringEnumConverter() } };
+        
         private ISelectableItems<TKey> itemDevice;
 
-        private readonly string _propName;
         public ISelectableItemsMessenger(string key, string messagePath, ISelectableItems<TKey> device, string propName) : base(key, messagePath, device as IKeyName)
         {
-            itemDevice = device;
-            _propName = propName;
+            itemDevice = device;        
         }
 
         protected override void RegisterActions()
         {
             base.RegisterActions();
 
-            AddAction($"/{_propName}/fullStatus", (id, context) =>
+            AddAction($"/fullStatus", (id, context) =>
             {
                 SendFullStatus();
             });
@@ -48,7 +41,7 @@ namespace PepperDash.Essentials.AppServer.Messengers
                 var key = input.Key;
                 var localItem = input.Value;                
 
-                AddAction($"/{_propName}/{key}", (id, content) =>
+                AddAction($"/{key}", (id, content) =>
                 {
                     localItem.Select();
                 });
