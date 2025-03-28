@@ -1308,7 +1308,7 @@ namespace PepperDash.Essentials
         {
             if (_messengers.ContainsKey(messenger.Key))
             {
-                Debug.Console(1, this, "Messenger with key {0} already added", messenger.Key);
+                this.LogDebug("Messenger with key {messengerKey} already added", messenger.Key);
                 return;
             }
 
@@ -1322,27 +1322,27 @@ namespace PepperDash.Essentials
                 _roomBridges.Add(roomBridge);
             }
 
-            Debug.Console(
-                2,
-                this,
-                "Adding messenger with key {0} for path {1}",
+            this.LogVerbose(
+                "Adding messenger with key {messengerKey} for path {messagePath}",
                 messenger.Key,
                 messenger.MessagePath
             );
 
             _messengers.Add(messenger.Key, messenger);
 
-            messenger.RegisterWithAppServer(this);
+            if(_initialized)
+            {
+                this.LogDebug("Registering messenger {messengerKey} AFTER initialization", messenger.Key);
+                messenger.RegisterWithAppServer(this);
+            }
         }
 
         private void AddDefaultDeviceMessenger(IMobileControlMessenger messenger)
         {
             if (_defaultMessengers.ContainsKey(messenger.Key))
             {
-                Debug.Console(
-                    1,
-                    this,
-                    "Default messenger with key {0} already added",
+               this.LogDebug(
+                    "Default messenger with key {messengerKey} already added",
                     messenger.Key
                 );
                 return;
@@ -1352,10 +1352,8 @@ namespace PepperDash.Essentials
             {
                 simplMessenger.ConfigurationIsReady += Bridge_ConfigurationIsReady;
             }
-            Debug.Console(
-                2,
-                this,
-                "Adding default messenger with key {0} for path {1}",
+            this.LogVerbose(
+                "Adding default messenger with key {messengerKey} for path {messagePath}",
                 messenger.Key,
                 messenger.MessagePath
             );
@@ -1364,16 +1362,15 @@ namespace PepperDash.Essentials
 
             if (_initialized)
             {
+                this.LogDebug("Registering default messenger {messengerKey} AFTER initialization", messenger.Key);
                 RegisterMessengerWithServer(messenger);
             }
         }
 
         private void RegisterMessengerWithServer(IMobileControlMessenger messenger)
         {
-            Debug.Console(
-                2,
-                this,
-                "Registering messenger with key {0} for path {1}",
+            this.LogVerbose(
+                "Registering messenger with key {messengerKey} for path {messagePath}",
                 messenger.Key,
                 messenger.MessagePath
             );
@@ -1391,15 +1388,8 @@ namespace PepperDash.Essentials
                 }
                 catch (Exception ex)
                 {
-                    Debug.Console(
-                        0,
-                        this,
-                        $"Exception registering paths for {messenger.Key}: {ex.Message}"
-                    );
-                    Debug.Console(
-                        2,
-                        this,
-                        $"Exception registering paths for {messenger.Key}: {ex.StackTrace}"
+                    Debug.LogMessage(ex,
+                        "Exception registering paths for default messenger {messengerKey}", this, messenger.Key
                     );
                     continue;
                 }
@@ -1413,15 +1403,8 @@ namespace PepperDash.Essentials
                 }
                 catch (Exception ex)
                 {
-                    Debug.Console(
-                        0,
-                        this,
-                        $"Exception registering paths for {messenger.Key}: {ex.Message}"
-                    );
-                    Debug.Console(
-                        2,
-                        this,
-                        $"Exception registering paths for {messenger.Key}: {ex.StackTrace}"
+                    Debug.LogMessage(ex,
+                        "Exception registering paths for messenger {messengerKey}", this, messenger.Key
                     );
                     continue;
                 }
@@ -1685,6 +1668,7 @@ namespace PepperDash.Essentials
                     actionList.Any(a =>
                         a.Messenger.GetType() == messenger.GetType()
                         && a.Messenger.DeviceKey == messenger.DeviceKey
+                        && a.Messenger.MessagePath == messenger.MessagePath
                     )
                 )
                 {
@@ -1693,6 +1677,7 @@ namespace PepperDash.Essentials
                         this,
                         $"Messenger of type {messenger.GetType().Name} already exists. Skipping actions for {messenger.Key}"
                     );
+
                     return;
                 }
 
@@ -2550,16 +2535,18 @@ Mobile Control Direct Server Infromation:
                         // /room/roomAB
 
                         // Can't do direct comparison because it will match /room/roomA with /room/roomA/xxx instead of /room/roomAB/xxx
-                        var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key + "/")); // adds trailing slash to ensure above case is handled
-                        
+                        // /device/aquilon-processor/fullStatus 
+                        // /device/aquilon-processor/screen-1/fullStatus
+                        // /device/aquilon-processor/screen-2/fullStatus
+                        // /device/aquilon-processor/screen-3/fullStatus
+                        //var handlersKv = _actionDictionary.FirstOrDefault(kv => message.Type.StartsWith(kv.Key + "/")); // adds trailing slash to ensure above case is handled
+                        var handlers = _actionDictionary.Where(kv => message.Type.StartsWith(kv.Key + "/")).SelectMany(kv => kv.Value).ToList();
 
-                        if (handlersKv.Key == null)
+                        if (handlers.Count == 0)
                         {
                             this.LogInformation("-- Warning: Incoming message has no registered handler {type}", message.Type);
                             break;
                         }
-
-                        var handlers = handlersKv.Value;
 
                         foreach (var handler in handlers)
                         {

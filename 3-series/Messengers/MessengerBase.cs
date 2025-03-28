@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using PepperDash.Core;
+using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
 using PepperDash.Essentials.Core.DeviceTypeInterfaces;
 using System;
@@ -91,10 +92,17 @@ namespace PepperDash.Essentials.AppServer.Messengers
 
         private void HandleMessage(string path, string id, JToken content)
         {
+            //this.LogVerbose("Received message with path: {path}", path);
+
+            //this.LogVerbose("Message Path: {MessagePath}", MessagePath);
+
             // replace base path with empty string. Should leave something like /fullStatus
             var route = path.Replace(MessagePath, string.Empty); 
 
-            if(!_actions.TryGetValue(route, out var action)) {                
+            //this.LogVerbose("Route: {route}", route);
+
+            if(!_actions.TryGetValue(route, out var action)) {
+                this.LogVerbose($"{route} not found in actions", route);
                 return;
             }
 
