@@ -193,3 +193,345 @@ In addition to the automatically instantiated messengers, plugin devices can ref
 To view the paths at runtime, the console command `mobilecontrolshowactionpaths:[slotnumber]` will print all the action paths for the mobile control API. 
 
 
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 2.0.0
+- 1.12.5
+<!-- END Minimum Essentials Framework Versions -->
+<!-- START Config Example -->
+### Config Example
+
+```json
+{
+    "key": "GeneratedKey",
+    "uid": 1,
+    "name": "GeneratedName",
+    "type": "mctsw750",
+    "group": "Group",
+    "properties": {
+        "apiPath": "SampleString",
+        "gatewayAppPath": "SampleString",
+        "enableDev": true,
+        "LogoPath": "SampleString",
+        "iconSet": "SampleValue",
+        "loginMode": "SampleString",
+        "modes": {
+            "SampleString": {
+                "listPageText": "SampleString",
+                "loginHelpText": "SampleString",
+                "passcodePageText": "SampleString"
+            }
+        },
+        "enableRemoteLogging": true,
+        "PartnerMetadata": [
+            {
+                "role": "SampleString",
+                "description": "SampleString",
+                "logoPath": "SampleString"
+            }
+        ]
+    }
+}
+```
+<!-- END Config Example -->
+<!-- START Supported Types -->
+### Supported Types
+
+- mctsw750
+- mcts770
+- mctsw760
+- mcts1070
+- mctsw1070
+- mctsw1050
+- mccrestronapp
+- mcxpanel
+- mctsw1060
+- mctsw770
+- mctsw550
+- mctsw570
+- mctsw560
+<!-- END Supported Types -->
+<!-- START Join Maps -->
+### Join Maps
+
+#### Digitals
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Use Advanced Sharing Mode |
+| 1 | R | Use Advanced Sharing Mode |
+| 2 | R | Use Advanced Sharing Mode |
+| 3 | R | Use Advanced Sharing Mode |
+| 21 | R | Hang Up |
+| 51 | R | Answer Incoming Call |
+| 52 | R | Reject Incoming Call |
+| 41 | R | Speed Dial |
+| 10 | R | DTMF 0 |
+| 1 | R | DTMF 1 |
+| 2 | R | DTMF 2 |
+| 3 | R | DTMF 3 |
+| 4 | R | DTMF 4 |
+| 5 | R | DTMF 5 |
+| 6 | R | DTMF 6 |
+| 7 | R | DTMF 7 |
+| 8 | R | DTMF 8 |
+| 9 | R | DTMF 9 |
+| 11 | R | DTMF * |
+| 12 | R | DTMF # |
+| 1 | R | Master Volume Mute Toggle/FB/Level/Label |
+| 2 | R | Volume Mute Toggle/FB/Level/Label |
+| 12 | R | Privacy Mute Toggle/FB |
+| 41 | R | Prompt User for Code |
+| 42 | R | Client Joined |
+| 48 | R | Enable Activity Phone Call |
+| 49 | R | Enable Activity Video Call |
+| 51 | R | Activity Share |
+| 52 | R | Activity Phone Call |
+| 53 | R | Activity Video Call |
+| 61 | R | Shutdown Cancel |
+| 62 | R | Shutdown End |
+| 63 | R | Shutdown Start |
+| 71 | R | Source Changed |
+| 100 | R | Config is local to Essentials |
+| 261 | R | Speed Dial Visible |
+| 301 | R | Room Is On |
+| 500 | R | Config info from SIMPL is ready |
+| 501 | R | Config info from SIMPL is ready |
+| 501 | R | Config info from SIMPL is ready |
+| 502 | R | Hide Video Conference Recents |
+| 503 | R | Show camera when not in call |
+| 504 | R | Use Source Enabled Joins |
+| 601 | R | Source is not sharable |
+| 621 | R | Source is enabled/visible |
+| 641 | R | Source is controllable |
+| 661 | R | Source is Audio Source |
+| 505 | R | Supports Advanced Sharing |
+| 506 | R | Use Destination Enable |
+| 507 | R | Share Mode Toggle Visible to User |
+| 801 | R | Show Destination on UI |
+| 24 | R | Hang Up |
+| 50 | R | Incoming Call |
+| 51 | R | Answer Incoming Call |
+| 52 | R | Reject Incoming Call |
+| 41 | R | Speed Dial |
+| 100 | R | Directory Search Busy FB |
+| 101 | R | Directory Line Selected FB |
+| 101 | R | Directory Selected Entry Is Contact FB |
+| 102 | R | Directory is on Root FB |
+| 103 | R | Directory has changed FB |
+| 104 | R | Go to Directory Root |
+| 105 | R | Go back one directory level |
+| 106 | R | Dial selected directory line |
+| 111 | R | Camera Tilt Up |
+| 112 | R | Camera Tilt Down |
+| 113 | R | Camera Pan Left |
+| 114 | R | Camera Pan Right |
+| 115 | R | Camera Zoom In |
+| 116 | R | Camera Zoom Out |
+| 121 | R | Camera Presets |
+| 131 | R | Camera Mode Auto |
+| 132 | R | Camera Mode Manual |
+| 133 | R | Camera Mode Off |
+| 141 | R | Camera Self View Toggle/FB |
+| 142 | R | Camera Layout Toggle |
+| 143 | R | Camera Supports Auto Mode FB |
+| 144 | R | Camera Supports Off Mode FB |
+| 60 | R | Camera Number Select/FB |
+| 1 | R | DTMF 1 |
+| 2 | R | DTMF 2 |
+| 3 | R | DTMF 3 |
+| 4 | R | DTMF 4 |
+| 5 | R | DTMF 5 |
+| 6 | R | DTMF 6 |
+| 7 | R | DTMF 7 |
+| 8 | R | DTMF 8 |
+| 9 | R | DTMF 9 |
+| 10 | R | DTMF 0 |
+| 11 | R | DTMF * |
+| 12 | R | DTMF # |
+
+#### Analogs
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 61 | R | Shutdown Cancel |
+| 101 | R | Number of Auxilliary Faders |
+| 101 | R | Directory Select Row |
+| 101 | R | Directory Row Count FB |
+
+#### Serials
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 51 | R | Source to Route to Destination & FB |
+| 61 | R | Source to Route to Destination & FB |
+| 1 | R | Current Dial String |
+| 11 | R | Current Call Number |
+| 12 | R | Current Call Name |
+| 21 | R | Current Hook State |
+| 22 | R | Current Call Direction |
+| 51 | R | Incoming Call Name |
+| 52 | R | Incoming Call Number |
+| 403 | R | QR Code URL |
+| 404 | R | Portal System URL |
+| 71 | R | Key of selected source |
+| 241 | R | Speed Dial names |
+| 251 | R | Speed Dial numbers |
+| 401 | R | User Code |
+| 402 | R | Server URL |
+| 501 | R | Room Name |
+| 502 | R | Room help message |
+| 503 | R | Room help number |
+| 504 | R | Room phone number |
+| 505 | R | Room URI |
+| 601 | R | Source Names |
+| 621 | R | Source Icons |
+| 641 | R | Source Keys |
+| 701 | R | Source Control Device Keys |
+| 661 | R | Source Types |
+| 761 | R | Near End Camera Names |
+| 771 | R | Far End Camera Name |
+| 801 | R | Destination Name |
+| 811 | R | Destination Device Key |
+| 821 | R | Destination type. Should be Audio, Video, AudioVideo |
+| 1 | R | Current Dial String |
+| 2 | R | Current Call Name |
+| 3 | R | Current Call Number |
+| 31 | R | Current Hook State |
+| 22 | R | Current Call Direction |
+| 51 | R | Incoming Call Name |
+| 52 | R | Incoming Call Number |
+| 100 | R | Directory Search String |
+| 101 | R | Directory Entries |
+| 356 | R | Selected Directory Entry Name |
+| 357 | R | Selected Directory Entry Number |
+| 358 | R | Selected Directory Folder Name |
+<!-- END Join Maps -->
+<!-- START Interfaces Implemented -->
+### Interfaces Implemented
+
+- IMobileControlMessage
+#else
+    public class MobileControlMessage
+#endif
+- IMobileControlAction
+- IHasFeedback
+- ITswAppControl
+- ITswZoomControl
+- IDeviceInfoProvider
+- IMobileControlTouchpanelController
+- ITheme
+- IChannel
+- INumericKeypad
+- IQueueMessage
+- IMobileControl
+- IMobileControlMessenger
+#else
+    public abstract class MessengerBase: EssentialsDevice
+#endif
+- IMobileControlRoomMessenger
+- IDelayedConfiguration
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- MessengerBase
+- TouchpanelBase
+- CrestronTouchpanelPropertiesConfig
+- WebSocketBehavior
+- CrestronLocalSecretsProvider
+- WebApiBaseRequestAsyncHandler
+- WebApiBaseRequestHandler
+- Device
+- EssentialsConfig
+- EssentialsDevice
+- JoinMapBaseAdvanced
+- EiscApiPropertiesConfig.ApiDevicePropertiesConfig
+- VideoCodecBaseMessenger
+- MobileControlBridgeBase
+- Dictionary<string
+- uint>
+<!-- END Base Classes -->
+<!-- START Public Methods -->
+### Public Methods
+
+- public void SendFullStatus()
+- public void SendFullStatus()
+- public void UpdateTheme(string theme)
+- public void SetAppUrl(string url)
+- public void HideOpenApp()
+- public void OpenApp()
+- public void CloseOpenApp()
+- public void EndZoomCall()
+- public void UpdateDeviceInfo()
+- public void UpdateSecret()
+- public void StopServer()
+- public void SendMessageToAllClients(string message)
+- public void SendMessageToClient(object clientId, string message)
+- public void SetClient(UiClient client)
+- public ServerTokenSecrets DeserializeSecret()
+- public void ChannelUp(bool pressRelease)
+- public void ChannelDown(bool pressRelease)
+- public void LastChannel(bool pressRelease)
+- public void Guide(bool pressRelease)
+- public void Info(bool pressRelease)
+- public void Exit(bool pressRelease)
+- public void Digit0(bool pressRelease)
+- public void Digit1(bool pressRelease)
+- public void Digit2(bool pressRelease)
+- public void Digit3(bool pressRelease)
+- public void Digit4(bool pressRelease)
+- public void Digit5(bool pressRelease)
+- public void Digit6(bool pressRelease)
+- public void Digit7(bool pressRelease)
+- public void Digit8(bool pressRelease)
+- public void Digit9(bool pressRelease)
+- public void KeypadAccessoryButton1(bool pressRelease)
+- public void KeypadAccessoryButton2(bool pressRelease)
+- public void Dispatch()
+- public void Dispatch()
+- public bool CheckForDeviceMessenger(string key)
+- public void AddDeviceMessenger(IMobileControlMessenger messenger)
+- public void AddDeviceMessenger(MessengerBase messenger)
+- public void LinkSystemMonitorToAppServer()
+- public void CreateMobileControlRoomBridge(IEssentialsRoom room, IMobileControl parent)
+- public void PrintActionDictionaryPaths(object o)
+- public void RemoveAction(string key)
+- public MobileControlBridgeBase GetRoomBridge(string key)
+- public IMobileControlRoomMessenger GetRoomMessenger(string key)
+- public void RegisterSystemToServer()
+- public MobileControlEssentialsConfig GetConfigWithPluginVersion()
+- public void SetClientUrl(string path, string roomKey = null)
+- public void SendMessageObject(IMobileControlMessage o)
+- public void SendMessageObjectToDirectClient(object o)
+- public void HandleClientMessage(string message)
+- public void RegisterWithAppServer(IMobileControl appServerController)
+- public void RegisterWithAppServer(MobileControlSystemController appServerController)
+- public void SetInterfaces(List<string> interfaces)
+- public void RegisterForDestinationPaths()
+- public void SendFullStatus()
+- public void CustomUnregsiterWithAppServer(IMobileControl appServerController)
+- public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
+- public void CustomUnregsiterWithAppServer(IMobileControl appServerController)
+- public void CustomUnregsiterWithAppServer(MobileControlSystemController appServerController)
+- public void SetUserCode(string code)
+- public void SetUserCode(string code, string qrChecksum)
+<!-- END Public Methods -->
+<!-- START Bool Feedbacks -->
+### Bool Feedbacks
+
+- AppOpenFeedback
+- ZoomIncomingCallFeedback
+- ZoomInCallFeedback
+- ApiOnlineAndAuthorized
+<!-- END Bool Feedbacks -->
+<!-- START Int Feedbacks -->
+
+<!-- END Int Feedbacks -->
+<!-- START String Feedbacks -->
+### String Feedbacks
+
+- AppUrlFeedback
+- ThemeFeedback
+<!-- END String Feedbacks -->
