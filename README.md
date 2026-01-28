@@ -1,5 +1,7 @@
 # Mobile Control Essentials Plugin
 
+# !!!!As of Essentials 2.1.0 this plugin is no longer necessary as it was added to Essentials as a project!!!
+
 This plugin enables Essentials to communicate with the Mobile Control User App.
 
 This happens via two methods:
